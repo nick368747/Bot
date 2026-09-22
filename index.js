@@ -15,6 +15,9 @@ const http = require("http");
 
 const PORT = process.env.PORT || 10000;
 
+// Discord-Kanal für Minecraft-Chat
+const MINECRAFT_CHAT_CHANNEL_ID = "1552068948676059146";
+
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end("Bot läuft!");
@@ -67,6 +70,23 @@ function minecraftStarten() {
   mcBot.once("spawn", () => {
     verbindetSich = false;
     console.log("✅ FrozenRun ist jetzt online auf BlockBande!");
+
+    const channel = client.channels.cache.get(MINECRAFT_CHAT_CHANNEL_ID);
+
+    if (channel) {
+      channel.send("🟢 **FrozenRun ist jetzt auf Minecraft online!**");
+    }
+  });
+
+  // Minecraft-Chat → Discord
+  mcBot.on("chat", (username, message) => {
+    if (username === mcBot.username) return;
+
+    const channel = client.channels.cache.get(MINECRAFT_CHAT_CHANNEL_ID);
+
+    if (channel) {
+      channel.send(`💬 **${username}:** ${message}`);
+    }
   });
 
   mcBot.on("error", (err) => {
@@ -75,6 +95,13 @@ function minecraftStarten() {
 
   mcBot.on("end", () => {
     console.log("FrozenRun wurde getrennt.");
+
+    const channel = client.channels.cache.get(MINECRAFT_CHAT_CHANNEL_ID);
+
+    if (channel) {
+      channel.send("🔴 **FrozenRun wurde von Minecraft getrennt.**");
+    }
+
     mcBot = null;
     verbindetSich = false;
     botAktiv = false;
