@@ -10,32 +10,32 @@ const {
   SlashCommandBuilder
 } = require("discord.js");
 
+const mineflayer = require("mineflayer");
 const http = require("http");
 
-// Render braucht einen offenen Port
 const PORT = process.env.PORT || 10000;
 
 http.createServer((req, res) => {
   res.writeHead(200);
-  res.end("Discord Bot läuft!");
+  res.end("Bot läuft!");
 }).listen(PORT, () => {
   console.log(`Webserver läuft auf Port ${PORT}`);
 });
 
-// Discord-Bot
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
+let mcBot = null;
 let botAktiv = false;
+let verbindetSich = false;
 
-// /panel Befehl
 const command = new SlashCommandBuilder()
   .setName("panel")
   .setDescription("Zeigt das Bot-Steuerungsfeld an.");
 
 client.once(Events.ClientReady, async () => {
-  console.log(`Bot ist online als ${client.user.tag}`);
+  console.log(`Discord-Bot online als ${client.user.tag}`);
 
   const rest = new REST({ version: "10" })
     .setToken(process.env.DISCORD_TOKEN);
@@ -47,39 +47,92 @@ client.once(Events.ClientReady, async () => {
     }
   );
 
-  console.log("Slash-Befehl /panel registriert.");
+  console.log("/panel registriert.");
 });
+
+function minecraftStarten() {
+  if (mcBot || verbindetSich) return;
+
+  verbindetSich = true;
+
+  console.log("FrozenRun verbindet sich mit BlockBande...");
+
+  mcBot = mineflayer.createBot({
+    host: "blockbande.de",
+    port: 25565,
+    username: "FrozenRun",
+    auth: "microsoft"
+  });
+
+  mcBot.once("spawn", () => {
+    verbindetSich = false;
+    console.log("✅ FrozenRun ist jetzt online auf BlockBande!");
+  });
+
+  mcBot.on("error", (err) => {
+    console.log("Minecraft-Fehler:", err.message);
+  });
+
+  mcBot.on("end", () => {
+    console.log("FrozenRun wurde getrennt.");
+    mcBot = null;
+    verbindetSich = false;
+    botAktiv = false;
+  });
+}
+
+function minecraftStoppen() {
+  if (mcBot) {
+    console.log("FrozenRun wird getrennt...");
+    mcBot.quit("Bot ausgeschaltet");
+    mcBot = null;
+  }
+
+  verbindetSich = false;
+  botAktiv = false;
+}
 
 client.on(Events.InteractionCreate, async (interaction) => {
 
-  // /panel
   if (interaction.isChatInputCommand()) {
-
     if (interaction.commandName === "panel") {
 
       const button = new ButtonBuilder()
         .setCustomId("toggle_bot")
-        .setLabel("🔴 BOT EINSCHALTEN")
-        .setStyle(ButtonStyle.Success);
+        .setLabel(
+          botAktiv
+            ? "🟢 BOT AUSSCHALTEN"
+            : "🔴 BOT EINSCHALTEN"
+        )
+        .setStyle(
+          botAktiv
+            ? ButtonStyle.Danger
+            : ButtonStyle.Success
+        );
 
       const row = new ActionRowBuilder()
         .addComponents(button);
 
       await interaction.reply({
         content:
-          "🎮 **Bot-Steuerung**\n" +
-          "Der Minecraft-Bot ist momentan **AUS**.",
+          "🎮 **FrozenRun Steuerung**\n" +
+          (botAktiv
+            ? "🟢 FrozenRun ist **AN**."
+            : "🔴 FrozenRun ist **AUS**."),
         components: [row]
       });
     }
   }
 
-  // AN/AUS-Knopf
   if (interaction.isButton()) {
-
     if (interaction.customId === "toggle_bot") {
 
-      botAktiv = !botAktiv;
+      if (!botAktiv) {
+        botAktiv = true;
+        minecraftStarten();
+      } else {
+        minecraftStoppen();
+      }
 
       const button = new ButtonBuilder()
         .setCustomId("toggle_bot")
@@ -98,18 +151,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .addComponents(button);
 
       await interaction.update({
-        content: botAktiv
-          ? "🎮 **Bot-Steuerung**\n🟢 Der Minecraft-Bot ist **AN**."
-          : "🎮 **Bot-Steuerung**\n🔴 Der Minecraft-Bot ist **AUS**.",
+        content:
+          "🎮 **FrozenRun Steuerung**\n" +
+          (botAktiv
+            ? "🟢 FrozenRun verbindet sich mit **BlockBande.de**."
+            : "🔴 FrozenRun ist **AUS**."),
         components: [row]
       });
-
-      console.log(
-        `Minecraft-Bot: ${botAktiv ? "AN" : "AUS"}`
-      );
     }
   }
 });
 
-// Discord anmelden
 client.login(process.env.DISCORD_TOKEN);
