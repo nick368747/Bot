@@ -10,24 +10,25 @@ const {
   SlashCommandBuilder
 } = require("discord.js");
 
-const mineflayer = require("mineflayer");
+const bedrock = require("bedrock-protocol");
+const { randomUUID } = require("crypto");
 const http = require("http");
+
+// =====================================
+// EINSTELLUNGEN
+// =====================================
 
 const PORT = process.env.PORT || 10000;
 
-// ===============================
-// EINSTELLUNGEN
-// ===============================
-
-const MINECRAFT_CHAT_CHANNEL_ID = "1552068948676059146";
+const DISCORD_CHAT_CHANNEL_ID = "1552068948676059146";
 
 const MC_HOST = "blockbande.de";
-const MC_PORT = 25565;
+const MC_PORT = 19132;
 const MC_USERNAME = "FrozenRun";
 
-// ===============================
-// WEB SERVER FÜR RENDER
-// ===============================
+// =====================================
+// RENDER WEB SERVER
+// =====================================
 
 http.createServer((req, res) => {
   res.writeHead(200);
@@ -36,9 +37,9 @@ http.createServer((req, res) => {
   console.log(`Webserver läuft auf Port ${PORT}`);
 });
 
-// ===============================
+// =====================================
 // DISCORD
-// ===============================
+// =====================================
 
 const client = new Client({
   intents: [
@@ -49,14 +50,30 @@ const client = new Client({
 let mcBot = null;
 let botAktiv = false;
 let verbindetSich = false;
+let playerEntityId = null;
 
-// ===============================
-// /panel
-// ===============================
+// =====================================
+// DISCORD SLASH-BEFEHLE
+// =====================================
 
-const command = new SlashCommandBuilder()
+const panelCommand = new SlashCommandBuilder()
   .setName("panel")
   .setDescription("Öffnet das FrozenRun Steuerungspanel.");
+
+const mcCommand = new SlashCommandBuilder()
+  .setName("mc")
+  .setDescription("Führt einen Minecraft-Befehl mit FrozenRun aus.")
+  .addStringOption(option =>
+    option
+      .setName("befehl")
+      .setDescription("Minecraft-Befehl, z.B. /spawn oder /home")
+      .setRequired(true)
+      .setMaxLength(256)
+  );
+
+// =====================================
+// DISCORD READY
+// =====================================
 
 client.once(Events.ClientReady, async () => {
 
@@ -68,52 +85,56 @@ client.once(Events.ClientReady, async () => {
   await rest.put(
     Routes.applicationCommands(client.user.id),
     {
-      body: [command.toJSON()]
+      body: [
+        panelCommand.toJSON(),
+        mcCommand.toJSON()
+      ]
     }
   );
 
   console.log("/panel registriert.");
+  console.log("/mc registriert.");
 });
 
-// ===============================
-// DISCORD-KANAL
-// ===============================
+// =====================================
+// DISCORD KANAL
+// =====================================
 
-function getChatChannel() {
+function getDiscordChannel() {
   return client.channels.cache.get(
-    MINECRAFT_CHAT_CHANNEL_ID
+    DISCORD_CHAT_CHANNEL_ID
   );
 }
 
-// ===============================
+// =====================================
 // STATUS
-// ===============================
+// =====================================
 
-function getStatusText() {
+function getStatus() {
 
   if (verbindetSich) {
-    return "🟡 **Verbindet sich...**";
+    return "🟡 Verbindet sich...";
   }
 
   if (mcBot && botAktiv) {
-    return "🟢 **Online**";
+    return "🟢 Online";
   }
 
-  return "🔴 **Offline**";
+  return "🔴 Offline";
 }
 
-// ===============================
+// =====================================
 // PANEL
-// ===============================
+// =====================================
 
 function createPanel() {
 
-  const botButton = new ButtonBuilder()
+  const toggleButton = new ButtonBuilder()
     .setCustomId("toggle_bot")
     .setLabel(
       botAktiv
-        ? "🔴 Bot ausschalten"
-        : "🟢 Bot einschalten"
+        ? "🔴 FrozenRun ausschalten"
+        : "🟢 FrozenRun einschalten"
     )
     .setStyle(
       botAktiv
@@ -128,7 +149,7 @@ function createPanel() {
 
   const chatButton = new ButtonBuilder()
     .setCustomId("chat")
-    .setLabel("💬 Chat")
+    .setLabel("💬 Minecraft-Chat")
     .setStyle(ButtonStyle.Secondary);
 
   const reconnectButton = new ButtonBuilder()
@@ -137,13 +158,13 @@ function createPanel() {
     .setStyle(ButtonStyle.Secondary);
 
   const stopButton = new ButtonBuilder()
-    .setCustomId("stop_bot")
+    .setCustomId("stop")
     .setLabel("🛑 Stoppen")
     .setStyle(ButtonStyle.Danger);
 
   const row1 = new ActionRowBuilder()
     .addComponents(
-      botButton,
+      toggleButton,
       statusButton,
       chatButton
     );
@@ -157,21 +178,106 @@ function createPanel() {
   return [row1, row2];
 }
 
+// =====================================
+// PANEL TEXT
+// =====================================
+
 function getPanelText() {
 
   return (
-    "🎮 **FrozenRun – Steuerung**\n\n" +
-    `**Status:** ${getStatusText()}\n` +
+    "🎮 **FrozenRun – Bedrock Steuerung**\n\n" +
+    `**Status:** ${getStatus()}\n` +
     `**Server:** \`${MC_HOST}\`\n` +
-    `**Minecraft:** \`${MC_USERNAME}\`\n\n` +
-    "💬 **Chat:** Minecraft → Discord\n" +
-    "🔄 **Neu verbinden:** Minecraft-Verbindung neu starten"
+    `**Account:** \`${MC_USERNAME}\`\n\n` +
+    "💬 Minecraft-Chat → Discord\n" +
+    "⚡ Minecraft-Befehle → `/mc befehl:`"
   );
 }
 
-// ===============================
-// MINECRAFT STARTEN
-// ===============================
+// =====================================
+// MINECRAFT-BEFEHL AUSFÜHREN
+// =====================================
+
+function minecraftBefehlAusführen(command) {
+
+  if (!mcBot || !botAktiv) {
+    return {
+      ok: false,
+      message: "🔴 FrozenRun ist nicht online."
+    };
+  }
+
+  if (playerEntityId === null) {
+    return {
+      ok: false,
+      message: "🟡 FrozenRun ist noch nicht vollständig geladen."
+    };
+  }
+
+  // Nur Befehle erlauben
+  if (!command.startsWith("/")) {
+    return {
+      ok: false,
+      message:
+        "❌ Es werden nur Minecraft-Befehle akzeptiert, die mit `/` beginnen."
+    };
+  }
+
+  // Keine Zeilenumbrüche
+  if (command.includes("\n") || command.includes("\r")) {
+    return {
+      ok: false,
+      message: "❌ Der Befehl darf keine Zeilenumbrüche enthalten."
+    };
+  }
+
+  const uuid = randomUUID();
+
+  try {
+
+    mcBot.queue("command_request", {
+      command: command,
+
+      origin: {
+        type: "player",
+        uuid: uuid,
+        request_id: "",
+        player_entity_id: BigInt(playerEntityId)
+      },
+
+      internal: false,
+
+      // Aktuelle Bedrock-Versionen
+      version: "latest"
+    });
+
+    console.log(
+      `[Minecraft-Befehl] ${command}`
+    );
+
+    return {
+      ok: true,
+      message: `✅ Befehl ausgeführt: \`${command}\``
+    };
+
+  } catch (error) {
+
+    console.log(
+      "Fehler beim Minecraft-Befehl:",
+      error.message
+    );
+
+    return {
+      ok: false,
+      message:
+        `❌ Fehler beim Ausführen: ${error.message}`
+    };
+  }
+}
+
+// =====================================
+// BEDROCK BOT STARTEN
+// =====================================
 
 function minecraftStarten() {
 
@@ -180,52 +286,139 @@ function minecraftStarten() {
   }
 
   verbindetSich = true;
+  playerEntityId = null;
 
   console.log(
-    "FrozenRun verbindet sich mit BlockBande..."
+    "FrozenRun verbindet sich mit BlockBande Bedrock..."
   );
 
-  mcBot = mineflayer.createBot({
+  mcBot = bedrock.createClient({
+
     host: MC_HOST,
+
     port: MC_PORT,
+
     username: MC_USERNAME,
-    auth: "microsoft"
+
+    offline: false,
+
+    profilesFolder: "./.minecraft",
+
+    onMsaCode: (data) => {
+
+      console.log("");
+      console.log("======================================");
+      console.log("MICROSOFT ANMELDUNG");
+      console.log("======================================");
+
+      console.log(
+        "Öffne:",
+        data.verification_uri
+      );
+
+      console.log(
+        "Code:",
+        data.user_code
+      );
+
+      console.log("======================================");
+      console.log("");
+    }
+
   });
 
-  // =============================
-  // Minecraft ist online
-  // =============================
+  // ===================================
+  // START_GAME
+  // ===================================
 
-  mcBot.once("spawn", () => {
+  mcBot.on("start_game", (packet) => {
+
+    if (packet.runtime_entity_id !== undefined) {
+
+      playerEntityId = BigInt(
+        packet.runtime_entity_id
+      );
+
+      console.log(
+        "Player Entity ID:",
+        playerEntityId.toString()
+      );
+    }
+  });
+
+  // ===================================
+  // VERBINDUNG
+  // ===================================
+
+  mcBot.on("connect", () => {
+
+    console.log(
+      "🔗 Verbindung zu BlockBande hergestellt."
+    );
+  });
+
+  // ===================================
+  // JOIN
+  // ===================================
+
+  mcBot.on("join", () => {
+
+    console.log(
+      "✅ FrozenRun hat sich authentifiziert."
+    );
+  });
+
+  // ===================================
+  // SPAWN
+  // ===================================
+
+  mcBot.on("spawn", () => {
 
     verbindetSich = false;
     botAktiv = true;
 
     console.log(
-      "✅ FrozenRun ist jetzt online auf BlockBande!"
+      "🟢 FrozenRun ist jetzt online!"
     );
 
-    const channel = getChatChannel();
+    const channel = getDiscordChannel();
 
     if (channel) {
+
       channel.send(
         "🟢 **FrozenRun ist jetzt auf BlockBande online!**"
       );
     }
   });
 
-  // =============================
-  // Minecraft Chat → Discord
-  // =============================
+  // ===================================
+  // MINECRAFT CHAT → DISCORD
+  // ===================================
 
-  mcBot.on("chat", (username, message) => {
+  mcBot.on("text", (packet) => {
 
-    if (!mcBot) return;
+    if (!packet) return;
 
-    // Eigene Nachrichten nicht zurückschicken
-    if (username === mcBot.username) return;
+    const username =
+      packet.source_name || "Minecraft";
 
-    const channel = getChatChannel();
+    const message =
+      packet.message || "";
+
+    if (!message) return;
+
+    if (
+      mcBot &&
+      username === mcBot.username
+    ) {
+      return;
+    }
+
+    console.log(
+      `[Minecraft] ${username}: ${message}`
+    );
+
+    const channel = getDiscordChannel();
 
     if (channel) {
 
@@ -233,15 +426,49 @@ function minecraftStarten() {
         `💬 **${username}:** ${message}`
       );
     }
-
-    console.log(
-      `[Minecraft] ${username}: ${message}`
-    );
   });
 
-  // =============================
-  // Fehler
-  // =============================
+  // ===================================
+  // COMMAND OUTPUT
+  // ===================================
+
+  mcBot.on("command_output", (packet) => {
+
+    if (!packet) return;
+
+    if (packet.output) {
+
+      console.log(
+        "[Minecraft Command Output]",
+        packet.output
+      );
+    }
+  });
+
+  // ===================================
+  // KICK
+  // ===================================
+
+  mcBot.on("kick", (reason) => {
+
+    console.log(
+      "⚠️ FrozenRun wurde gekickt:",
+      reason
+    );
+
+    const channel = getDiscordChannel();
+
+    if (channel) {
+
+      channel.send(
+        `⚠️ **FrozenRun wurde gekickt:** ${reason}`
+      );
+    }
+  });
+
+  // ===================================
+  // FEHLER
+  // ===================================
 
   mcBot.on("error", (err) => {
 
@@ -249,45 +476,28 @@ function minecraftStarten() {
       "Minecraft-Fehler:",
       err.message
     );
-
-    const channel = getChatChannel();
-
-    if (channel) {
-
-      channel.send(
-        `⚠️ **Minecraft-Fehler:** ${err.message}`
-      );
-    }
   });
 
-  // =============================
-  // Verbindung beendet
-  // =============================
+  // ===================================
+  // VERBINDUNG ENDE
+  // ===================================
 
-  mcBot.on("end", () => {
+  mcBot.on("close", () => {
 
     console.log(
-      "FrozenRun wurde von Minecraft getrennt."
+      "🔴 Minecraft-Verbindung beendet."
     );
-
-    const channel = getChatChannel();
-
-    if (channel) {
-
-      channel.send(
-        "🔴 **FrozenRun wurde von Minecraft getrennt.**"
-      );
-    }
 
     mcBot = null;
     verbindetSich = false;
     botAktiv = false;
+    playerEntityId = null;
   });
 }
 
-// ===============================
-// MINECRAFT STOPPEN
-// ===============================
+// =====================================
+// STOPPEN
+// =====================================
 
 function minecraftStoppen() {
 
@@ -297,50 +507,50 @@ function minecraftStoppen() {
       "FrozenRun wird getrennt..."
     );
 
-    mcBot.quit(
-      "Bot ausgeschaltet"
-    );
+    mcBot.close();
 
     mcBot = null;
   }
 
   verbindetSich = false;
   botAktiv = false;
+  playerEntityId = null;
 }
 
-// ===============================
-// MINECRAFT NEU VERBINDEN
-// ===============================
+// =====================================
+// NEU VERBINDEN
+// =====================================
 
 function minecraftNeuVerbinden() {
-
-  console.log(
-    "FrozenRun wird neu verbunden..."
-  );
 
   minecraftStoppen();
 
   setTimeout(() => {
 
     botAktiv = true;
+
     minecraftStarten();
 
   }, 2000);
 }
 
-// ===============================
+// =====================================
 // DISCORD INTERAKTIONEN
-// ===============================
+// =====================================
 
 client.on(
   Events.InteractionCreate,
   async (interaction) => {
 
-    // =============================
+    // =================================
     // /panel
-    // =============================
+    // =================================
 
     if (interaction.isChatInputCommand()) {
+
+      // -------------------------------
+      // /panel
+      // -------------------------------
 
       if (interaction.commandName === "panel") {
 
@@ -351,17 +561,48 @@ client.on(
 
         return;
       }
+
+      // -------------------------------
+      // /mc
+      // -------------------------------
+
+      if (interaction.commandName === "mc") {
+
+        const command =
+          interaction.options.getString("befehl");
+
+        if (!command) {
+
+          await interaction.reply({
+            content:
+              "❌ Bitte einen Minecraft-Befehl angeben.",
+            ephemeral: true
+          });
+
+          return;
+        }
+
+        const result =
+          minecraftBefehlAusführen(command);
+
+        await interaction.reply({
+          content: result.message,
+          ephemeral: true
+        });
+
+        return;
+      }
     }
 
-    // =============================
+    // =================================
     // BUTTONS
-    // =============================
+    // =================================
 
     if (interaction.isButton()) {
 
-      // -----------------------------
-      // BOT AN / AUS
-      // -----------------------------
+      // -------------------------------
+      // AN / AUS
+      // -------------------------------
 
       if (
         interaction.customId === "toggle_bot"
@@ -386,35 +627,29 @@ client.on(
         return;
       }
 
-      // -----------------------------
+      // -------------------------------
       // STATUS
-      // -----------------------------
+      // -------------------------------
 
       if (
         interaction.customId === "status"
       ) {
 
-        let status = getStatusText();
-
-        if (mcBot) {
-
-          status +=
-            `\n\n👤 **Minecraft:** ${MC_USERNAME}`;
-
-        }
-
         await interaction.reply({
           content:
-            `📊 **FrozenRun Status**\n\n${status}`,
+            "📊 **FrozenRun Status**\n\n" +
+            `Status: ${getStatus()}\n` +
+            `Server: ${MC_HOST}\n` +
+            `Account: ${MC_USERNAME}`,
           ephemeral: true
         });
 
         return;
       }
 
-      // -----------------------------
+      // -------------------------------
       // CHAT
-      // -----------------------------
+      // -------------------------------
 
       if (
         interaction.customId === "chat"
@@ -423,19 +658,18 @@ client.on(
         await interaction.reply({
           content:
             "💬 **Minecraft-Chat → Discord**\n\n" +
-            `Zielkanal: <#${MINECRAFT_CHAT_CHANNEL_ID}>\n\n` +
-            "Sobald FrozenRun auf Minecraft online ist, " +
-            "werden normale Minecraft-Chatnachrichten " +
-            "dort angezeigt.",
+            `Ziel: <#${DISCORD_CHAT_CHANNEL_ID}>\n\n` +
+            "Minecraft-Nachrichten werden dort angezeigt.\n" +
+            "Normale Discord-Nachrichten werden NICHT an Minecraft gesendet.",
           ephemeral: true
         });
 
         return;
       }
 
-      // -----------------------------
+      // -------------------------------
       // NEU VERBINDEN
-      // -----------------------------
+      // -------------------------------
 
       if (
         interaction.customId === "reconnect"
@@ -445,7 +679,7 @@ client.on(
 
           await interaction.reply({
             content:
-              "🔴 FrozenRun ist aktuell ausgeschaltet.",
+              "🔴 FrozenRun ist ausgeschaltet.",
             ephemeral: true
           });
 
@@ -462,12 +696,12 @@ client.on(
         return;
       }
 
-      // -----------------------------
+      // -------------------------------
       // STOPPEN
-      // -----------------------------
+      // -------------------------------
 
       if (
-        interaction.customId === "stop_bot"
+        interaction.customId === "stop"
       ) {
 
         minecraftStoppen();
@@ -483,9 +717,9 @@ client.on(
   }
 );
 
-// ===============================
+// =====================================
 // DISCORD LOGIN
-// ===============================
+// =====================================
 
 client.login(
   process.env.DISCORD_TOKEN
