@@ -7,6 +7,6 @@
   },
   "dependencies": {
     "discord.js": "^14.15.3",
-    "bedrock-protocol": "^3.46.0"
+    "bedrock-protocol": "^3.43.0"
   }
 }
