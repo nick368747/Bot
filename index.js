@@ -20,7 +20,7 @@ const http = require("http");
 
 const PORT = process.env.PORT || 10000;
 
-const DISCORD_CHAT_CHANNEL_ID = "1552068948676059146";
+const DISCORD_CHAT_CHANNEL_ID = "1552712351344496741";
 
 const MC_HOST = "blockbande.de";
 const MC_PORT = 19132;
