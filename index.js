@@ -51,6 +51,7 @@ let laufenTimer = null;
 let laufenRichtungTimer = null;
 let laufenTick = 0n;
 let laufenYaw = 0;
+
 function laufenStoppen() {
   laufenAktiv = false;
   if (laufenTimer) {
@@ -63,53 +64,70 @@ function laufenStoppen() {
   }
   console.log("🚶 Zufälliges Laufen gestoppt.");
 }
+
 function neueLaufrichtung() {
   if (!laufenAktiv || !mcBot || !mcOnline) {
     return;
   }
+
   const richtungen = [0, -90, 90];
   const richtung =
     richtungen[Math.floor(Math.random() * richtungen.length)];
+
   laufenYaw += richtung;
+
   while (laufenYaw > 180) laufenYaw -= 360;
   while (laufenYaw < -180) laufenYaw += 360;
+
   const dauer = 1500 + Math.random() * 2500;
+
   const richtungsText =
     richtung === -90
       ? "links"
       : richtung === 90
         ? "rechts"
         : "geradeaus";
+
   console.log(
     `🚶 FrozenRun läuft ${richtungsText} für ${Math.round(dauer)} ms.`
   );
+
   laufenRichtungTimer = setTimeout(
     neueLaufrichtung,
     dauer
   );
 }
+
 function laufenStarten() {
   if (!mcBot || !mcOnline) {
     return false;
   }
+
   if (laufenAktiv) {
     return true;
   }
+
   laufenAktiv = true;
   laufenTick = 0n;
+
   console.log("🚶 Zufälliges Laufen gestartet.");
+
   laufenTimer = setInterval(() => {
     if (!laufenAktiv || !mcBot || !mcOnline) {
       laufenStoppen();
       return;
     }
+
     const pos = aktuelleKoordinaten;
     const rad = laufenYaw * Math.PI / 180;
     const geschwindigkeit = 0.18;
+
     const neueX =
       pos.x - Math.sin(rad) * geschwindigkeit;
+
     const neueZ =
       pos.z + Math.cos(rad) * geschwindigkeit;
+
     try {
       mcBot.queue("player_auth_input", {
         pitch: 0,
@@ -162,12 +180,16 @@ function laufenStarten() {
       );
     }
   }, 50);
+
   neueLaufrichtung();
+
   return true;
 }
+
 function formatGeld(betrag) {
   return Number(betrag || 0).toLocaleString("de-DE");
 }
+
 function formatKoordinaten() {
   return (
     `${Math.round(aktuelleKoordinaten.x)}, ` +
@@ -175,29 +197,36 @@ function formatKoordinaten() {
     `${Math.round(aktuelleKoordinaten.z)}`
   );
 }
+
 function istServerOwner(interaction) {
   return (
     interaction.guild &&
     interaction.guild.ownerId === interaction.user.id
   );
 }
+
 function darfSteuern(interaction) {
   if (istServerOwner(interaction)) {
     return true;
   }
+
   return erlaubteController.has(
     interaction.user.id
   );
 }
+
 function geldAusOutputLesen(text) {
   if (!text) {
     return null;
   }
+
   const clean = String(text)
     .replace(/\u00a0/g, " ");
+
   const match = clean.match(
     /Dein\s+Kontostand\s*:\s*([\d.,]+)/i
   );
+
   if (!match) {
     console.log(
       "Kontostand nicht gefunden:",
@@ -205,15 +234,21 @@ function geldAusOutputLesen(text) {
     );
     return null;
   }
+
   let zahl = match[1];
+
   zahl = zahl.replace(/\./g, "");
   zahl = zahl.replace(",", ".");
+
   const wert = Number(zahl);
+
   if (!Number.isFinite(wert)) {
     return null;
   }
+
   return Math.floor(wert);
 }
+
 function minecraftCommand(command) {
   return new Promise((resolve, reject) => {
     if (!mcBot || !mcOnline) {
@@ -224,6 +259,7 @@ function minecraftCommand(command) {
       );
       return;
     }
+
     if (!minecraftUuid) {
       reject(
         new Error(
@@ -232,27 +268,35 @@ function minecraftCommand(command) {
       );
       return;
     }
+
     const requestId =
       Math.random()
         .toString(36)
         .slice(2);
+
     let erledigt = false;
+
     const timeout = setTimeout(() => {
       if (erledigt) {
         return;
       }
+
       erledigt = true;
+
       mcBot.removeListener(
         "command_output",
         listener
       );
+
       resolve(null);
     }, 8000);
+
     function listener(packet) {
       try {
         if (!packet) {
           return;
         }
+
         if (
           packet.origin &&
           packet.origin.uuid &&
@@ -261,22 +305,29 @@ function minecraftCommand(command) {
         ) {
           return;
         }
+
         if (erledigt) {
           return;
         }
+
         erledigt = true;
+
         clearTimeout(timeout);
+
         mcBot.removeListener(
           "command_output",
           listener
         );
+
         let output = "";
+
         if (Array.isArray(packet.output)) {
           output = packet.output
             .map(item => {
               if (typeof item === "string") {
                 return item;
               }
+
               if (
                 item &&
                 typeof item === "object"
@@ -287,6 +338,7 @@ function minecraftCommand(command) {
                   JSON.stringify(item)
                 );
               }
+
               return String(item);
             })
             .join("\n");
@@ -297,29 +349,37 @@ function minecraftCommand(command) {
         } else {
           output = JSON.stringify(packet);
         }
+
         resolve(output);
       } catch (err) {
         if (erledigt) {
           return;
         }
+
         erledigt = true;
+
         clearTimeout(timeout);
+
         mcBot.removeListener(
           "command_output",
           listener
         );
+
         resolve(null);
       }
     }
+
     mcBot.on(
       "command_output",
       listener
     );
+
     try {
       mcBot.queue(
         "command_request",
         {
           command,
+
           origin: {
             type: "player",
             uuid: minecraftUuid,
@@ -327,77 +387,97 @@ function minecraftCommand(command) {
             player_entity_id:
               BigInt(playerEntityId || 0)
           },
+
           internal: false,
           version: "latest"
         }
       );
     } catch (err) {
       clearTimeout(timeout);
+
       mcBot.removeListener(
         "command_output",
         listener
       );
+
       reject(err);
     }
   });
 }
+
 async function geldAktualisieren() {
   if (!mcBot || !mcOnline) {
     return null;
   }
+
   try {
     const output =
       await minecraftCommand("/money");
+
     if (!output) {
       console.log(
         "Keine /money Antwort."
       );
       return null;
     }
+
     console.log(
       "MONEY OUTPUT:",
       output
     );
+
     const geld =
       geldAusOutputLesen(output);
+
     if (geld === null) {
       console.log(
         "Kontostand konnte nicht erkannt werden."
       );
       return null;
     }
+
     aktuellesGeld = geld;
+
     console.log(
       "Aktueller Kontostand:",
       aktuellesGeld
     );
+
     return geld;
   } catch (err) {
     console.log(
       "Geld Fehler:",
       err.message
     );
+
     return null;
   }
 }
+
 function minecraftVerbinden() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
   }
+
   if (mcBot) {
     try {
       mcBot.disconnect();
     } catch {}
   }
+
   mcBot = null;
   mcOnline = false;
+
   laufenStoppen();
+
   minecraftUuid = null;
   playerEntityId = 0;
+
   console.log(
     "Verbinde FrozenRun mit Minecraft..."
   );
+
   try {
     mcBot =
       bedrock.createClient({
@@ -406,6 +486,7 @@ function minecraftVerbinden() {
         username: MC_USERNAME,
         profilesFolder:
           "./.minecraft",
+
         onMsaCode: data => {
           console.log("");
           console.log(
@@ -417,23 +498,28 @@ function minecraftVerbinden() {
           console.log(
             "===================================="
           );
+
           console.log(
             "Code:",
             data.user_code
           );
+
           console.log(
             "Link:",
             data.verification_uri
           );
+
           console.log(
             "===================================="
           );
         }
       });
+
     mcBot.on(
       "start_game",
       async packet => {
         mcOnline = true;
+
         if (
           packet.runtime_entity_id !==
           undefined
@@ -443,6 +529,7 @@ function minecraftVerbinden() {
               packet.runtime_entity_id
             );
         }
+
         if (
           packet.player_entity_id !==
           undefined
@@ -452,6 +539,7 @@ function minecraftVerbinden() {
               packet.player_entity_id
             );
         }
+
         if (
           packet.entity_id !==
           undefined
@@ -461,13 +549,16 @@ function minecraftVerbinden() {
               packet.entity_id
             );
         }
+
         if (packet.uuid) {
           minecraftUuid =
             packet.uuid;
         }
+
         console.log(
           "FrozenRun ist online!"
         );
+
         setTimeout(
           async () => {
             await geldAktualisieren();
@@ -476,6 +567,7 @@ function minecraftVerbinden() {
         );
       }
     );
+
     mcBot.on(
       "text",
       async packet => {
@@ -484,10 +576,13 @@ function minecraftVerbinden() {
             "Minecraft:",
             packet
           );
+
           const username =
             packet.source_name || "";
+
           let message =
             packet.message || "";
+
           if (
             !message &&
             packet.parameters
@@ -495,10 +590,12 @@ function minecraftVerbinden() {
             message =
               packet.parameters.join(" ");
           }
+
           const channel =
             discord.channels.cache.get(
               MC_CHANNEL_ID
             );
+
           if (
             channel &&
             message
@@ -507,6 +604,7 @@ function minecraftVerbinden() {
               `**${username || "Minecraft"}:** ${message}`
             ).catch(() => {});
           }
+
           if (
             username ===
               "FrozenBoar16433" &&
@@ -515,14 +613,17 @@ function minecraftVerbinden() {
             console.log(
               "TPA von FrozenBoar16433 erkannt."
             );
+
             await minecraftCommand(
               "/tpaccept"
             );
+
             setTimeout(
               async () => {
                 await minecraftCommand(
                   "/sethome afk"
                 );
+
                 console.log(
                   "AFK-Home gesetzt."
                 );
@@ -538,6 +639,7 @@ function minecraftVerbinden() {
         }
       }
     );
+
     mcBot.on(
       "move_player",
       packet => {
@@ -547,10 +649,12 @@ function minecraftVerbinden() {
               Number(
                 packet.position.x || 0
               );
+
             aktuelleKoordinaten.y =
               Number(
                 packet.position.y || 0
               );
+
             aktuelleKoordinaten.z =
               Number(
                 packet.position.z || 0
@@ -559,6 +663,7 @@ function minecraftVerbinden() {
         } catch {}
       }
     );
+
     mcBot.on(
       "error",
       err => {
@@ -568,33 +673,43 @@ function minecraftVerbinden() {
         );
       }
     );
+
     mcBot.on(
       "close",
       () => {
         console.log(
           "Minecraft Verbindung geschlossen."
         );
+
         mcOnline = false;
+
         minecraftUuid = null;
+
         playerEntityId = 0;
+
         if (manuellGestoppt) {
           console.log(
             "Manuell gestoppt – kein Reconnect."
           );
+
           return;
         }
+
         if (reconnectTimer) {
           clearTimeout(
             reconnectTimer
           );
         }
+
         console.log(
           "Automatischer Reconnect in 30 Sekunden..."
         );
+
         reconnectTimer =
           setTimeout(
             () => {
               reconnectTimer = null;
+
               if (!manuellGestoppt) {
                 minecraftVerbinden();
               }
@@ -610,6 +725,7 @@ function minecraftVerbinden() {
     );
   }
 }
+
 function dashboardEmbed() {
   return new EmbedBuilder()
     .setTitle(
@@ -672,6 +788,7 @@ function dashboardEmbed() {
         "FrozenRun • BlockBande"
     });
 }
+
 function panelEmbed() {
   return new EmbedBuilder()
     .setTitle(
@@ -707,6 +824,7 @@ function panelEmbed() {
         "FrozenRun Control Panel"
     });
 }
+
 function panelButtons() {
   const row1 =
     new ActionRowBuilder()
@@ -724,6 +842,7 @@ function panelButtons() {
           .setStyle(
             ButtonStyle.Primary
           ),
+
         new ButtonBuilder()
           .setCustomId(
             "status"
@@ -737,6 +856,7 @@ function panelButtons() {
           .setStyle(
             ButtonStyle.Secondary
           ),
+
         new ButtonBuilder()
           .setCustomId(
             "money"
@@ -750,6 +870,7 @@ function panelButtons() {
           .setStyle(
             ButtonStyle.Secondary
           ),
+
         new ButtonBuilder()
           .setCustomId(
             "pay"
@@ -764,6 +885,7 @@ function panelButtons() {
             ButtonStyle.Success
           )
       );
+
   const row2 =
     new ActionRowBuilder()
       .addComponents(
@@ -780,6 +902,7 @@ function panelButtons() {
           .setStyle(
             ButtonStyle.Secondary
           ),
+
         new ButtonBuilder()
           .setCustomId(
             "reconnect"
@@ -793,6 +916,7 @@ function panelButtons() {
           .setStyle(
             ButtonStyle.Primary
           ),
+
         new ButtonBuilder()
           .setCustomId(
             "stop"
@@ -807,6 +931,7 @@ function panelButtons() {
             ButtonStyle.Danger
           )
       );
+
   return [
     row1,
     row2
@@ -818,6 +943,7 @@ discord.once(
     console.log(
       `Discord-Bot online als ${discord.user.tag}`
     );
+
     const dashboardCommand =
       new SlashCommandBuilder()
         .setName(
@@ -826,6 +952,7 @@ discord.once(
         .setDescription(
           "Zeigt das FrozenRun Dashboard."
         );
+
     const panelCommand =
       new SlashCommandBuilder()
         .setName(
@@ -834,6 +961,7 @@ discord.once(
         .setDescription(
           "Öffnet das FrozenRun Control Panel."
         );
+
     const mcCommand =
       new SlashCommandBuilder()
         .setName(
@@ -855,10 +983,20 @@ discord.once(
                 true
               )
         );
+
     const controllerCommand =
       new SlashCommandBuilder()
         .setName(
-                          "hinzufügen"
+          "controller"
+        )
+        .setDescription(
+          "Verwaltet, wer FrozenRun steuern darf."
+        )
+        .addSubcommand(
+          subcommand =>
+            subcommand
+              .setName(
+                "hinzufügen"
               )
               .setDescription(
                 "Gibt einem Benutzer Zugriff auf FrozenRun."
@@ -910,22 +1048,30 @@ discord.once(
                 "Zeigt alle Controller."
               )
         );
+
     const laufenCommand =
       new SlashCommandBuilder()
         .setName("laufen")
-        .setDescription("Lässt FrozenRun zufällig laufen.")
+        .setDescription(
+          "Lässt FrozenRun zufällig laufen."
+        )
         .addSubcommand(
           subcommand =>
             subcommand
               .setName("start")
-              .setDescription("Startet das zufällige Laufen.")
+              .setDescription(
+                "Startet das zufällige Laufen."
+              )
         )
         .addSubcommand(
           subcommand =>
             subcommand
               .setName("stop")
-              .setDescription("Stoppt das zufällige Laufen.")
+              .setDescription(
+                "Stoppt das zufällige Laufen."
+              )
         );
+
     try {
       await discord.application.commands.set([
         dashboardCommand,
@@ -934,21 +1080,27 @@ discord.once(
         controllerCommand,
         laufenCommand
       ]);
+
       console.log(
         "/dashboard registriert."
       );
+
       console.log(
         "/panel registriert."
       );
+
       console.log(
         "/mc registriert."
       );
+
       console.log(
         "/controller registriert."
       );
+
       console.log(
         "/laufen registriert."
       );
+
       console.log(
         "Minecraft startet NICHT automatisch."
       );
@@ -960,6 +1112,7 @@ discord.once(
     }
   }
 );
+
 discord.on(
   "interactionCreate",
   async interaction => {
@@ -976,8 +1129,10 @@ discord.on(
               dashboardEmbed()
             ]
           });
+
           return;
         }
+
         if (
           interaction.commandName ===
           "controller"
@@ -992,10 +1147,13 @@ discord.on(
                 "❌ Nur der Serverbesitzer darf die Controller verwalten.",
               ephemeral: true
             });
+
             return;
           }
+
           const subcommand =
             interaction.options.getSubcommand();
+
           if (
             subcommand ===
             "hinzufügen"
@@ -1004,6 +1162,7 @@ discord.on(
               interaction.options.getUser(
                 "benutzer"
               );
+
             if (
               user.id ===
               interaction.user.id
@@ -1013,18 +1172,23 @@ discord.on(
                   "👑 Du bist der Serverbesitzer und hast automatisch Zugriff.",
                 ephemeral: true
               });
+
               return;
             }
+
             erlaubteController.add(
               user.id
             );
+
             await interaction.reply({
               content:
                 `✅ ${user} darf jetzt FrozenRun steuern.`,
               ephemeral: true
             });
+
             return;
           }
+
           if (
             subcommand ===
             "entfernen"
@@ -1033,6 +1197,7 @@ discord.on(
               interaction.options.getUser(
                 "benutzer"
               );
+
             if (
               !erlaubteController.has(
                 user.id
@@ -1043,18 +1208,23 @@ discord.on(
                   `ℹ️ ${user} ist kein Controller.`,
                 ephemeral: true
               });
+
               return;
             }
+
             erlaubteController.delete(
               user.id
             );
+
             await interaction.reply({
               content:
                 `🚫 ${user} darf FrozenRun jetzt nicht mehr steuern.`,
               ephemeral: true
             });
+
             return;
           }
+
           if (
             subcommand ===
             "liste"
@@ -1068,8 +1238,10 @@ discord.on(
                   "📋 Es sind momentan keine zusätzlichen Controller eingetragen.\n\n👑 Der Serverbesitzer hat immer Zugriff.",
                 ephemeral: true
               });
+
               return;
             }
+
             const liste =
               [...erlaubteController]
                 .map(
@@ -1077,6 +1249,7 @@ discord.on(
                     `<@${id}>`
                 )
                 .join("\n");
+
             await interaction.reply({
               content:
                 `📋 **FrozenRun Controller**\n\n` +
@@ -1084,9 +1257,11 @@ discord.on(
                 `👑 Der Serverbesitzer hat immer Zugriff.`,
               ephemeral: true
             });
+
             return;
           }
         }
+
         if (
           interaction.commandName ===
           "panel"
@@ -1101,8 +1276,10 @@ discord.on(
                 "❌ Du hast keinen Zugriff auf das FrozenRun Panel.",
               ephemeral: true
             });
+
             return;
           }
+
           await interaction.reply({
             embeds: [
               panelEmbed()
@@ -1110,8 +1287,10 @@ discord.on(
             components:
               panelButtons()
           });
+
           return;
         }
+
         if (
           interaction.commandName ===
           "mc"
@@ -1126,32 +1305,40 @@ discord.on(
                 "❌ Du darfst FrozenRun nicht steuern.",
               ephemeral: true
             });
+
             return;
           }
+
           const befehl =
             interaction.options.getString(
               "befehl"
             );
+
           if (!mcOnline) {
             await interaction.reply({
               content:
                 "❌ FrozenRun ist momentan offline.",
               ephemeral: true
             });
+
             return;
           }
+
           await interaction.deferReply({
             ephemeral: true
           });
+
           try {
             const command =
               befehl.startsWith("/")
                 ? befehl
                 : "/" + befehl;
+
             const output =
               await minecraftCommand(
                 command
               );
+
             if (output) {
               await interaction.editReply(
                 `✅ Befehl ausgeführt.\n` +
@@ -1172,9 +1359,11 @@ discord.on(
               `❌ Fehler: ${err.message}`
             );
           }
+
           return;
         }
       }
+
       if (
         interaction.isChatInputCommand() &&
         interaction.commandName === "laufen"
@@ -1185,10 +1374,13 @@ discord.on(
               "❌ Du darfst FrozenRun nicht steuern.",
             ephemeral: true
           });
+
           return;
         }
+
         const aktion =
           interaction.options.getSubcommand();
+
         if (aktion === "start") {
           if (!mcOnline || !mcBot) {
             await interaction.reply({
@@ -1196,23 +1388,30 @@ discord.on(
                 "❌ FrozenRun ist momentan offline.",
               ephemeral: true
             });
+
             return;
           }
+
           if (laufenAktiv) {
             await interaction.reply({
               content:
                 "🚶 FrozenRun läuft bereits.",
               ephemeral: true
             });
+
             return;
           }
+
           laufenStarten();
+
           await interaction.reply({
             content:
               "🚶 FrozenRun läuft jetzt zufällig herum."
           });
+
           return;
         }
+
         if (aktion === "stop") {
           if (!laufenAktiv) {
             await interaction.reply({
@@ -1220,16 +1419,21 @@ discord.on(
                 "ℹ️ FrozenRun läuft momentan nicht.",
               ephemeral: true
             });
+
             return;
           }
+
           laufenStoppen();
+
           await interaction.reply({
             content:
               "🛑 FrozenRun bleibt stehen."
           });
+
           return;
         }
       }
+
       if (
         interaction.isButton()
       ) {
@@ -1243,8 +1447,10 @@ discord.on(
               "❌ Du hast keinen Zugriff auf FrozenRun.",
             ephemeral: true
           });
+
           return;
         }
+
         if (
           interaction.customId ===
           "toggle_bot"
@@ -1252,42 +1458,53 @@ discord.on(
           if (mcOnline) {
             manuellGestoppt =
               true;
-          laufenStoppen();
+
             laufenStoppen();
+
             if (
               reconnectTimer
             ) {
               clearTimeout(
                 reconnectTimer
               );
+
               reconnectTimer =
                 null;
             }
+
             if (mcBot) {
               try {
                 mcBot.disconnect();
               } catch {}
             }
+
             mcOnline =
               false;
+
             await interaction.reply({
               content:
                 "⛔ FrozenRun wurde ausgeschaltet.",
               ephemeral: true
             });
+
             return;
           }
+
           manuellGestoppt =
             false;
+
           await interaction.reply({
             content:
               "▶️ FrozenRun wird gestartet. Falls nötig, erscheint jetzt der Microsoft-Login.",
             ephemeral: true
           });
-                    laufenStoppen();
-minecraftVerbinden();
+
+          laufenStoppen();
+          minecraftVerbinden();
+
           return;
         }
+
         if (
           interaction.customId ===
           "status"
@@ -1299,8 +1516,10 @@ minecraftVerbinden();
                 : "🔴 FrozenRun ist offline.",
             ephemeral: true
           });
+
           return;
         }
+
         if (
           interaction.customId ===
           "money"
@@ -1311,26 +1530,34 @@ minecraftVerbinden();
                 "❌ FrozenRun ist offline.",
               ephemeral: true
             });
+
             return;
           }
+
           await interaction.deferReply({
             ephemeral: true
           });
+
           const geld =
             await geldAktualisieren();
+
           if (
             geld === null
           ) {
             await interaction.editReply(
               "❌ `/money` konnte nicht ausgelesen werden."
             );
+
             return;
           }
+
           await interaction.editReply(
             `💰 **Dein Kontostand:** ${formatGeld(geld)}`
           );
+
           return;
         }
+
         if (
           interaction.customId ===
           "pay"
@@ -1341,8 +1568,10 @@ minecraftVerbinden();
                 "❌ FrozenRun ist offline.",
               ephemeral: true
             });
+
             return;
           }
+
           const modal =
             new ModalBuilder()
               .setCustomId(
@@ -1351,6 +1580,7 @@ minecraftVerbinden();
               .setTitle(
                 "💸 Geld senden"
               );
+
           const amountInput =
             new TextInputBuilder()
               .setCustomId(
@@ -1374,19 +1604,24 @@ minecraftVerbinden();
               .setMaxLength(
                 12
               );
+
           const row =
             new ActionRowBuilder()
               .addComponents(
                 amountInput
               );
+
           modal.addComponents(
             row
           );
+
           await interaction.showModal(
             modal
           );
+
           return;
         }
+
         if (
           interaction.customId ===
           "home_afk"
@@ -1397,19 +1632,25 @@ minecraftVerbinden();
                 "❌ FrozenRun ist offline.",
               ephemeral: true
             });
+
             return;
           }
+
           await interaction.deferReply({
             ephemeral: true
           });
+
           await minecraftCommand(
             "/home afk"
           );
+
           await interaction.editReply(
             "🏠 `/home afk` wurde ausgeführt."
           );
+
           return;
         }
+
         if (
           interaction.customId ===
           "reconnect"
@@ -1417,53 +1658,67 @@ minecraftVerbinden();
           await interaction.deferReply({
             ephemeral: true
           });
+
           manuellGestoppt =
             false;
+
           if (
             reconnectTimer
           ) {
             clearTimeout(
               reconnectTimer
             );
+
             reconnectTimer =
               null;
           }
+
           minecraftVerbinden();
+
           await interaction.editReply(
             "🔄 FrozenRun wird neu verbunden."
           );
+
           return;
         }
+
         if (
           interaction.customId ===
           "stop"
         ) {
           manuellGestoppt =
             true;
+
           if (
             reconnectTimer
           ) {
             clearTimeout(
               reconnectTimer
             );
+
             reconnectTimer =
               null;
           }
+
           if (mcBot) {
             try {
               mcBot.disconnect();
             } catch {}
           }
+
           mcOnline =
             false;
+
           await interaction.reply({
             content:
               "⛔ FrozenRun wurde gestoppt. Kein automatischer Reconnect.",
             ephemeral: true
           });
+
           return;
         }
       }
+
       if (
         interaction.isModalSubmit() &&
         interaction.customId ===
@@ -1479,28 +1734,35 @@ minecraftVerbinden();
               "❌ Du darfst FrozenRun nicht steuern.",
             ephemeral: true
           });
+
           return;
         }
+
         if (!mcOnline) {
           await interaction.reply({
             content:
               "❌ FrozenRun ist offline.",
             ephemeral: true
           });
+
           return;
         }
+
         const input =
           interaction.fields.getTextInputValue(
             "pay_amount"
           );
+
         const normalisiert =
           input
             .replace(/\./g, "")
             .replace(/,/g, "");
+
         const betrag =
           Number(
             normalisiert
           );
+
         if (
           !Number.isFinite(betrag) ||
           !Number.isInteger(betrag) ||
@@ -1511,21 +1773,27 @@ minecraftVerbinden();
               "❌ Bitte gib einen gültigen ganzen Betrag ein.",
             ephemeral: true
           });
+
           return;
         }
+
         await interaction.deferReply({
           ephemeral: true
         });
+
         const kontostand =
           await geldAktualisieren();
+
         if (
           kontostand === null
         ) {
           await interaction.editReply(
             "❌ Der Kontostand konnte mit `/money` nicht ermittelt werden."
           );
+
           return;
         }
+
         if (
           betrag >
           kontostand
@@ -1539,17 +1807,22 @@ minecraftVerbinden();
               betrag
             )}**`
           );
+
           return;
         }
+
         const payCommand =
           `/pay ${MONEY_TARGET} ${betrag}`;
+
         console.log(
           "Sende:",
           payCommand
         );
+
         await minecraftCommand(
           payCommand
         );
+
         if (
           betrag > 4999
         ) {
@@ -1560,16 +1833,19 @@ minecraftVerbinden();
                 1000
               )
           );
+
           await minecraftCommand(
             `${payCommand} confirm`
           );
         }
+
         setTimeout(
           async () => {
             await geldAktualisieren();
           },
           1500
         );
+
         await interaction.editReply(
           `💸 **Geld gesendet!**\n\n` +
           `👤 Empfänger: **${MONEY_TARGET}**\n` +
@@ -1578,13 +1854,14 @@ minecraftVerbinden();
           )}**\n` +
           `📊 Kontostand vorher: **${formatGeld(
             kontostand
-          )}**` +
+          )}` +
           (
             betrag > 4999
               ? "\n✅ Bestätigung wurde automatisch gesendet."
               : ""
           )
         );
+
         return;
       }
     } catch (err) {
@@ -1592,6 +1869,7 @@ minecraftVerbinden();
         "Interaction Fehler:",
         err?.message || err
       );
+
       try {
         if (
           !interaction.replied &&
@@ -1607,6 +1885,7 @@ minecraftVerbinden();
     }
   }
 );
+
 discord.login(
   DISCORD_TOKEN
 );
