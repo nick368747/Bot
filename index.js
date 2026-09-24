@@ -1999,3 +1999,259 @@ discord.on(
 discord.login(
   DISCORD_TOKEN
 );
+const http = require("http");
+        // ==================================================
+        // STOP
+        // ==================================================
+
+        if (
+          interaction.customId ===
+          "stop"
+        ) {
+
+          manuellGestoppt =
+            true;
+
+          if (
+            reconnectTimer
+          ) {
+
+            clearTimeout(
+              reconnectTimer
+            );
+
+            reconnectTimer =
+              null;
+          }
+
+          if (mcBot) {
+
+            try {
+              mcBot.disconnect();
+            } catch {}
+          }
+
+          mcOnline =
+            false;
+
+          await interaction.reply({
+            content:
+              "⛔ FrozenRun wurde gestoppt. Kein automatischer Reconnect.",
+            ephemeral: true
+          });
+
+          return;
+        }
+      }
+
+      // ==================================================
+      // GELD-MODAL
+      // ==================================================
+
+      if (
+        interaction.isModalSubmit() &&
+        interaction.customId ===
+          "pay_modal"
+      ) {
+
+        if (
+          !darfSteuern(
+            interaction
+          )
+        ) {
+
+          await interaction.reply({
+            content:
+              "❌ Du darfst FrozenRun nicht steuern.",
+            ephemeral: true
+          });
+
+          return;
+        }
+
+        if (!mcOnline) {
+
+          await interaction.reply({
+            content:
+              "❌ FrozenRun ist offline.",
+            ephemeral: true
+          });
+
+          return;
+        }
+
+        const input =
+          interaction.fields.getTextInputValue(
+            "pay_amount"
+          );
+
+        // Punkte und Kommas entfernen
+        const normalisiert =
+          input
+            .replace(/\./g, "")
+            .replace(/,/g, "");
+
+        const betrag =
+          Number(
+            normalisiert
+          );
+
+        if (
+          !Number.isFinite(betrag) ||
+          !Number.isInteger(betrag) ||
+          betrag <= 0
+        ) {
+
+          await interaction.reply({
+            content:
+              "❌ Bitte gib einen gültigen ganzen Betrag ein.",
+            ephemeral: true
+          });
+
+          return;
+        }
+
+        await interaction.deferReply({
+          ephemeral: true
+        });
+
+        // ==================================================
+        // ERST /money
+        // ==================================================
+
+        const kontostand =
+          await geldAktualisieren();
+
+        if (
+          kontostand === null
+        ) {
+
+          await interaction.editReply(
+            "❌ Der Kontostand konnte mit `/money` nicht ermittelt werden."
+          );
+
+          return;
+        }
+
+        // ==================================================
+        // NICHT GENUG GELD
+        // ==================================================
+
+        if (
+          betrag >
+          kontostand
+        ) {
+
+          await interaction.editReply(
+            `❌ **Nicht genug Geld.**\n\n` +
+            `💰 Kontostand: **${formatGeld(
+              kontostand
+            )}**\n` +
+            `💸 Gewünscht: **${formatGeld(
+              betrag
+            )}**`
+          );
+
+          return;
+        }
+
+        // ==================================================
+        // PAY
+        // ==================================================
+
+        const payCommand =
+          `/pay ${MONEY_TARGET} ${betrag}`;
+
+        console.log(
+          "Sende:",
+          payCommand
+        );
+
+        await minecraftCommand(
+          payCommand
+        );
+
+        // ==================================================
+        // ÜBER 4999 -> CONFIRM
+        // ==================================================
+
+        if (
+          betrag > 4999
+        ) {
+
+          await new Promise(
+            resolve =>
+              setTimeout(
+                resolve,
+                1000
+              )
+          );
+
+          await minecraftCommand(
+            `${payCommand} confirm`
+          );
+        }
+
+        // ==================================================
+        // GELD NOCHMAL AKTUALISIEREN
+        // ==================================================
+
+        setTimeout(
+          async () => {
+            await geldAktualisieren();
+          },
+          1500
+        );
+
+        await interaction.editReply(
+          `💸 **Geld gesendet!**\n\n` +
+          `👤 Empfänger: **${MONEY_TARGET}**\n` +
+          `💰 Betrag: **${formatGeld(
+            betrag
+          )}**\n` +
+          `📊 Kontostand vorher: **${formatGeld(
+            kontostand
+          )}**` +
+          (
+            betrag > 4999
+              ? "\n✅ Bestätigung wurde automatisch gesendet."
+              : ""
+          )
+        );
+
+        return;
+      }
+
+    } catch (err) {
+
+      console.log(
+        "Interaction Fehler:",
+        err?.message || err
+      );
+
+      try {
+
+        if (
+          !interaction.replied &&
+          !interaction.deferred
+        ) {
+
+          await interaction.reply({
+            content:
+              "❌ Es ist ein Fehler aufgetreten.",
+            ephemeral: true
+          });
+        }
+
+      } catch {}
+    }
+  }
+);
+
+// ==================================================
+// DISCORD LOGIN
+// ==================================================
+
+discord.login(
+  DISCORD_TOKEN
+);
