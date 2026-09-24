@@ -25,7 +25,6 @@ const MC_USERNAME = "FrozenRun";
 
 const MONEY_TARGET = "!FrozenBoar16433";
 
-// Discord-Kanal für Minecraft-Chat
 const MC_CHANNEL_ID = "1552068948676059146";
 
 // ==================================================
@@ -37,6 +36,13 @@ const discord = new Client({
     GatewayIntentBits.Guilds
   ]
 });
+
+// ==================================================
+// CONTROLLER
+// ==================================================
+
+// Benutzer, die den Bot steuern dürfen
+const erlaubteController = new Set();
 
 // ==================================================
 // MINECRAFT STATUS
@@ -74,23 +80,54 @@ function formatKoordinaten() {
 }
 
 // ==================================================
-// GELD AUS /money AUSLESEN
+// SERVER OWNER
+// ==================================================
+
+function istServerOwner(interaction) {
+  return (
+    interaction.guild &&
+    interaction.guild.ownerId ===
+      interaction.user.id
+  );
+}
+
+// ==================================================
+// DARF DEN BOT STEUERN?
+// ==================================================
+
+function darfSteuern(interaction) {
+
+  if (istServerOwner(interaction)) {
+    return true;
+  }
+
+  return erlaubteController.has(
+    interaction.user.id
+  );
+}
+
+// ==================================================
+// GELD AUS /money LESEN
 // ==================================================
 
 function geldAusOutputLesen(text) {
+
   if (!text) return null;
 
-  const clean = String(text)
-    .replace(/\u00a0/g, " ");
+  const clean =
+    String(text)
+      .replace(/\u00a0/g, " ");
 
-  // Erwartet:
+  // Beispiel:
   // Dein Kontostand: 12.345
 
-  const match = clean.match(
-    /Dein\s+Kontostand\s*:\s*([\d.,]+)/i
-  );
+  const match =
+    clean.match(
+      /Dein\s+Kontostand\s*:\s*([\d.,]+)/i
+    );
 
   if (!match) {
+
     console.log(
       "Kontostand nicht gefunden:",
       clean
@@ -101,13 +138,14 @@ function geldAusOutputLesen(text) {
 
   let zahl = match[1];
 
-  // 12.345 -> 12345
-  // 12.345,50 -> 12345.50
+  zahl =
+    zahl.replace(/\./g, "");
 
-  zahl = zahl.replace(/\./g, "");
-  zahl = zahl.replace(",", ".");
+  zahl =
+    zahl.replace(",", ".");
 
-  const wert = Number(zahl);
+  const wert =
+    Number(zahl);
 
   if (!Number.isFinite(wert)) {
     return null;
@@ -121,160 +159,197 @@ function geldAusOutputLesen(text) {
 // ==================================================
 
 function minecraftCommand(command) {
-  return new Promise((resolve, reject) => {
-    if (!mcBot || !mcOnline) {
-      reject(
-        new Error(
-          "FrozenRun ist nicht online."
-        )
-      );
 
-      return;
-    }
+  return new Promise(
+    (resolve, reject) => {
 
-    if (!minecraftUuid) {
-      reject(
-        new Error(
-          "Minecraft-UUID ist noch nicht verfügbar."
-        )
-      );
+      if (!mcBot || !mcOnline) {
 
-      return;
-    }
-
-    const requestId =
-      Math.random()
-        .toString(36)
-        .slice(2);
-
-    let erledigt = false;
-
-    const timeout =
-      setTimeout(() => {
-        if (erledigt) return;
-
-        erledigt = true;
-
-        mcBot.removeListener(
-          "command_output",
-          listener
+        reject(
+          new Error(
+            "FrozenRun ist nicht online."
+          )
         );
 
-        resolve(null);
-      }, 8000);
-
-    function listener(packet) {
-      try {
-        if (!packet) return;
-
-        if (
-          packet.origin &&
-          packet.origin.uuid &&
-          String(packet.origin.uuid) !==
-            String(minecraftUuid)
-        ) {
-          return;
-        }
-
-        if (erledigt) return;
-
-        erledigt = true;
-
-        clearTimeout(timeout);
-
-        mcBot.removeListener(
-          "command_output",
-          listener
-        );
-
-        let output = "";
-
-        if (Array.isArray(packet.output)) {
-          output = packet.output
-            .map(item => {
-              if (
-                typeof item === "string"
-              ) {
-                return item;
-              }
-
-              if (
-                item &&
-                typeof item === "object"
-              ) {
-                return (
-                  item.message ||
-                  item.text ||
-                  JSON.stringify(item)
-                );
-              }
-
-              return String(item);
-            })
-            .join("\n");
-        } else if (
-          typeof packet.output === "string"
-        ) {
-          output = packet.output;
-        } else {
-          output = JSON.stringify(packet);
-        }
-
-        resolve(output);
-
-      } catch (err) {
-        if (erledigt) return;
-
-        erledigt = true;
-
-        clearTimeout(timeout);
-
-        mcBot.removeListener(
-          "command_output",
-          listener
-        );
-
-        resolve(null);
+        return;
       }
-    }
 
-    mcBot.on(
-      "command_output",
-      listener
-    );
+      if (!minecraftUuid) {
 
-    try {
-      mcBot.queue(
-        "command_request",
-        {
-          command,
+        reject(
+          new Error(
+            "Minecraft-UUID ist noch nicht verfügbar."
+          )
+        );
 
-          origin: {
-            type: "player",
-            uuid: minecraftUuid,
-            request_id: requestId,
-            player_entity_id:
-              BigInt(
-                playerEntityId || 0
+        return;
+      }
+
+      const requestId =
+        Math.random()
+          .toString(36)
+          .slice(2);
+
+      let erledigt = false;
+
+      const timeout =
+        setTimeout(() => {
+
+          if (erledigt) return;
+
+          erledigt = true;
+
+          mcBot.removeListener(
+            "command_output",
+            listener
+          );
+
+          resolve(null);
+
+        }, 8000);
+
+      function listener(packet) {
+
+        try {
+
+          if (!packet) return;
+
+          if (
+            packet.origin &&
+            packet.origin.uuid &&
+            String(
+              packet.origin.uuid
+            ) !==
+              String(
+                minecraftUuid
               )
-          },
+          ) {
+            return;
+          }
 
-          internal: false,
-          version: "latest"
+          if (erledigt) return;
+
+          erledigt = true;
+
+          clearTimeout(timeout);
+
+          mcBot.removeListener(
+            "command_output",
+            listener
+          );
+
+          let output = "";
+
+          if (
+            Array.isArray(
+              packet.output
+            )
+          ) {
+
+            output =
+              packet.output
+                .map(item => {
+
+                  if (
+                    typeof item ===
+                    "string"
+                  ) {
+                    return item;
+                  }
+
+                  if (
+                    item &&
+                    typeof item ===
+                    "object"
+                  ) {
+
+                    return (
+                      item.message ||
+                      item.text ||
+                      JSON.stringify(item)
+                    );
+                  }
+
+                  return String(item);
+
+                })
+                .join("\n");
+
+          } else if (
+            typeof packet.output ===
+            "string"
+          ) {
+
+            output =
+              packet.output;
+
+          } else {
+
+            output =
+              JSON.stringify(
+                packet
+              );
+          }
+
+          resolve(output);
+
+        } catch (err) {
+
+          if (erledigt) return;
+
+          erledigt = true;
+
+          clearTimeout(timeout);
+
+          mcBot.removeListener(
+            "command_output",
+            listener
+          );
+
+          resolve(null);
         }
-      );
+      }
 
-    } catch (err) {
-      clearTimeout(timeout);
-
-      mcBot.removeListener(
+      mcBot.on(
         "command_output",
         listener
       );
 
-      reject(err);
+      try {
+
+        mcBot.queue(
+          "command_request",
+          {
+            command,
+
+            origin: {
+              type: "player",
+              uuid: minecraftUuid,
+              request_id: requestId,
+              player_entity_id:
+                BigInt(
+                  playerEntityId || 0
+                )
+            },
+
+            internal: false,
+            version: "latest"
+          }
+        );
+
+      } catch (err) {
+
+        clearTimeout(timeout);
+
+        mcBot.removeListener(
+          "command_output",
+          listener
+        );
+
+        reject(err);
+      }
     }
-  });
+  );
 }
 
 // ==================================================
@@ -282,19 +357,22 @@ function minecraftCommand(command) {
 // ==================================================
 
 async function geldAktualisieren() {
+
   if (!mcBot || !mcOnline) {
     return null;
   }
 
   try {
+
     const output =
       await minecraftCommand(
         "/money"
       );
 
     if (!output) {
+
       console.log(
-        "Keine /money Antwort erhalten."
+        "Keine /money Antwort."
       );
 
       return null;
@@ -306,9 +384,12 @@ async function geldAktualisieren() {
     );
 
     const geld =
-      geldAusOutputLesen(output);
+      geldAusOutputLesen(
+        output
+      );
 
     if (geld === null) {
+
       console.log(
         "Kontostand konnte nicht erkannt werden."
       );
@@ -316,7 +397,8 @@ async function geldAktualisieren() {
       return null;
     }
 
-    aktuellesGeld = geld;
+    aktuellesGeld =
+      geld;
 
     console.log(
       "Aktueller Kontostand:",
@@ -326,6 +408,7 @@ async function geldAktualisieren() {
     return geld;
 
   } catch (err) {
+
     console.log(
       "Geld Fehler:",
       err.message
@@ -341,17 +424,18 @@ async function geldAktualisieren() {
 
 function minecraftVerbinden() {
 
-  // Alten Reconnect abbrechen
   if (reconnectTimer) {
+
     clearTimeout(
       reconnectTimer
     );
 
-    reconnectTimer = null;
+    reconnectTimer =
+      null;
   }
 
-  // Alte Verbindung schließen
   if (mcBot) {
+
     try {
       mcBot.disconnect();
     } catch {}
@@ -378,10 +462,9 @@ function minecraftVerbinden() {
 
         port: MC_PORT,
 
-        username: MC_USERNAME,
+        username:
+          MC_USERNAME,
 
-        // Microsoft-Login wird hier gespeichert,
-        // sofern die Umgebung persistent ist.
         profilesFolder:
           "./.minecraft",
 
@@ -425,6 +508,7 @@ function minecraftVerbinden() {
           packet.runtime_entity_id !==
           undefined
         ) {
+
           playerEntityId =
             Number(
               packet.runtime_entity_id
@@ -435,6 +519,7 @@ function minecraftVerbinden() {
           packet.player_entity_id !==
           undefined
         ) {
+
           playerEntityId =
             Number(
               packet.player_entity_id
@@ -445,6 +530,7 @@ function minecraftVerbinden() {
           packet.entity_id !==
           undefined
         ) {
+
           playerEntityId =
             Number(
               packet.entity_id
@@ -452,6 +538,7 @@ function minecraftVerbinden() {
         }
 
         if (packet.uuid) {
+
           minecraftUuid =
             packet.uuid;
         }
@@ -460,10 +547,11 @@ function minecraftVerbinden() {
           "FrozenRun ist online!"
         );
 
-        // Kontostand nach Login holen
         setTimeout(
           async () => {
+
             await geldAktualisieren();
+
           },
           3000
         );
@@ -497,13 +585,13 @@ function minecraftVerbinden() {
             !message &&
             packet.parameters
           ) {
+
             message =
               packet.parameters.join(
                 " "
               );
           }
 
-          // Minecraft -> Discord
           const channel =
             discord.channels.cache.get(
               MC_CHANNEL_ID
@@ -580,19 +668,19 @@ function minecraftVerbinden() {
             aktuelleKoordinaten.x =
               Number(
                 packet.position.x ||
-                  0
+                0
               );
 
             aktuelleKoordinaten.y =
               Number(
                 packet.position.y ||
-                  0
+                0
               );
 
             aktuelleKoordinaten.z =
               Number(
                 packet.position.z ||
-                  0
+                0
               );
           }
 
@@ -616,7 +704,7 @@ function minecraftVerbinden() {
     );
 
     // ==================================================
-    // VERBINDUNG GETRENNT
+    // CLOSE
     // ==================================================
 
     mcBot.on(
@@ -633,8 +721,6 @@ function minecraftVerbinden() {
 
         playerEntityId = 0;
 
-        // Wenn absichtlich gestoppt:
-        // KEIN Reconnect
         if (manuellGestoppt) {
 
           console.log(
@@ -645,6 +731,7 @@ function minecraftVerbinden() {
         }
 
         if (reconnectTimer) {
+
           clearTimeout(
             reconnectTimer
           );
@@ -685,7 +772,6 @@ function minecraftVerbinden() {
 
 // ==================================================
 // DASHBOARD
-// NUR INFORMATIONEN
 // ==================================================
 
 function dashboardEmbed() {
@@ -762,10 +848,10 @@ function dashboardEmbed() {
       },
 
       {
-        name: "🔐 Sicherheit",
+        name: "🔐 Zugriff",
 
         value:
-          "Steuerung nur durch den Discord-Serverbesitzer.",
+          "Serverbesitzer + freigeschaltete Controller.",
 
         inline: false
       }
@@ -779,7 +865,6 @@ function dashboardEmbed() {
 
 // ==================================================
 // PANEL
-// NUR STEUERUNG
 // ==================================================
 
 function panelEmbed() {
@@ -820,9 +905,9 @@ function panelEmbed() {
         name: "🔐 Zugriff",
 
         value:
-          "Nur der Serverbesitzer.",
+          "Serverbesitzer + freigeschaltete Controller.",
 
-        inline: true
+        inline: false
       }
     )
 
@@ -834,6 +919,7 @@ function panelEmbed() {
 
 // ==================================================
 // PANEL BUTTONS
+// KOORDINATEN-BUTTON ENTFERNT
 // ==================================================
 
 function panelButtons() {
@@ -865,20 +951,6 @@ function panelButtons() {
           )
           .setEmoji(
             "📡"
-          )
-          .setStyle(
-            ButtonStyle.Secondary
-          ),
-
-        new ButtonBuilder()
-          .setCustomId(
-            "coordinates"
-          )
-          .setLabel(
-            "Koordinaten"
-          )
-          .setEmoji(
-            "📍"
           )
           .setStyle(
             ButtonStyle.Secondary
@@ -967,21 +1039,6 @@ function panelButtons() {
 }
 
 // ==================================================
-// SERVER OWNER CHECK
-// ==================================================
-
-function istServerOwner(
-  interaction
-) {
-
-  return (
-    interaction.guild &&
-    interaction.guild.ownerId ===
-      interaction.user.id
-  );
-}
-
-// ==================================================
 // DISCORD READY
 // ==================================================
 
@@ -1055,13 +1112,106 @@ discord.once(
               )
         );
 
+    // ==================================================
+    // /controller
+    // ==================================================
+
+    const controllerCommand =
+      new SlashCommandBuilder()
+
+        .setName(
+          "controller"
+        )
+
+        .setDescription(
+          "Verwaltet, wer FrozenRun steuern darf."
+        )
+
+        .addSubcommand(
+          subcommand =>
+            subcommand
+
+              .setName(
+                "hinzufügen"
+              )
+
+              .setDescription(
+                "Gibt einem Benutzer Zugriff auf FrozenRun."
+              )
+
+              .addUserOption(
+                option =>
+                  option
+
+                    .setName(
+                      "benutzer"
+                    )
+
+                    .setDescription(
+                      "Discord-Benutzer"
+                    )
+
+                    .setRequired(
+                      true
+                    )
+              )
+        )
+
+        .addSubcommand(
+          subcommand =>
+            subcommand
+
+              .setName(
+                "entfernen"
+              )
+
+              .setDescription(
+                "Entfernt den Zugriff eines Benutzers."
+              )
+
+              .addUserOption(
+                option =>
+                  option
+
+                    .setName(
+                      "benutzer"
+                    )
+
+                    .setDescription(
+                      "Discord-Benutzer"
+                    )
+
+                    .setRequired(
+                      true
+                    )
+              )
+        )
+
+        .addSubcommand(
+          subcommand =>
+            subcommand
+
+              .setName(
+                "liste"
+              )
+
+              .setDescription(
+                "Zeigt alle Controller."
+              )
+        );
+
+    // ==================================================
+    // REGISTRIEREN
+    // ==================================================
+
     try {
 
       await discord.application.commands.set(
         [
           dashboardCommand,
           panelCommand,
-          mcCommand
+          mcCommand,
+          controllerCommand
         ]
       );
 
@@ -1078,11 +1228,11 @@ discord.once(
       );
 
       console.log(
-        "Minecraft startet NICHT automatisch."
+        "/controller registriert."
       );
 
       console.log(
-        "Starte FrozenRun über /panel."
+        "Minecraft startet NICHT automatisch."
       );
 
     } catch (err) {
@@ -1093,15 +1243,13 @@ discord.once(
       );
     }
 
-    // ==================================================
     // WICHTIG:
-    // KEIN minecraftVerbinden() HIER!
-    // ==================================================
+    // Kein minecraftVerbinden() hier!
   }
 );
 
 // ==================================================
-// DISCORD INTERACTIONS
+// INTERACTIONS
 // ==================================================
 
 discord.on(
@@ -1118,9 +1266,9 @@ discord.on(
         interaction.isChatInputCommand()
       ) {
 
-        // ------------------------------------------
+        // ==================================================
         // /dashboard
-        // ------------------------------------------
+        // ==================================================
 
         if (
           interaction.commandName ===
@@ -1128,23 +1276,26 @@ discord.on(
         ) {
 
           await interaction.reply({
+
             embeds: [
               dashboardEmbed()
             ]
+
           });
 
           return;
         }
 
-        // ------------------------------------------
-        // /panel
-        // ------------------------------------------
+        // ==================================================
+        // /controller
+        // ==================================================
 
         if (
           interaction.commandName ===
-          "panel"
+          "controller"
         ) {
 
+          // Nur Serverbesitzer
           if (
             !istServerOwner(
               interaction
@@ -1152,10 +1303,186 @@ discord.on(
           ) {
 
             await interaction.reply({
+
               content:
-                "❌ Nur der Discord-Serverbesitzer darf das Panel benutzen.",
+                "❌ Nur der Serverbesitzer darf die Controller verwalten.",
 
               ephemeral: true
+
+            });
+
+            return;
+          }
+
+          const subcommand =
+            interaction.options.getSubcommand();
+
+          // ------------------------------------------
+          // HINZUFÜGEN
+          // ------------------------------------------
+
+          if (
+            subcommand ===
+            "hinzufügen"
+          ) {
+
+            const user =
+              interaction.options.getUser(
+                "benutzer"
+              );
+
+            if (
+              user.id ===
+              interaction.user.id
+            ) {
+
+              await interaction.reply({
+
+                content:
+                  "👑 Du bist bereits der Serverbesitzer und hast automatisch Zugriff.",
+
+                ephemeral: true
+
+              });
+
+              return;
+            }
+
+            erlaubteController.add(
+              user.id
+            );
+
+            await interaction.reply({
+
+              content:
+                `✅ ${user} darf jetzt FrozenRun steuern.`,
+
+              ephemeral: true
+
+            });
+
+            return;
+          }
+
+          // ------------------------------------------
+          // ENTFERNEN
+          // ------------------------------------------
+
+          if (
+            subcommand ===
+            "entfernen"
+          ) {
+
+            const user =
+              interaction.options.getUser(
+                "benutzer"
+              );
+
+            if (
+              !erlaubteController.has(
+                user.id
+              )
+            ) {
+
+              await interaction.reply({
+
+                content:
+                  `ℹ️ ${user} ist kein Controller.`,
+
+                ephemeral: true
+
+              });
+
+              return;
+            }
+
+            erlaubteController.delete(
+              user.id
+            );
+
+            await interaction.reply({
+
+              content:
+                `🚫 ${user} darf FrozenRun jetzt nicht mehr steuern.`,
+
+              ephemeral: true
+
+            });
+
+            return;
+          }
+
+          // ------------------------------------------
+          // LISTE
+          // ------------------------------------------
+
+          if (
+            subcommand ===
+            "liste"
+          ) {
+
+            if (
+              erlaubteController.size ===
+              0
+            ) {
+
+              await interaction.reply({
+
+                content:
+                  "📋 Es sind momentan keine zusätzlichen Controller eingetragen.\n\n👑 Der Serverbesitzer hat immer Zugriff.",
+
+                ephemeral: true
+
+              });
+
+              return;
+            }
+
+            const liste =
+              [...erlaubteController]
+                .map(
+                  id =>
+                    `<@${id}>`
+                )
+                .join("\n");
+
+            await interaction.reply({
+
+              content:
+                `📋 **FrozenRun Controller**\n\n` +
+                `${liste}\n\n` +
+                `👑 Der Serverbesitzer hat immer Zugriff.`,
+
+              ephemeral: true
+
+            });
+
+            return;
+          }
+        }
+
+        // ==================================================
+        // /panel
+        // ==================================================
+
+        if (
+          interaction.commandName ===
+          "panel"
+        ) {
+
+          if (
+            !darfSteuern(
+              interaction
+            )
+          ) {
+
+            await interaction.reply({
+
+              content:
+                "❌ Du hast keinen Zugriff auf das FrozenRun Panel.",
+
+              ephemeral: true
+
             });
 
             return;
@@ -1169,14 +1496,15 @@ discord.on(
 
             components:
               panelButtons()
+
           });
 
           return;
         }
 
-        // ------------------------------------------
+        // ==================================================
         // /mc
-        // ------------------------------------------
+        // ==================================================
 
         if (
           interaction.commandName ===
@@ -1184,16 +1512,18 @@ discord.on(
         ) {
 
           if (
-            !istServerOwner(
+            !darfSteuern(
               interaction
             )
           ) {
 
             await interaction.reply({
+
               content:
-                "❌ Nur der Serverbesitzer darf den Bot steuern.",
+                "❌ Du darfst FrozenRun nicht steuern.",
 
               ephemeral: true
+
             });
 
             return;
@@ -1207,10 +1537,12 @@ discord.on(
           if (!mcOnline) {
 
             await interaction.reply({
+
               content:
                 "❌ FrozenRun ist momentan offline.",
 
               ephemeral: true
+
             });
 
             return;
@@ -1243,6 +1575,7 @@ discord.on(
                   1800
                 )}\n` +
                 `\`\`\``
+
               );
 
             } else {
@@ -1272,16 +1605,18 @@ discord.on(
       ) {
 
         if (
-          !istServerOwner(
+          !darfSteuern(
             interaction
           )
         ) {
 
           await interaction.reply({
+
             content:
-              "❌ Nur der Serverbesitzer darf FrozenRun steuern.",
+              "❌ Du hast keinen Zugriff auf FrozenRun.",
 
             ephemeral: true
+
           });
 
           return;
@@ -1295,10 +1630,6 @@ discord.on(
           interaction.customId ===
           "toggle_bot"
         ) {
-
-          // ------------------------------------------
-          // Wenn online -> ausschalten
-          // ------------------------------------------
 
           if (mcOnline) {
 
@@ -1333,14 +1664,11 @@ discord.on(
                 "⛔ FrozenRun wurde ausgeschaltet.",
 
               ephemeral: true
+
             });
 
             return;
           }
-
-          // ------------------------------------------
-          // Wenn offline -> STARTEN
-          // ------------------------------------------
 
           manuellGestoppt =
             false;
@@ -1348,9 +1676,10 @@ discord.on(
           await interaction.reply({
 
             content:
-              "▶️ FrozenRun wird gestartet. Falls nötig, erscheint gleich der Microsoft-Login-Code.",
+              "▶️ FrozenRun wird gestartet. Falls nötig, erscheint der Microsoft-Login-Code.",
 
             ephemeral: true
+
           });
 
           minecraftVerbinden();
@@ -1375,27 +1704,7 @@ discord.on(
                 : "🔴 FrozenRun ist offline.",
 
             ephemeral: true
-          });
 
-          return;
-        }
-
-        // ==================================================
-        // KOORDINATEN
-        // ==================================================
-
-        if (
-          interaction.customId ===
-          "coordinates"
-        ) {
-
-          await interaction.reply({
-
-            content:
-              `📍 **FrozenRun Koordinaten:**\n` +
-              `\`${formatKoordinaten()}\``,
-
-            ephemeral: true
           });
 
           return;
@@ -1418,6 +1727,7 @@ discord.on(
                 "❌ FrozenRun ist offline.",
 
               ephemeral: true
+
             });
 
             return;
@@ -1445,6 +1755,7 @@ discord.on(
 
             `💰 **Dein Kontostand:** ` +
             `${formatGeld(geld)}`
+
           );
 
           return;
@@ -1467,6 +1778,7 @@ discord.on(
                 "❌ FrozenRun ist offline.",
 
               ephemeral: true
+
             });
 
             return;
@@ -1548,6 +1860,7 @@ discord.on(
                 "❌ FrozenRun ist offline.",
 
               ephemeral: true
+
             });
 
             return;
@@ -1645,6 +1958,7 @@ discord.on(
               "⛔ FrozenRun wurde gestoppt. Kein automatischer Reconnect.",
 
             ephemeral: true
+
           });
 
           return;
@@ -1652,7 +1966,7 @@ discord.on(
       }
 
       // ==================================================
-      // GELD-MODAL
+      // GELD MODAL
       // ==================================================
 
       if (
@@ -1662,7 +1976,7 @@ discord.on(
       ) {
 
         if (
-          !istServerOwner(
+          !darfSteuern(
             interaction
           )
         ) {
@@ -1670,9 +1984,10 @@ discord.on(
           await interaction.reply({
 
             content:
-              "❌ Nur der Serverbesitzer darf Geld senden.",
+              "❌ Du darfst FrozenRun nicht steuern.",
 
             ephemeral: true
+
           });
 
           return;
@@ -1686,6 +2001,7 @@ discord.on(
               "❌ FrozenRun ist offline.",
 
             ephemeral: true
+
           });
 
           return;
@@ -1695,11 +2011,6 @@ discord.on(
           interaction.fields.getTextInputValue(
             "pay_amount"
           );
-
-        // Punkte/Kommas entfernen
-        // 7500 -> 7500
-        // 7.500 -> 7500
-        // 7,500 -> 7500
 
         const normalisiert =
           input
@@ -1727,6 +2038,7 @@ discord.on(
               "❌ Bitte gib einen gültigen ganzen Betrag ein.",
 
             ephemeral: true
+
           });
 
           return;
@@ -1754,14 +2066,6 @@ discord.on(
           return;
         }
 
-        console.log(
-          `Kontostand: ${kontostand}`
-        );
-
-        console.log(
-          `Gewünschte Zahlung: ${betrag}`
-        );
-
         // ==================================================
         // NICHT GENUG GELD
         // ==================================================
@@ -1782,6 +2086,7 @@ discord.on(
             `💸 Gewünscht: **${formatGeld(
               betrag
             )}**`
+
           );
 
           return;
@@ -1804,7 +2109,7 @@ discord.on(
         );
 
         // ==================================================
-        // ÜBER 4999 -> CONFIRM
+        // ÜBER 4999 CONFIRM
         // ==================================================
 
         if (
@@ -1819,17 +2124,13 @@ discord.on(
               )
           );
 
-          console.log(
-            "Sende Pay Confirm..."
-          );
-
           await minecraftCommand(
             `${payCommand} confirm`
           );
         }
 
         // ==================================================
-        // GELD NACH ZAHLUNG AKTUALISIEREN
+        // GELD AKTUALISIEREN
         // ==================================================
 
         setTimeout(
@@ -1840,10 +2141,6 @@ discord.on(
           },
           1500
         );
-
-        // ==================================================
-        // DISCORD ANTWORT
-        // ==================================================
 
         await interaction.editReply(
 
@@ -1864,6 +2161,7 @@ discord.on(
               ? "\n✅ Bestätigung wurde automatisch gesendet."
               : ""
           )
+
         );
 
         return;
@@ -1889,6 +2187,7 @@ discord.on(
               "❌ Es ist ein Fehler aufgetreten.",
 
             ephemeral: true
+
           });
         }
 
