@@ -3,6 +3,36 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
+// ==================================================
+// MICROSOFT LOGIN RESET
+// ==================================================
+
+const minecraftProfilOrdner = path.join(
+  process.cwd(),
+  ".minecraft"
+);
+
+if (process.env.RESET_MINECRAFT_LOGIN === "true") {
+  try {
+    fs.rmSync(
+      minecraftProfilOrdner,
+      {
+        recursive: true,
+        force: true
+      }
+    );
+
+    console.log(
+      "Minecraft-Login wurde zurückgesetzt."
+    );
+  } catch (err) {
+    console.log(
+      "Fehler beim Zurücksetzen des Minecraft-Logins:",
+      err?.message || err
+    );
+  }
+}
+
 const {
   Client,
   GatewayIntentBits,
@@ -50,31 +80,6 @@ const MONEY_TARGET = "!FrozenBoar16433";
 
 // Hier deine Discord-Minecraft-Chat-ID
 const MC_CHANNEL_ID = "1552068948676059146";
-
-// ==================================================
-// EINMALIGER MICROSOFT-LOGIN RESET
-// ==================================================
-
-const minecraftProfilOrdner = path.join(
-  process.cwd(),
-  ".minecraft"
-);
-
-if (process.env.RESET_MINECRAFT_LOGIN === "true") {
-  try {
-    fs.rmSync(minecraftProfilOrdner, {
-      recursive: true,
-      force: true
-    });
-
-    console.log("Minecraft-Login wurde zurückgesetzt.");
-  } catch (err) {
-    console.log(
-      "Fehler beim Zurücksetzen des Minecraft-Logins:",
-      err?.message || err
-    );
-  }
-}
 
 // ==================================================
 // DISCORD CLIENT
@@ -752,8 +757,7 @@ function minecraftVerbinden() {
     // ==================================================
     // MINECRAFT FEHLER
     // ==================================================
-
-    mcBot.on(
+      mcBot.on(
       "error",
       err => {
         console.log(
@@ -762,7 +766,8 @@ function minecraftVerbinden() {
         );
       }
     );
-        // ==================================================
+
+    // ==================================================
     // VERBINDUNG GESCHLOSSEN
     // ==================================================
 
@@ -1488,18 +1493,6 @@ discord.on(
               await interaction.reply({
                 content:
                   "📋 Es sind momentan keine zusätzlichen Controller eingetragen.\n\n👑 Der Serverbesitzer hat immer Zugriff.",
-                            subcommand ===
-            "liste"
-          ) {
-
-            if (
-              erlaubteController.size ===
-              0
-            ) {
-
-              await interaction.reply({
-                content:
-                  "📋 Es sind momentan keine zusätzlichen Controller eingetragen.\n\n👑 Der Serverbesitzer hat immer Zugriff.",
                 ephemeral: true
               });
 
@@ -1525,8 +1518,7 @@ discord.on(
             return;
           }
         }
-
-        // ==================================================
+                // ==================================================
         // /panel
         // ==================================================
 
@@ -1655,61 +1647,41 @@ discord.on(
         interaction.isChatInputCommand() &&
         interaction.commandName === "laufen"
       ) {
-
         if (!darfSteuern(interaction)) {
-
           await interaction.reply({
-            content:
-              "❌ Du darfst FrozenRun nicht steuern.",
+            content: "❌ Du darfst FrozenRun nicht steuern.",
             ephemeral: true
           });
-
           return;
         }
 
-        const subcommand =
-          interaction.options.getSubcommand();
+        const subcommand = interaction.options.getSubcommand();
 
-        if (
-          subcommand ===
-          "start"
-        ) {
-
+        if (subcommand === "start") {
           if (!mcOnline) {
-
             await interaction.reply({
-              content:
-                "❌ FrozenRun ist offline.",
+              content: "❌ FrozenRun ist offline.",
               ephemeral: true
             });
-
             return;
           }
 
           laufenStarten();
 
           await interaction.reply({
-            content:
-              "🏃 FrozenRun läuft jetzt.",
+            content: "🏃 FrozenRun läuft jetzt.",
             ephemeral: true
           });
-
           return;
         }
 
-        if (
-          subcommand ===
-          "stop"
-        ) {
-
+        if (subcommand === "stop") {
           laufenStoppen();
 
           await interaction.reply({
-            content:
-              "🛑 FrozenRun läuft nicht mehr.",
+            content: "🛑 FrozenRun läuft nicht mehr.",
             ephemeral: true
           });
-
           return;
         }
       }
@@ -1767,7 +1739,6 @@ discord.on(
             }
 
             if (mcBot) {
-
               try {
                 mcBot.disconnect();
               } catch {}
@@ -2256,6 +2227,7 @@ discord.on(
     }
   }
 );
+
 // ==================================================
 // DISCORD LOGIN
 // ==================================================
