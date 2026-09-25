@@ -43,11 +43,11 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  SlashCommandBuilder
+  SlashCommandBuilder,
+  MessageFlags
 } = require("discord.js");
 
 const bedrock = require("bedrock-protocol");
-const { Authflow, Titles } = require("prismarine-auth");
 
 // ==================================================
 // RENDER WEB SERVER
@@ -79,7 +79,6 @@ const MC_USERNAME = "FrozenRun";
 
 const MONEY_TARGET = "!FrozenBoar16433";
 
-// Hier deine Discord-Minecraft-Chat-ID
 const MC_CHANNEL_ID = "1552068948676059146";
 
 // ==================================================
@@ -96,7 +95,6 @@ const discord = new Client({
 // CONTROLLER
 // ==================================================
 
-// Benutzer mit Zugriff auf FrozenRun
 const erlaubteController = new Set();
 
 // ==================================================
@@ -137,9 +135,130 @@ let laufenRichtungsTimer = null;
 // ==================================================
 
 const botStartzeit = Date.now();
+
 let dashboardMessage = null;
+
 let dashboardUptimeTimer = null;
+
 let dashboardGeldTimer = null;
+
+// ==================================================
+// GESPEICHERTES DASHBOARD
+// ==================================================
+
+const dashboardDatei = path.join(
+  process.cwd(),
+  ".dashboard.json"
+);
+
+let gespeichertesDashboard = null;
+
+// ==================================================
+// DASHBOARD-DATEN LADEN
+// ==================================================
+
+function dashboardDatenLaden() {
+  try {
+    if (!fs.existsSync(dashboardDatei)) {
+      return null;
+    }
+
+    const daten = fs.readFileSync(
+      dashboardDatei,
+      "utf8"
+    );
+
+    if (!daten.trim()) {
+      return null;
+    }
+
+    const parsed = JSON.parse(daten);
+
+    if (
+      !parsed ||
+      !parsed.guildId ||
+      !parsed.channelId ||
+      !parsed.messageId
+    ) {
+      return null;
+    }
+
+    return parsed;
+
+  } catch (err) {
+    console.log(
+      "Dashboard-Daten konnten nicht geladen werden:",
+      err?.message || err
+    );
+
+    return null;
+  }
+}
+
+// ==================================================
+// DASHBOARD-DATEN SPEICHERN
+// ==================================================
+
+function dashboardDatenSpeichern(
+  guildId,
+  channelId,
+  messageId
+) {
+  try {
+    gespeichertesDashboard = {
+      guildId,
+      channelId,
+      messageId
+    };
+
+    fs.writeFileSync(
+      dashboardDatei,
+      JSON.stringify(
+        gespeichertesDashboard,
+        null,
+        2
+      )
+    );
+
+    console.log(
+      "Dashboard-Daten gespeichert."
+    );
+
+  } catch (err) {
+    console.log(
+      "Dashboard-Daten konnten nicht gespeichert werden:",
+      err?.message || err
+    );
+  }
+}
+
+// ==================================================
+// DASHBOARD-DATEN LÖSCHEN
+// ==================================================
+
+function dashboardDatenLöschen() {
+  gespeichertesDashboard = null;
+
+  try {
+    if (fs.existsSync(dashboardDatei)) {
+      fs.rmSync(
+        dashboardDatei,
+        {
+          force: true
+        }
+      );
+    }
+  } catch (err) {
+    console.log(
+      "Dashboard-Datei konnte nicht gelöscht werden:",
+      err?.message || err
+    );
+  }
+}
+
+// ==================================================
+// HILFSFUNKTIONEN
+// ==================================================
 
 function formatLiveUptime() {
   const sekundenGesamt = Math.max(
@@ -147,10 +266,20 @@ function formatLiveUptime() {
     Math.floor((Date.now() - botStartzeit) / 1000)
   );
 
-  const tage = Math.floor(sekundenGesamt / 86400);
-  const stunden = Math.floor((sekundenGesamt % 86400) / 3600);
-  const minuten = Math.floor((sekundenGesamt % 3600) / 60);
-  const sekunden = sekundenGesamt % 60;
+  const tage = Math.floor(
+    sekundenGesamt / 86400
+  );
+
+  const stunden = Math.floor(
+    (sekundenGesamt % 86400) / 3600
+  );
+
+  const minuten = Math.floor(
+    (sekundenGesamt % 3600) / 60
+  );
+
+  const sekunden =
+    sekundenGesamt % 60;
 
   const zeit =
     `${String(stunden).padStart(2, "0")}:` +
@@ -162,12 +291,10 @@ function formatLiveUptime() {
     : zeit;
 }
 
-// ==================================================
-// HILFSFUNKTIONEN
-// ==================================================
-
 function formatGeld(betrag) {
-  return Number(betrag || 0).toLocaleString("de-DE");
+  return Number(
+    betrag || 0
+  ).toLocaleString("de-DE");
 }
 
 function formatKoordinaten() {
@@ -185,7 +312,8 @@ function formatKoordinaten() {
 function istServerOwner(interaction) {
   return (
     interaction.guild &&
-    interaction.guild.ownerId === interaction.user.id
+    interaction.guild.ownerId ===
+      interaction.user.id
   );
 }
 
@@ -194,7 +322,9 @@ function istServerOwner(interaction) {
 // ==================================================
 
 function darfSteuern(interaction) {
-  if (istServerOwner(interaction)) {
+  if (
+    istServerOwner(interaction)
+  ) {
     return true;
   }
 
@@ -215,12 +345,6 @@ function geldAusOutputLesen(text) {
   const clean = String(text)
     .replace(/\u00a0/g, " ");
 
-  /*
-    Erwartetes Format:
-
-    Dein Kontostand: 12.345
-  */
-
   const match = clean.match(
     /Dein\s+Kontostand\s*:\s*([\d.,]+)/i
   );
@@ -236,10 +360,8 @@ function geldAusOutputLesen(text) {
 
   let zahl = match[1];
 
-  // Deutsche Tausenderpunkte entfernen
   zahl = zahl.replace(/\./g, "");
 
-  // Komma entfernen/vereinheitlichen
   zahl = zahl.replace(",", ".");
 
   const wert = Number(zahl);
@@ -359,6 +481,7 @@ function minecraftCommand(command) {
         }
 
         resolve(output);
+
       } catch (err) {
         if (erledigt) {
           return;
@@ -400,6 +523,7 @@ function minecraftCommand(command) {
           version: "latest"
         }
       );
+
     } catch (err) {
       clearTimeout(timeout);
 
@@ -458,6 +582,7 @@ async function geldAktualisieren() {
     );
 
     return geld;
+
   } catch (err) {
     console.log(
       "Geld Fehler:",
@@ -481,44 +606,74 @@ function laufenStoppen() {
   }
 
   if (laufenRichtungsTimer) {
-    clearInterval(laufenRichtungsTimer);
+    clearInterval(
+      laufenRichtungsTimer
+    );
+
     laufenRichtungsTimer = null;
   }
 }
 
 function laufenStarten() {
   if (!mcOnline) {
-    throw new Error("FrozenRun ist offline.");
+    throw new Error(
+      "FrozenRun ist offline."
+    );
   }
 
   laufenStoppen();
+
   laufenAktiv = true;
-  laufenRichtung = Math.random() * Math.PI * 2;
 
-  // Alle paar Sekunden zufällig die Laufrichtung ändern.
-  laufenRichtungsTimer = setInterval(() => {
-    if (!laufenAktiv) return;
-    laufenRichtung += (Math.random() - 0.5) * Math.PI;
-  }, 2500);
+  laufenRichtung =
+    Math.random() *
+    Math.PI *
+    2;
 
-  // Bewegung über kleine relative Teleport-Schritte.
-  // Dadurch läuft FrozenRun weiter, ohne dass ein zusätzlicher
-  // Discord-/Minecraft-Client benötigt wird.
-  laufenTimer = setInterval(async () => {
-    if (!laufenAktiv || !mcOnline) return;
+  laufenRichtungsTimer =
+    setInterval(() => {
+      if (!laufenAktiv) {
+        return;
+      }
 
-    const geschwindigkeit = 0.18;
-    const dx = Math.cos(laufenRichtung) * geschwindigkeit;
-    const dz = Math.sin(laufenRichtung) * geschwindigkeit;
+      laufenRichtung +=
+        (Math.random() - 0.5) *
+        Math.PI;
 
-    try {
-      await minecraftCommand(
-        `/tp @s ~${dx.toFixed(3)} ~ ~${dz.toFixed(3)}`
-      );
-    } catch (err) {
-      console.log("Laufen Fehler:", err?.message || err);
-    }
-  }, 250);
+    }, 2500);
+
+  laufenTimer =
+    setInterval(async () => {
+      if (
+        !laufenAktiv ||
+        !mcOnline
+      ) {
+        return;
+      }
+
+      const geschwindigkeit =
+        0.18;
+
+      const dx =
+        Math.cos(laufenRichtung) *
+        geschwindigkeit;
+
+      const dz =
+        Math.sin(laufenRichtung) *
+        geschwindigkeit;
+
+      try {
+        await minecraftCommand(
+          `/tp @s ~${dx.toFixed(3)} ~ ~${dz.toFixed(3)}`
+        );
+      } catch (err) {
+        console.log(
+          "Laufen Fehler:",
+          err?.message || err
+        );
+      }
+
+    }, 250);
 }
 
 // ==================================================
@@ -550,20 +705,18 @@ function minecraftVerbinden() {
   );
 
   try {
-    const minecraftAuthflow =
-      new Authflow(
-        MC_USERNAME,
-        minecraftProfilOrdner,
-        {
-          flow: "live",
-          authTitle:
-            Titles.MinecraftNintendoSwitch,
-          deviceType: "Nintendo",
-          forceRefresh:
-            process.env.RESET_MINECRAFT_LOGIN ===
-            "true"
-        },
-        data => {
+    mcBot =
+      bedrock.createClient({
+        host: MC_HOST,
+
+        port: MC_PORT,
+
+        username: MC_USERNAME,
+
+        profilesFolder:
+          "./.minecraft",
+
+        onMsaCode: data => {
           console.log("");
           console.log(
             "===================================="
@@ -595,20 +748,6 @@ function minecraftVerbinden() {
             "===================================="
           );
         }
-      );
-
-    mcBot =
-      bedrock.createClient({
-        host: MC_HOST,
-
-        port: MC_PORT,
-
-        username: MC_USERNAME,
-
-        profilesFolder:
-          minecraftProfilOrdner,
-
-        authflow: minecraftAuthflow
       });
 
     // ==================================================
@@ -735,6 +874,7 @@ function minecraftVerbinden() {
               10000
             );
           }
+
         } catch (err) {
           console.log(
             "Chat Fehler:",
@@ -810,7 +950,8 @@ function minecraftVerbinden() {
 
           return;
         }
-                if (reconnectTimer) {
+
+        if (reconnectTimer) {
           clearTimeout(
             reconnectTimer
           );
@@ -833,6 +974,7 @@ function minecraftVerbinden() {
           );
       }
     );
+
   } catch (err) {
     console.log(
       "Minecraft Verbindungsfehler:",
@@ -1103,189 +1245,333 @@ function panelButtons() {
     row2
   ];
 }
+// ==================================================
+// DASHBOARD AUTOMATISCH FINDEN
+// ==================================================
+
+async function dashboardAutomatischFinden() {
+  try {
+    if (!discord.user) {
+      return null;
+    }
+
+    let gefunden = null;
+
+    for (
+      const guild of discord.guilds.cache.values()
+    ) {
+      const channels =
+        guild.channels.cache.filter(
+          channel =>
+            channel.isTextBased() &&
+            typeof channel.messages?.fetch ===
+              "function"
+        );
+
+      for (
+        const channel of channels.values()
+      ) {
+        try {
+          const messages =
+            await channel.messages.fetch({
+              limit: 100
+            });
+
+          for (
+            const message of messages.values()
+          ) {
+            if (
+              message.author?.id !==
+                discord.user.id ||
+              !message.embeds?.some(
+                embed =>
+                  embed.title ===
+                  "🎮 FrozenRun Dashboard"
+              )
+            ) {
+              continue;
+            }
+
+            if (
+              !gefunden ||
+              message.createdTimestamp >
+                gefunden.createdTimestamp
+            ) {
+              gefunden = message;
+            }
+          }
+        } catch (err) {
+          // Fehlende Rechte in einem Kanal
+          // dürfen den Start nicht stoppen.
+        }
+      }
+    }
+
+    if (gefunden) {
+      dashboardMessage =
+        gefunden;
+
+      console.log(
+        `Vorhandenes FrozenRun Dashboard gefunden: ${gefunden.id}`
+      );
+    } else {
+      console.log(
+        "Kein vorhandenes FrozenRun Dashboard gefunden."
+      );
+    }
+
+    return gefunden;
+
+  } catch (err) {
+    console.log(
+      "Dashboard Suche Fehler:",
+      err?.message || err
+    );
+
+    return null;
+  }
+}
+
+// ==================================================
+// DASHBOARD TIMER STOPPEN
+// ==================================================
+
+function dashboardTimerStoppen() {
+  if (dashboardUptimeTimer) {
+    clearInterval(
+      dashboardUptimeTimer
+    );
+
+    dashboardUptimeTimer = null;
+  }
+
+  if (dashboardGeldTimer) {
+    clearInterval(
+      dashboardGeldTimer
+    );
+
+    dashboardGeldTimer = null;
+  }
+}
+
+// ==================================================
+// DASHBOARD TIMER STARTEN
+// ==================================================
+
+function dashboardTimerStarten() {
+  dashboardTimerStoppen();
+
+  if (!dashboardMessage) {
+    return;
+  }
+
+  dashboardUptimeTimer =
+    setInterval(
+      async () => {
+        if (!dashboardMessage) {
+          return;
+        }
+
+        try {
+          await dashboardMessage.edit({
+            embeds: [
+              dashboardEmbed()
+            ],
+
+            components:
+              panelButtons()
+          });
+
+        } catch (err) {
+          console.log(
+            "Dashboard Update Fehler:",
+            err?.message || err
+          );
+
+          if (
+            err?.code === 10008
+          ) {
+            dashboardMessage =
+              null;
+
+            dashboardTimerStoppen();
+
+            dashboardDatenLöschen();
+          }
+        }
+      },
+      1000
+    );
+
+  dashboardGeldTimer =
+    setInterval(
+      async () => {
+        if (
+          !dashboardMessage ||
+          !mcOnline
+        ) {
+          return;
+        }
+
+        try {
+          await geldAktualisieren();
+
+        } catch (err) {
+          console.log(
+            "Automatische Geldaktualisierung Fehler:",
+            err?.message || err
+          );
+        }
+      },
+      10000
+    );
+}
+
+// ==================================================
+// SLASH COMMANDS
+// ==================================================
+
+const commands = [
+
+  // ==================================================
+  // /dashboard
+  // ==================================================
+
+  new SlashCommandBuilder()
+    .setName("dashboard")
+    .setDescription(
+      "Zeigt das FrozenRun Dashboard."
+    ),
+
+  // ==================================================
+  // /panel
+  // ==================================================
+
+  new SlashCommandBuilder()
+    .setName("panel")
+    .setDescription(
+      "Zeigt das FrozenRun Control Panel."
+    ),
+
+  // ==================================================
+  // /mc
+  // ==================================================
+
+  new SlashCommandBuilder()
+    .setName("mc")
+    .setDescription(
+      "Sendet einen Minecraft-Befehl."
+    )
+    .addStringOption(
+      option =>
+        option
+          .setName("befehl")
+          .setDescription(
+            "Minecraft-Befehl ohne /"
+          )
+          .setRequired(true)
+    ),
+
+  // ==================================================
+  // /controller
+  // ==================================================
+
+  new SlashCommandBuilder()
+    .setName("controller")
+    .setDescription(
+      "Verwaltet die Controller."
+    )
+    .addSubcommand(
+      sub =>
+        sub
+          .setName("hinzufügen")
+          .setDescription(
+            "Fügt einen Controller hinzu."
+          )
+          .addUserOption(
+            option =>
+              option
+                .setName("user")
+                .setDescription(
+                  "Discord User"
+                )
+                .setRequired(true)
+          )
+    )
+    .addSubcommand(
+      sub =>
+        sub
+          .setName("entfernen")
+          .setDescription(
+            "Entfernt einen Controller."
+          )
+          .addUserOption(
+            option =>
+              option
+                .setName("user")
+                .setDescription(
+                  "Discord User"
+                )
+                .setRequired(true)
+          )
+    )
+    .addSubcommand(
+      sub =>
+        sub
+          .setName("liste")
+          .setDescription(
+            "Zeigt alle Controller."
+          )
+    ),
+
+  // ==================================================
+  // /laufen
+  // ==================================================
+
+  new SlashCommandBuilder()
+    .setName("laufen")
+    .setDescription(
+      "Startet oder stoppt das automatische Laufen."
+    )
+    .addStringOption(
+      option =>
+        option
+          .setName("aktion")
+          .setDescription(
+            "Start oder Stop"
+          )
+          .setRequired(true)
+          .addChoices(
+            {
+              name: "Start",
+              value: "start"
+            },
+            {
+              name: "Stop",
+              value: "stop"
+            }
+          )
+    )
+];
 
 // ==================================================
 // DISCORD READY
 // ==================================================
 
 discord.once(
-  "clientReady",
+  "ready",
   async () => {
-
     console.log(
       `Discord-Bot online als ${discord.user.tag}`
     );
 
-    // ==================================================
-    // /dashboard
-    // ==================================================
-
-    const dashboardCommand =
-      new SlashCommandBuilder()
-        .setName(
-          "dashboard"
-        )
-        .setDescription(
-          "Zeigt das FrozenRun Dashboard."
-        );
-
-    // ==================================================
-    // /panel
-    // ==================================================
-
-    const panelCommand =
-      new SlashCommandBuilder()
-        .setName(
-          "panel"
-        )
-        .setDescription(
-          "Öffnet das FrozenRun Control Panel."
-        );
-
-    // ==================================================
-    // /mc
-    // ==================================================
-
-    const mcCommand =
-      new SlashCommandBuilder()
-        .setName(
-          "mc"
-        )
-        .setDescription(
-          "Führt einen Minecraft-Befehl aus."
-        )
-        .addStringOption(
-          option =>
-            option
-              .setName(
-                "befehl"
-              )
-              .setDescription(
-                "Minecraft-Befehl"
-              )
-              .setRequired(
-                true
-              )
-        );
-
-    // ==================================================
-    // /controller
-    // ==================================================
-
-    const controllerCommand =
-      new SlashCommandBuilder()
-        .setName(
-          "controller"
-        )
-        .setDescription(
-          "Verwaltet, wer FrozenRun steuern darf."
-        )
-
-        .addSubcommand(
-          subcommand =>
-            subcommand
-              .setName(
-                "hinzufügen"
-              )
-              .setDescription(
-                "Gibt einem Benutzer Zugriff auf FrozenRun."
-              )
-              .addUserOption(
-                option =>
-                  option
-                    .setName(
-                      "benutzer"
-                    )
-                    .setDescription(
-                      "Discord-Benutzer"
-                    )
-                    .setRequired(
-                      true
-                    )
-              )
-        )
-
-        .addSubcommand(
-          subcommand =>
-            subcommand
-              .setName(
-                "entfernen"
-              )
-              .setDescription(
-                "Entfernt den Zugriff eines Benutzers."
-              )
-              .addUserOption(
-                option =>
-                  option
-                    .setName(
-                      "benutzer"
-                    )
-                    .setDescription(
-                      "Discord-Benutzer"
-                    )
-                    .setRequired(
-                      true
-                    )
-              )
-        )
-
-        .addSubcommand(
-          subcommand =>
-            subcommand
-              .setName(
-                "liste"
-              )
-              .setDescription(
-                "Zeigt alle Controller."
-              )
-        );
-
-    // ==================================================
-    // /laufen
-    // ==================================================
-
-    const laufenCommand =
-      new SlashCommandBuilder()
-        .setName(
-          "laufen"
-        )
-        .setDescription(
-          "Startet oder stoppt das Laufen von FrozenRun."
-        )
-        .addSubcommand(
-          subcommand =>
-            subcommand
-              .setName(
-                "start"
-              )
-              .setDescription(
-                "FrozenRun beginnt zu laufen."
-              )
-        )
-        .addSubcommand(
-          subcommand =>
-            subcommand
-              .setName(
-                "stop"
-              )
-              .setDescription(
-                "FrozenRun hört auf zu laufen."
-              )
-        );
-
-    // ==================================================
-    // SLASH COMMANDS REGISTRIEREN
-    // ==================================================
-
     try {
-
-      await discord.application.commands.set([
-        dashboardCommand,
-        panelCommand,
-        mcCommand,
-        controllerCommand,
-        laufenCommand
-      ]);
+      await discord.application.commands.set(
+        commands.map(
+          command =>
+            command.toJSON()
+        )
+      );
 
       console.log(
         "/dashboard registriert."
@@ -1307,23 +1593,27 @@ discord.once(
         "/laufen registriert."
       );
 
-      console.log(
-        "Minecraft startet NICHT automatisch."
-      );
-
     } catch (err) {
-
       console.log(
-        "Slash Command Fehler:",
-        err.message
+        "Slash-Command Fehler:",
+        err?.message || err
       );
     }
 
-    // WICHTIG:
-    // KEIN minecraftVerbinden() hier!
-    //
-    // Minecraft startet erst über
-    // den Start-Button.
+    // ==================================================
+    // DASHBOARD NACH NEUSTART SUCHEN
+    // ==================================================
+
+    const vorhandenesDashboard =
+      await dashboardAutomatischFinden();
+
+    if (vorhandenesDashboard) {
+      dashboardTimerStarten();
+    }
+
+    console.log(
+      "Minecraft startet NICHT automatisch."
+    );
   }
 );
 
@@ -1338,7 +1628,7 @@ discord.on(
     try {
 
       // ==================================================
-      // SLASH COMMANDS
+      // SLASH COMMAND
       // ==================================================
 
       if (
@@ -1346,7 +1636,7 @@ discord.on(
       ) {
 
         // ==================================================
-        // /dashboard
+        // /DASHBOARD
         // ==================================================
 
         if (
@@ -1355,168 +1645,166 @@ discord.on(
         ) {
 
           if (
-            !darfSteuern(
-              interaction
-            )
+            !darfSteuern(interaction)
           ) {
-
             await interaction.reply({
               content:
-                "❌ Du hast keinen Zugriff auf das FrozenRun Dashboard.",
-              ephemeral: true
+                "❌ Du darfst den Bot nicht steuern.",
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
           }
 
-          const message =
-            await interaction.reply({
-              embeds: [
-                dashboardEmbed()
-              ],
-              components:
-                panelButtons(),
-              fetchReply: true
-            });
+          if (dashboardMessage) {
+            try {
+              await dashboardMessage.delete();
+            } catch {}
+          }
+
+          dashboardTimerStoppen();
+
+          if (mcOnline) {
+            await geldAktualisieren();
+          }
+
+          await interaction.reply({
+            embeds: [
+              dashboardEmbed()
+            ],
+
+            components:
+              panelButtons()
+          });
 
           dashboardMessage =
-            message;
+            await interaction.fetchReply();
 
-          if (
-            dashboardUptimeTimer
-          ) {
+          dashboardDatenSpeichern(
+            interaction.guildId,
+            interaction.channelId,
+            dashboardMessage.id
+          );
 
-            clearInterval(
-              dashboardUptimeTimer
-            );
-          }
-
-          if (
-            dashboardGeldTimer
-          ) {
-
-            clearInterval(
-              dashboardGeldTimer
-            );
-          }
-
-          if (
-            mcOnline
-          ) {
-
-            try {
-
-              await geldAktualisieren();
-
-            } catch (err) {
-
-              console.log(
-                "Dashboard Geld Start Fehler:",
-                err?.message || err
-              );
-            }
-          }
-
-          // ==================================================
-          // LIVE DASHBOARD JEDE SEKUNDE
-          // ==================================================
-
-          dashboardUptimeTimer =
-            setInterval(
-              async () => {
-
-                if (
-                  !dashboardMessage
-                ) {
-                  return;
-                }
-
-                try {
-
-                  await dashboardMessage.edit({
-                    embeds: [
-                      dashboardEmbed()
-                    ],
-                    components:
-                      panelButtons()
-                  });
-
-                } catch (err) {
-
-                  console.log(
-                    "Dashboard Update Fehler:",
-                    err?.message || err
-                  );
-
-                  if (
-                    err?.code ===
-                    10008
-                  ) {
-
-                    dashboardMessage =
-                      null;
-
-                    clearInterval(
-                      dashboardUptimeTimer
-                    );
-
-                    dashboardUptimeTimer =
-                      null;
-
-                    if (
-                      dashboardGeldTimer
-                    ) {
-
-                      clearInterval(
-                        dashboardGeldTimer
-                      );
-
-                      dashboardGeldTimer =
-                        null;
-                    }
-                  }
-                }
-
-              },
-              1000
-            );
-
-          // ==================================================
-          // GELD AUTOMATISCH ALLE 10 SEKUNDEN
-          // ==================================================
-
-          dashboardGeldTimer =
-            setInterval(
-              async () => {
-
-                if (
-                  !dashboardMessage ||
-                  !mcOnline
-                ) {
-                  return;
-                }
-
-                try {
-
-                  await geldAktualisieren();
-
-                } catch (err) {
-
-                  console.log(
-                    "Automatische Geldaktualisierung Fehler:",
-                    err?.message || err
-                  );
-                }
-
-              },
-              10000
-            );
+          dashboardTimerStarten();
 
           return;
         }
 
         // ==================================================
-        // /controller
+        // /PANEL
+        // ==================================================
+
+        if (
+          interaction.commandName ===
+          "panel"
+        ) {
+
+          if (
+            !darfSteuern(interaction)
+          ) {
+            await interaction.reply({
+              content:
+                "❌ Du darfst den Bot nicht steuern.",
+              flags:
+                MessageFlags.Ephemeral
+            });
+
+            return;
+          }
+
+          await interaction.reply({
+            embeds: [
+              panelEmbed()
+            ],
+
+            components:
+              panelButtons(),
+
+            flags:
+              MessageFlags.Ephemeral
+          });
+
+          return;
+        }
+
+        // ==================================================
+        // /MC
+        // ==================================================
+
+        if (
+          interaction.commandName ===
+          "mc"
+        ) {
+
+          if (
+            !darfSteuern(interaction)
+          ) {
+            await interaction.reply({
+              content:
+                "❌ Du darfst den Bot nicht steuern.",
+              flags:
+                MessageFlags.Ephemeral
+            });
+
+            return;
+          }
+
+          if (!mcOnline) {
+            await interaction.reply({
+              content:
+                "❌ FrozenRun ist nicht online.",
+              flags:
+                MessageFlags.Ephemeral
+            });
+
+            return;
+          }
+
+          let command =
+            interaction.options.getString(
+              "befehl"
+            );
+
+          command =
+            command.trim();
+
+          if (!command) {
+            await interaction.reply({
+              content:
+                "❌ Kein Minecraft-Befehl angegeben.",
+              flags:
+                MessageFlags.Ephemeral
+            });
+
+            return;
+          }
+
+          if (!command.startsWith("/")) {
+            command =
+              "/" + command;
+          }
+
+          const output =
+            await minecraftCommand(
+              command
+            );
+
+          await interaction.reply({
+            content:
+              output
+                ? `\`\`\`\n${output}\n\`\`\``
+                : "Minecraft-Befehl gesendet.",
+            flags:
+              MessageFlags.Ephemeral
+          });
+
+          return;
+        }
+
+        // ==================================================
+        // /CONTROLLER
         // ==================================================
 
         if (
@@ -1525,15 +1813,13 @@ discord.on(
         ) {
 
           if (
-            !istServerOwner(
-              interaction
-            )
+            !istServerOwner(interaction)
           ) {
-
             await interaction.reply({
               content:
-                "❌ Nur der Serverbesitzer darf die Controller verwalten.",
-              ephemeral: true
+                "❌ Nur der Serverbesitzer darf Controller verwalten.",
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
@@ -1543,7 +1829,7 @@ discord.on(
             interaction.options.getSubcommand();
 
           // ==================================================
-          // HINZUFÜGEN
+          // CONTROLLER HINZUFÜGEN
           // ==================================================
 
           if (
@@ -1553,18 +1839,15 @@ discord.on(
 
             const user =
               interaction.options.getUser(
-                "benutzer"
+                "user"
               );
 
-            if (
-              user.id ===
-              interaction.user.id
-            ) {
-
+            if (!user) {
               await interaction.reply({
                 content:
-                  "👑 Du bist der Serverbesitzer und hast automatisch Zugriff.",
-                ephemeral: true
+                  "❌ User nicht gefunden.",
+                flags:
+                  MessageFlags.Ephemeral
               });
 
               return;
@@ -1576,15 +1859,16 @@ discord.on(
 
             await interaction.reply({
               content:
-                `✅ ${user} darf jetzt FrozenRun steuern.`,
-              ephemeral: true
+                `✅ ${user} darf den Bot jetzt steuern.`,
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
           }
 
           // ==================================================
-          // ENTFERNEN
+          // CONTROLLER ENTFERNEN
           // ==================================================
 
           if (
@@ -1594,19 +1878,15 @@ discord.on(
 
             const user =
               interaction.options.getUser(
-                "benutzer"
+                "user"
               );
 
-            if (
-              !erlaubteController.has(
-                user.id
-              )
-            ) {
-
+            if (!user) {
               await interaction.reply({
                 content:
-                  `ℹ️ ${user} ist kein Controller.`,
-                ephemeral: true
+                  "❌ User nicht gefunden.",
+                flags:
+                  MessageFlags.Ephemeral
               });
 
               return;
@@ -1618,15 +1898,16 @@ discord.on(
 
             await interaction.reply({
               content:
-                `🚫 ${user} darf FrozenRun jetzt nicht mehr steuern.`,
-              ephemeral: true
+                `✅ ${user} wurde als Controller entfernt.`,
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
           }
 
           // ==================================================
-          // LISTE
+          // CONTROLLER LISTE
           // ==================================================
 
           if (
@@ -1641,31 +1922,27 @@ discord.on(
 
               await interaction.reply({
                 content:
-                  "📋 Es sind momentan keine zusätzlichen Controller eingetragen.\n\n👑 Der Serverbesitzer hat immer Zugriff.",
-                ephemeral: true
+                  "📋 Es sind aktuell keine zusätzlichen Controller eingetragen.",
+                flags:
+                  MessageFlags.Ephemeral
               });
 
               return;
             }
 
             const liste =
-              [
-                ...erlaubteController
-              ]
+              [...erlaubteController]
                 .map(
                   id =>
                     `<@${id}>`
                 )
-                .join(
-                  "\n"
-                );
+                .join("\n");
 
             await interaction.reply({
               content:
-                `📋 **FrozenRun Controller**\n\n` +
-                `${liste}\n\n` +
-                `👑 Der Serverbesitzer hat immer Zugriff.`,
-              ephemeral: true
+                `📋 Controller:\n${liste}`,
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
@@ -1673,220 +1950,87 @@ discord.on(
         }
 
         // ==================================================
-        // /panel
+        // /LAUFEN
         // ==================================================
 
         if (
           interaction.commandName ===
-          "panel"
+          "laufen"
         ) {
 
           if (
-            !darfSteuern(
-              interaction
-            )
+            !darfSteuern(interaction)
           ) {
-
             await interaction.reply({
               content:
-                "❌ Du hast keinen Zugriff auf das FrozenRun Panel.",
-              ephemeral: true
+                "❌ Du darfst den Bot nicht steuern.",
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
           }
 
-          await interaction.reply({
-            embeds: [
-              panelEmbed()
-            ],
-            components:
-              panelButtons()
-          });
-
-          return;
-        }
-
-        // ==================================================
-        // /mc
-        // ==================================================
-
-        if (
-          interaction.commandName ===
-          "mc"
-        ) {
-
-          if (
-            !darfSteuern(
-              interaction
-            )
-          ) {
-
-            await interaction.reply({
-              content:
-                "❌ Du darfst FrozenRun nicht steuern.",
-              ephemeral: true
-            });
-
-            return;
-          }
-
-          const befehl =
+          const aktion =
             interaction.options.getString(
-              "befehl"
+              "aktion"
             );
 
           if (
-            !mcOnline
+            aktion ===
+            "start"
           ) {
 
-            await interaction.reply({
-              content:
-                "❌ FrozenRun ist momentan offline.",
-              ephemeral: true
-            });
+            if (!mcOnline) {
+              await interaction.reply({
+                content:
+                  "❌ FrozenRun ist offline.",
+                flags:
+                  MessageFlags.Ephemeral
+              });
 
-            return;
-          }
-
-          await interaction.deferReply({
-            ephemeral: true
-          });
-
-          try {
-
-            const command =
-              befehl.startsWith("/")
-                ? befehl
-                : "/" + befehl;
-
-            const output =
-              await minecraftCommand(
-                command
-              );
-
-            if (
-              output
-            ) {
-
-              await interaction.editReply(
-                `✅ Befehl ausgeführt.\n` +
-                `\`\`\`\n` +
-                `${output.slice(
-                  0,
-                  1800
-                )}\n` +
-                `\`\`\``
-              );
-
-            } else {
-
-              await interaction.editReply(
-                "✅ Befehl wurde gesendet."
-              );
+              return;
             }
 
-          } catch (err) {
+            try {
+              laufenStarten();
 
-            await interaction.editReply(
-              `❌ Fehler: ${err.message}`
-            );
-          }
+              await interaction.reply({
+                content:
+                  "🏃 FrozenRun läuft jetzt.",
+                flags:
+                  MessageFlags.Ephemeral
+              });
 
-          return;
-        }
-      }
+            } catch (err) {
 
-      // ==================================================
-      // /laufen
-      // ==================================================
-
-      if (
-        interaction.isChatInputCommand() &&
-        interaction.commandName ===
-          "laufen"
-      ) {
-
-        if (
-          !darfSteuern(
-            interaction
-          )
-        ) {
-
-          await interaction.reply({
-            content:
-              "❌ Du darfst FrozenRun nicht steuern.",
-            ephemeral: true
-          });
-
-          return;
-        }
-
-        const subcommand =
-          interaction.options.getSubcommand();
-
-        // ==================================================
-        // LAUFEN START
-        // ==================================================
-
-        if (
-          subcommand ===
-          "start"
-        ) {
-
-          if (
-            !mcOnline
-          ) {
-
-            await interaction.reply({
-              content:
-                "❌ FrozenRun ist offline.",
-              ephemeral: true
-            });
+              await interaction.reply({
+                content:
+                  `❌ ${err.message}`,
+                flags:
+                  MessageFlags.Ephemeral
+              });
+            }
 
             return;
           }
 
-          try {
+          if (
+            aktion ===
+            "stop"
+          ) {
 
-            laufenStarten();
-
-            await interaction.reply({
-              content:
-                "🏃 FrozenRun läuft jetzt.",
-              ephemeral: true
-            });
-
-          } catch (err) {
+            laufenStoppen();
 
             await interaction.reply({
               content:
-                `❌ Fehler: ${err.message}`,
-              ephemeral: true
+                "🛑 FrozenRun läuft nicht mehr.",
+              flags:
+                MessageFlags.Ephemeral
             });
+
+            return;
           }
-
-          return;
-        }
-
-        // ==================================================
-        // LAUFEN STOP
-        // ==================================================
-
-        if (
-          subcommand ===
-          "stop"
-        ) {
-
-          laufenStoppen();
-
-          await interaction.reply({
-            content:
-              "🛑 FrozenRun läuft nicht mehr.",
-            ephemeral: true
-          });
-
-          return;
         }
       }
 
@@ -1899,22 +2043,20 @@ discord.on(
       ) {
 
         if (
-          !darfSteuern(
-            interaction
-          )
+          !darfSteuern(interaction)
         ) {
-
           await interaction.reply({
             content:
-              "❌ Du hast keinen Zugriff auf FrozenRun.",
-            ephemeral: true
+              "❌ Du darfst den Bot nicht steuern.",
+            flags:
+              MessageFlags.Ephemeral
           });
 
           return;
         }
 
         // ==================================================
-        // EIN / AUS
+        // BOT EIN / AUS
         // ==================================================
 
         if (
@@ -1922,19 +2064,13 @@ discord.on(
           "toggle_bot"
         ) {
 
-          if (
-            mcOnline
-          ) {
+          if (mcOnline) {
+
+            manuellGestoppt = true;
 
             laufenStoppen();
 
-            manuellGestoppt =
-              true;
-
-            if (
-              reconnectTimer
-            ) {
-
+            if (reconnectTimer) {
               clearTimeout(
                 reconnectTimer
               );
@@ -1943,46 +2079,44 @@ discord.on(
                 null;
             }
 
-            if (
-              mcBot
-            ) {
-
+            if (mcBot) {
               try {
                 mcBot.disconnect();
               } catch {}
             }
 
-            mcBot =
-              null;
+            mcBot = null;
 
-            mcOnline =
-              false;
+            mcOnline = false;
 
-            minecraftUuid =
-              null;
+            minecraftUuid = null;
 
-            playerEntityId =
-              0;
+            playerEntityId = 0;
 
-            await interaction.reply({
-              content:
-                "⛔ FrozenRun wurde ausgeschaltet.",
-              ephemeral: true
+            await interaction.update({
+              embeds: [
+                panelEmbed()
+              ],
+
+              components:
+                panelButtons()
             });
 
-            return;
+          } else {
+
+            manuellGestoppt = false;
+
+            await interaction.update({
+              embeds: [
+                panelEmbed()
+              ],
+
+              components:
+                panelButtons()
+            });
+
+            minecraftVerbinden();
           }
-
-          manuellGestoppt =
-            false;
-
-          await interaction.reply({
-            content:
-              "▶️ FrozenRun wird gestartet. Falls nötig, erscheint jetzt der Microsoft-Login.",
-            ephemeral: true
-          });
-
-          minecraftVerbinden();
 
           return;
         }
@@ -1996,12 +2130,16 @@ discord.on(
           "status"
         ) {
 
+          const status =
+            mcOnline
+              ? "🟢 FrozenRun ist online."
+              : "🔴 FrozenRun ist offline.";
+
           await interaction.reply({
             content:
-              mcOnline
-                ? "🟢 FrozenRun ist online."
-                : "🔴 FrozenRun ist offline.",
-            ephemeral: true
+              `${status}\n📍 Koordinaten: ${formatKoordinaten()}\n⏱️ Uptime: ${formatLiveUptime()}`,
+            flags:
+              MessageFlags.Ephemeral
           });
 
           return;
@@ -2016,47 +2154,166 @@ discord.on(
           "money"
         ) {
 
-          if (
-            !mcOnline
-          ) {
-
+          if (!mcOnline) {
             await interaction.reply({
               content:
                 "❌ FrozenRun ist offline.",
-              ephemeral: true
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
           }
 
-          await interaction.deferReply({
-            ephemeral: true
+          await geldAktualisieren();
+
+          await interaction.reply({
+            content:
+              `💰 Kontostand: **${formatGeld(aktuellesGeld)}**`,
+            flags:
+              MessageFlags.Ephemeral
           });
-
-          const geld =
-            await geldAktualisieren();
-
-          if (
-            geld ===
-            null
-          ) {
-
-            await interaction.editReply(
-              "❌ `/money` konnte nicht ausgelesen werden."
-            );
-
-            return;
-          }
-
-          await interaction.editReply(
-            `💰 **Dein Kontostand:** ${formatGeld(geld)}`
-          );
 
           return;
         }
 
         // ==================================================
-        // GELD SENDEN
+        // HOME AFK
+        // ==================================================
+
+        if (
+          interaction.customId ===
+          "home_afk"
+        ) {
+
+          if (!mcOnline) {
+            await interaction.reply({
+              content:
+                "❌ FrozenRun ist offline.",
+              flags:
+                MessageFlags.Ephemeral
+            });
+
+            return;
+          }
+
+          const output =
+            await minecraftCommand(
+              "/sethome afk"
+            );
+
+          await interaction.reply({
+            content:
+              output
+                ? `🏠 Home AFK gesetzt.\n${output}`
+                : "🏠 Home AFK gesetzt.",
+            flags:
+              MessageFlags.Ephemeral
+          });
+
+          return;
+        }
+
+        // ==================================================
+        // RECONNECT
+        // ==================================================
+
+        if (
+          interaction.customId ===
+          "reconnect"
+        ) {
+
+          laufenStoppen();
+
+          manuellGestoppt =
+            false;
+
+          if (reconnectTimer) {
+            clearTimeout(
+              reconnectTimer
+            );
+
+            reconnectTimer =
+              null;
+          }
+
+          if (mcBot) {
+            try {
+              mcBot.disconnect();
+            } catch {}
+          }
+
+          mcBot = null;
+
+          mcOnline = false;
+
+          minecraftUuid = null;
+
+          playerEntityId = 0;
+
+          await interaction.reply({
+            content:
+              "🔄 FrozenRun wird neu verbunden.",
+            flags:
+              MessageFlags.Ephemeral
+          });
+
+          minecraftVerbinden();
+
+          return;
+        }
+
+        // ==================================================
+        // STOP
+        // ==================================================
+
+        if (
+          interaction.customId ===
+          "stop"
+        ) {
+
+          manuellGestoppt =
+            true;
+
+          laufenStoppen();
+
+          if (reconnectTimer) {
+            clearTimeout(
+              reconnectTimer
+            );
+
+            reconnectTimer =
+              null;
+          }
+
+          if (mcBot) {
+            try {
+              mcBot.disconnect();
+            } catch {}
+          }
+
+          mcBot = null;
+
+          mcOnline = false;
+
+          minecraftUuid = null;
+
+          playerEntityId = 0;
+
+          await interaction.update({
+            embeds: [
+              panelEmbed()
+            ],
+
+            components:
+              panelButtons()
+          });
+
+          return;
+        }
+
+        // ==================================================
+        // PAY
         // ==================================================
 
         if (
@@ -2065,11 +2322,11 @@ discord.on(
         ) {
 
           if (!mcOnline) {
-
             await interaction.reply({
               content:
                 "❌ FrozenRun ist offline.",
-              ephemeral: true
+              flags:
+                MessageFlags.Ephemeral
             });
 
             return;
@@ -2093,20 +2350,12 @@ discord.on(
                 "Betrag"
               )
               .setPlaceholder(
-                "z.B. 7500"
+                "z. B. 5000"
               )
               .setStyle(
                 TextInputStyle.Short
               )
-              .setRequired(
-                true
-              )
-              .setMinLength(
-                1
-              )
-              .setMaxLength(
-                12
-              );
+              .setRequired(true);
 
           const row =
             new ActionRowBuilder()
@@ -2124,298 +2373,144 @@ discord.on(
 
           return;
         }
-
-        // ==================================================
-        // HOME AFK
-        // ==================================================
-
-        if (
-          interaction.customId ===
-          "home_afk"
-        ) {
-
-          if (!mcOnline) {
-
-            await interaction.reply({
-              content:
-                "❌ FrozenRun ist offline.",
-              ephemeral: true
-            });
-
-            return;
-          }
-
-          await interaction.deferReply({
-            ephemeral: true
-          });
-
-          await minecraftCommand(
-            "/home afk"
-          );
-
-          await interaction.editReply(
-            "🏠 `/home afk` wurde ausgeführt."
-          );
-
-          return;
-        }
-
-        // ==================================================
-        // RECONNECT
-        // ==================================================
-
-        if (
-          interaction.customId ===
-          "reconnect"
-        ) {
-
-          await interaction.deferReply({
-            ephemeral: true
-          });
-
-          manuellGestoppt =
-            false;
-
-          if (
-            reconnectTimer
-          ) {
-
-            clearTimeout(
-              reconnectTimer
-            );
-
-            reconnectTimer =
-              null;
-          }
-
-          minecraftVerbinden();
-
-          await interaction.editReply(
-            "🔄 FrozenRun wird neu verbunden."
-          );
-
-          return;
-        }
-
-        // ==================================================
-        // STOP
-        // ==================================================
-
-        if (
-          interaction.customId ===
-          "stop"
-        ) {
-
-          laufenStoppen();
-
-          manuellGestoppt =
-            true;
-
-          if (
-            reconnectTimer
-          ) {
-
-            clearTimeout(
-              reconnectTimer
-            );
-
-            reconnectTimer =
-              null;
-          }
-
-          if (mcBot) {
-
-            try {
-              mcBot.disconnect();
-            } catch {}
-          }
-
-          mcOnline =
-            false;
-
-          await interaction.reply({
-            content:
-              "⛔ FrozenRun wurde gestoppt. Kein automatischer Reconnect.",
-            ephemeral: true
-          });
-
-          return;
-        }
       }
 
       // ==================================================
-      // GELD-MODAL
+      // MODAL
       // ==================================================
 
       if (
-        interaction.isModalSubmit() &&
-        interaction.customId ===
-          "pay_modal"
+        interaction.isModalSubmit()
       ) {
 
         if (
-          !darfSteuern(
-            interaction
-          )
+          interaction.customId !==
+          "pay_modal"
         ) {
+          return;
+        }
 
+        if (
+          !darfSteuern(interaction)
+        ) {
           await interaction.reply({
             content:
-              "❌ Du darfst FrozenRun nicht steuern.",
-            ephemeral: true
+              "❌ Du darfst den Bot nicht steuern.",
+            flags:
+              MessageFlags.Ephemeral
           });
 
           return;
         }
 
         if (!mcOnline) {
-
           await interaction.reply({
             content:
               "❌ FrozenRun ist offline.",
-            ephemeral: true
+            flags:
+              MessageFlags.Ephemeral
           });
 
           return;
         }
 
-        const input =
+        const eingabe =
           interaction.fields.getTextInputValue(
             "pay_amount"
           );
 
-        const normalisiert =
-          input
-            .replace(/\./g, "")
-            .replace(/,/g, "");
-
-        const betrag =
+        let betrag =
           Number(
-            normalisiert
+            String(eingabe)
+              .replace(/\./g, "")
+              .replace(",", ".")
+              .trim()
           );
 
         if (
           !Number.isFinite(betrag) ||
-          !Number.isInteger(betrag) ||
           betrag <= 0
         ) {
-
           await interaction.reply({
             content:
-              "❌ Bitte gib einen gültigen ganzen Betrag ein.",
-            ephemeral: true
+              "❌ Ungültiger Betrag.",
+            flags:
+              MessageFlags.Ephemeral
           });
 
           return;
         }
 
-        await interaction.deferReply({
-          ephemeral: true
-        });
+        betrag =
+          Math.floor(betrag);
 
-        // ==================================================
-        // ERST /money
-        // ==================================================
-
-        const kontostand =
-          await geldAktualisieren();
-
-        if (
-          kontostand === null
-        ) {
-
-          await interaction.editReply(
-            "❌ Der Kontostand konnte mit `/money` nicht ermittelt werden."
-          );
-
-          return;
-        }
-
-        // ==================================================
-        // NICHT GENUG GELD
-        // ==================================================
+        await geldAktualisieren();
 
         if (
           betrag >
-          kontostand
+          aktuellesGeld
         ) {
-
-          await interaction.editReply(
-            `❌ **Nicht genug Geld.**\n\n` +
-            `💰 Kontostand: **${formatGeld(
-              kontostand
-            )}**\n` +
-            `💸 Gewünscht: **${formatGeld(
-              betrag
-            )}**`
-          );
+          await interaction.reply({
+            content:
+              `❌ Nicht genug Geld.\nKontostand: **${formatGeld(aktuellesGeld)}**`,
+            flags:
+              MessageFlags.Ephemeral
+          });
 
           return;
         }
 
-        // ==================================================
-        // PAY
-        // ==================================================
-
-        const payCommand =
+        const ersterBefehl =
           `/pay ${MONEY_TARGET} ${betrag}`;
 
-        console.log(
-          "Sende:",
-          payCommand
-        );
-
-        await minecraftCommand(
-          payCommand
-        );
-
-        // ==================================================
-        // ÜBER 4999 -> CONFIRM
-        // ==================================================
+        const ersteAntwort =
+          await minecraftCommand(
+            ersterBefehl
+          );
 
         if (
           betrag > 4999
         ) {
 
-          await new Promise(
-            resolve =>
-              setTimeout(
-                resolve,
-                1000
-              )
-          );
+          const bestaetigung =
+            `/pay ${MONEY_TARGET} ${betrag} confirm`;
 
-          await minecraftCommand(
-            `${payCommand} confirm`
-          );
+          const zweiteAntwort =
+            await minecraftCommand(
+              bestaetigung
+            );
+
+          await geldAktualisieren();
+
+          await interaction.reply({
+            content:
+              `💸 **${formatGeld(betrag)}** an **${MONEY_TARGET}** gesendet.\n\n` +
+              "Bestätigung für Beträge über 4999 wurde ausgeführt." +
+              (
+                zweiteAntwort
+                  ? `\n\nMinecraft:\n${zweiteAntwort}`
+                  : ""
+              ),
+            flags:
+              MessageFlags.Ephemeral
+          });
+
+          return;
         }
 
-        // ==================================================
-        // GELD NOCHMAL AKTUALISIEREN
-        // ==================================================
+        await geldAktualisieren();
 
-        setTimeout(
-          async () => {
-            await geldAktualisieren();
-          },
-          1500
-        );
-
-        await interaction.editReply(
-          `💸 **Geld gesendet!**\n\n` +
-          `👤 Empfänger: **${MONEY_TARGET}**\n` +
-          `💰 Betrag: **${formatGeld(
-            betrag
-          )}**\n` +
-          `📊 Kontostand vorher: **${formatGeld(
-            kontostand
-          )}**` +
-          (
-            betrag > 4999
-              ? "\n✅ Bestätigung wurde automatisch gesendet."
-              : ""
-          )
-        );
+        await interaction.reply({
+          content:
+            `💸 **${formatGeld(betrag)}** an **${MONEY_TARGET}** gesendet.` +
+            (
+              ersteAntwort
+                ? `\n\nMinecraft:\n${ersteAntwort}`
+                : ""
+            ),
+          flags:
+            MessageFlags.Ephemeral
+        });
 
         return;
       }
@@ -2430,14 +2525,24 @@ discord.on(
       try {
 
         if (
-          !interaction.replied &&
-          !interaction.deferred
+          interaction.replied ||
+          interaction.deferred
         ) {
+
+          await interaction.followUp({
+            content:
+              "❌ Es ist ein Fehler aufgetreten.",
+            flags:
+              MessageFlags.Ephemeral
+          });
+
+        } else {
 
           await interaction.reply({
             content:
               "❌ Es ist ein Fehler aufgetreten.",
-            ephemeral: true
+            flags:
+              MessageFlags.Ephemeral
           });
         }
 
@@ -2445,7 +2550,6 @@ discord.on(
     }
   }
 );
-
 // ==================================================
 // DISCORD LOGIN
 // ==================================================
