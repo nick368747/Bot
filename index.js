@@ -2448,3 +2448,4 @@ minecraftVerbinden();
 
 discord.login(
   DISCORD_TOKEN
+);
