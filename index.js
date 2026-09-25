@@ -47,6 +47,7 @@ const {
 } = require("discord.js");
 
 const bedrock = require("bedrock-protocol");
+const { Authflow, Titles } = require("prismarine-auth");
 
 // ==================================================
 // RENDER WEB SERVER
@@ -549,18 +550,20 @@ function minecraftVerbinden() {
   );
 
   try {
-    mcBot =
-      bedrock.createClient({
-        host: MC_HOST,
-
-        port: MC_PORT,
-
-        username: MC_USERNAME,
-
-        profilesFolder:
-          "./.minecraft",
-
-        onMsaCode: data => {
+    const minecraftAuthflow =
+      new Authflow(
+        MC_USERNAME,
+        minecraftProfilOrdner,
+        {
+          flow: "live",
+          authTitle:
+            Titles.MinecraftNintendoSwitch,
+          deviceType: "Nintendo",
+          forceRefresh:
+            process.env.RESET_MINECRAFT_LOGIN ===
+            "true"
+        },
+        data => {
           console.log("");
           console.log(
             "===================================="
@@ -583,9 +586,29 @@ function minecraftVerbinden() {
           );
 
           console.log(
+            "Code gültig für ca.:",
+            data.expires_in,
+            "Sekunden"
+          );
+
+          console.log(
             "===================================="
           );
         }
+      );
+
+    mcBot =
+      bedrock.createClient({
+        host: MC_HOST,
+
+        port: MC_PORT,
+
+        username: MC_USERNAME,
+
+        profilesFolder:
+          minecraftProfilOrdner,
+
+        authflow: minecraftAuthflow
       });
 
     // ==================================================
@@ -636,7 +659,6 @@ function minecraftVerbinden() {
           "FrozenRun ist online!"
         );
 
-        // Geld nach dem Start abrufen
         setTimeout(
           async () => {
             await geldAktualisieren();
@@ -673,7 +695,6 @@ function minecraftVerbinden() {
               packet.parameters.join(" ");
           }
 
-          // Minecraft -> Discord
           const channel =
             discord.channels.cache.get(
               MC_CHANNEL_ID
@@ -687,10 +708,6 @@ function minecraftVerbinden() {
               `**${username || "Minecraft"}:** ${message}`
             ).catch(() => {});
           }
-
-          // ==================================================
-          // TPA AUTOMATIK
-          // ==================================================
 
           if (
             username ===
@@ -793,8 +810,7 @@ function minecraftVerbinden() {
 
           return;
         }
-
-        if (reconnectTimer) {
+                if (reconnectTimer) {
           clearTimeout(
             reconnectTimer
           );
@@ -1087,6 +1103,7 @@ function panelButtons() {
     row2
   ];
 }
+
 // ==================================================
 // DISCORD READY
 // ==================================================
@@ -1365,7 +1382,6 @@ discord.on(
           dashboardMessage =
             message;
 
-          // Alten Uptime-Timer entfernen
           if (
             dashboardUptimeTimer
           ) {
@@ -1375,7 +1391,6 @@ discord.on(
             );
           }
 
-          // Alten Geld-Timer entfernen
           if (
             dashboardGeldTimer
           ) {
@@ -1385,7 +1400,6 @@ discord.on(
             );
           }
 
-          // Direkt beim Öffnen den Kontostand aktualisieren
           if (
             mcOnline
           ) {
@@ -1510,7 +1524,6 @@ discord.on(
           "controller"
         ) {
 
-          // Nur Serverbesitzer
           if (
             !istServerOwner(
               interaction
@@ -1909,7 +1922,6 @@ discord.on(
           "toggle_bot"
         ) {
 
-          // Wenn online -> ausschalten
           if (
             mcOnline
           ) {
@@ -1961,7 +1973,6 @@ discord.on(
             return;
           }
 
-          // Wenn offline -> starten
           manuellGestoppt =
             false;
 
@@ -2043,9 +2054,10 @@ discord.on(
 
           return;
         }
+
         // ==================================================
-// GELD SENDEN
-// ==================================================
+        // GELD SENDEN
+        // ==================================================
 
         if (
           interaction.customId ===
@@ -2272,7 +2284,6 @@ discord.on(
             "pay_amount"
           );
 
-        // Punkte und Kommas entfernen
         const normalisiert =
           input
             .replace(/\./g, "")
