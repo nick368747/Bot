@@ -88,13 +88,13 @@ const MC_CHANNEL_ID =
 // ==================================================
 
 const MC_AUTH_FLOW =
-  "sisu";
+  "live";
 
 const MC_AUTH_TITLE =
-  Titles.MinecraftAndroid;
+  Titles.MinecraftNintendoSwitch;
 
 const MC_AUTH_DEVICE =
-  "Android";
+  "Nintendo";
 
 // ==================================================
 // RENDER WEB SERVER
