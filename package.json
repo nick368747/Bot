@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "discord.js": "^14.15.3",
-    "bedrock-protocol": "3.60.1",
-    "prismarine-auth": "3.1.1"
+    "bedrock-protocol": "^3.60.1",
+    "prismarine-auth": "^3.1.1"
   }
 }
