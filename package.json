@@ -1,6 +1,7 @@
 {
   "name": "discord-minecraft-bot",
   "version": "1.0.0",
+  "description": "Discord Bot für FrozenRun auf BlockBande",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
