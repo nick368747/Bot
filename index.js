@@ -196,8 +196,8 @@ let laufenRichtungsTimer =
 // DASHBOARD
 // ==================================================
 
-const botStartzeit =
-  Date.now();
+let minecraftStartzeit =
+  null;
 
 let dashboardMessage =
   null;
@@ -213,39 +213,38 @@ let dashboardGeldTimer =
 // ==================================================
 
 function formatLiveUptime() {
-  const startSekunden =
-    Math.floor(
-      botStartzeit / 1000
+  if (!minecraftStartzeit) {
+    return "00:00:00";
+  }
+
+  const vergangen =
+    Math.max(
+      0,
+      Math.floor(
+        (Date.now() - minecraftStartzeit) / 1000
+      )
     );
 
-  return `<t:${startSekunden}:R>`;
-}
+  const stunden =
+    Math.floor(
+      vergangen / 3600
+    );
 
-function formatGeld(
-  betrag
-) {
-  return Number(
-    betrag || 0
-  ).toLocaleString(
-    "de-DE"
-  );
-}
+  const minuten =
+    Math.floor(
+      (vergangen % 3600) / 60
+    );
 
-function formatKoordinaten() {
-  return (
-    `${Math.round(
-      aktuelleKoordinaten.x
-    )}, ` +
-    `${Math.round(
-      aktuelleKoordinaten.y
-    )}, ` +
-    `${Math.round(
-      aktuelleKoordinaten.z
-    )}`
-  );
-}
+  const sekunden =
+    vergangen % 60;
 
-// ==================================================
+  return [
+    String(stunden).padStart(2, "0"),
+    String(minuten).padStart(2, "0"),
+    String(sekunden).padStart(2, "0")
+  ].join(":");
+  
+}// ==================================================
 // SERVER OWNER
 // ==================================================
 
@@ -867,10 +866,13 @@ function minecraftVerbinden() {
       async packet => {
         mcOnline =
           true;
+        
+        minecraftStartzeit =
+          Date.now();
 
         if (
           packet.runtime_entity_id !==
-          undefined
+            undefined
         ) {
           playerEntityId =
             Number(
@@ -1212,6 +1214,9 @@ function minecraftStoppen() {
 
   mcOnline =
     false;
+
+  minecraftStartzeit =
+  null;
 
   minecraftUuid =
     null;
