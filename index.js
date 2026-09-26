@@ -1884,8 +1884,7 @@ discord.once(
     }
 
     dashboardTimerStarten();
-
-    minecraftStarten();
+    
   }
 );
 
