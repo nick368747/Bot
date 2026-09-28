@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 
 const {
@@ -7,26 +8,56 @@ const {
 
 const cacheDir = path.join(
   process.cwd(),
-  ".auth-test"
+  ".auth-test-sisu"
 );
 
 const username = "FrozenRun";
 
 console.log("");
 console.log("=================================");
-console.log(" MICROSOFT AUTH TEST");
+console.log(" MICROSOFT SISU AUTH TEST");
 console.log("=================================");
 console.log("");
-console.log("Starte Microsoft-Anmeldung...");
+console.log("Flow: sisu");
+console.log("AuthTitle: MinecraftAndroid");
+console.log("DeviceType: Android");
 console.log("");
+
+try {
+  fs.rmSync(
+    cacheDir,
+    {
+      recursive: true,
+      force: true
+    }
+  );
+
+  fs.mkdirSync(
+    cacheDir,
+    {
+      recursive: true
+    }
+  );
+} catch (error) {
+  console.log(
+    "Fehler beim Erstellen des Test-Caches:"
+  );
+
+  console.log(
+    error?.message || error
+  );
+
+  process.exit(1);
+}
 
 const authflow = new Authflow(
   username,
   cacheDir,
   {
-    flow: "live",
-    authTitle: Titles.MinecraftNintendoSwitch,
-    deviceType: "Nintendo",
+    flow: "sisu",
+    authTitle:
+      Titles.MinecraftAndroid,
+    deviceType: "Android",
     forceRefresh: true
   },
   data => {
@@ -35,12 +66,22 @@ const authflow = new Authflow(
     console.log(" MICROSOFT LOGIN");
     console.log("=================================");
     console.log("");
-    console.log("Link:", data.verification_uri);
-    console.log("Code:", data.user_code);
+    console.log(
+      "Link:",
+      data.verification_uri
+    );
+    console.log(
+      "Code:",
+      data.user_code
+    );
     console.log(
       "Gültig für:",
       data.expires_in,
       "Sekunden"
+    );
+    console.log("");
+    console.log(
+      "Code jetzt bei Microsoft eingeben."
     );
     console.log("");
     console.log("=================================");
@@ -50,7 +91,9 @@ const authflow = new Authflow(
 
 async function testen() {
   try {
-    console.log("Fordere Microsoft-Token an...");
+    console.log(
+      "1/3 Microsoft-Authentifizierung..."
+    );
 
     const msaToken =
       await authflow.getMsaToken();
@@ -61,11 +104,14 @@ async function testen() {
       );
     }
 
-    console.log("");
-    console.log("OK: Microsoft-Token erhalten.");
-    console.log("");
+    console.log(
+      "OK: Microsoft-Token erhalten."
+    );
 
-    console.log("Fordere Xbox-Token an...");
+    console.log("");
+    console.log(
+      "2/3 Xbox-Authentifizierung..."
+    );
 
     const xboxToken =
       await authflow.getXboxToken();
@@ -76,12 +122,13 @@ async function testen() {
       );
     }
 
-    console.log("");
-    console.log("OK: Xbox-Token erhalten.");
-    console.log("");
-
     console.log(
-      "Fordere Minecraft-Bedrock-Token an..."
+      "OK: Xbox-Token erhalten."
+    );
+
+    console.log("");
+    console.log(
+      "3/3 Minecraft-Bedrock-Authentifizierung..."
     );
 
     const bedrockToken =
@@ -95,7 +142,7 @@ async function testen() {
 
     console.log("");
     console.log("=================================");
-    console.log(" AUTHENTIFIZIERUNG ERFOLGREICH");
+    console.log(" SISU TEST ERFOLGREICH");
     console.log("=================================");
     console.log("");
     console.log("Microsoft: OK");
@@ -103,7 +150,7 @@ async function testen() {
     console.log("Minecraft Bedrock: OK");
     console.log("");
     console.log(
-      "Der Microsoft-Login funktioniert."
+      "Der sisu-Authentifizierungsweg funktioniert."
     );
     console.log("");
 
@@ -111,7 +158,7 @@ async function testen() {
   } catch (error) {
     console.log("");
     console.log("=================================");
-    console.log(" AUTHENTIFIZIERUNG FEHLGESCHLAGEN");
+    console.log(" SISU TEST FEHLGESCHLAGEN");
     console.log("=================================");
     console.log("");
 
@@ -121,7 +168,10 @@ async function testen() {
     );
 
     console.log("");
-    console.log("Fehlermeldung:");
+
+    console.log(
+      "Fehlermeldung:"
+    );
 
     console.log(
       error?.message || error
