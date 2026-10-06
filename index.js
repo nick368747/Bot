@@ -514,12 +514,12 @@ let message = packet.message || '';
 if (!message && Array.isArray(packet.parameters)) {
 message = packet.parameters.join(' ');
 }
-}
 const channel = discord.channels.cache.get(MC_CHANNEL_ID);
 if (channel && message) {
 await channel
 .send(`**${username || 'Minecraft'}:** ${message}`)
 .catch(() => undefined);
+}
 // TPA von !FrozenBoar16433 oder FrozenBoar16433 automatisch annehmen.
 if (istFrozenBoar(username) && /\btpa(?:here)?\b/i.test(message)) {
 console.log('[MC] TPA von FrozenBoar16433 erkannt.');
@@ -704,48 +704,53 @@ value: mcOnline ? '  Online' : '  Offline',
 inline: true,
 },
 {
+},
+{
+},
+{
+name: '  Anmeldung',
+value: mcOnline ? '  Angemeldet' : '  Noch nicht angemeldet – Button drücken',
+inline: true,
 name: '  Geld',
 value: formatGeld(aktuellesGeld),
 inline: true,
-},
-{
 name: '  Koordinaten',
 value: formatKoordinaten(),
 inline: true,
 },
 {
+},
+{
+},
+{
+},
+{
+},
+{
+}
 name: '   Uptime',
 value: formatLiveUptime(),
 inline: true,
-},
-{
 name: '  Laufen',
 value: laufenAktiv ? '  Aktiv' : '  Aus',
 inline: true,
-},
-{
 name: '  TPA',
 value: '  FrozenBoar16433 automatisch annehmen → danach /sethome afk',
 inline: false,
-},
-{
 name: '  Geldziel',
 value: MONEY_TARGET,
 inline: true,
-},
-{
+)
 name: '  Zugriff',
 value: 'Serverbesitzer + freigeschaltete Controller.',
 inline: true,
-}
-)
 .setFooter({ text: 'LiveSinger9275 • BlockBande' });
 }
 function panelButtons() {
 const row1 = new ActionRowBuilder().addComponents(
 new ButtonBuilder()
 .setCustomId('toggle_bot')
-.setLabel('Ein / Aus')
+.setLabel('Anmelden / Aus')
 .setEmoji('  ')
 .setStyle(ButtonStyle.Primary),
 new ButtonBuilder()
@@ -789,17 +794,34 @@ components: panelButtons(),
 console.error('[DASHBOARD] Update-Fehler:', safeError(err));
 }
 }
-async function dashboardNachNeustartLaden() {
-const messageId = String(process.env.DASHBOARD_MESSAGE_ID || '').trim();
-if (!messageId) return;
+async function dashboardImTextkanalSenden() {
 try {
 const channel = await discord.channels.fetch(MC_CHANNEL_ID);
-if (!channel || !channel.isTextBased()) return;
+if (!channel || !channel.isTextBased()) {
+console.error('[DASHBOARD] MC_CHANNEL_ID ist kein Textkanal oder nicht erreichbar.');
+return;
+}
+const messageId = String(process.env.DASHBOARD_MESSAGE_ID || '').trim();
+if (messageId) {
+try {
 dashboardMessage = await channel.messages.fetch(messageId);
 await dashboardAktualisieren();
 console.log('[DASHBOARD] Bestehendes Dashboard wiederhergestellt.');
+return;
 } catch (err) {
-console.log('[DASHBOARD] Dashboard konnte nicht wiederhergestellt werden:', safeError(err));
+console.log('[DASHBOARD] Gespeichertes Dashboard nicht gefunden – neues wird gesendet.');
+}
+}
+dashboardMessage = await channel.send({
+content: '  **FrozenRun / LiveSinger9275**\nMinecraft-Chat wird hier angezeigt. Die Minecraft-Anmeldung startet **erst nach Klick auf „Anmelden / Aus“**.',
+embeds: [dashboardEmbed()],
+components: panelButtons(),
+});
+console.log('[DASHBOARD] Dashboard und Minecraft-Chat-Kanal eingerichtet.');
+console.log(`[DASHBOARD] Neue Dashboard Message ID: ${dashboardMessage.id}`);
+console.log('[DASHBOARD] Diese ID kannst du als DASHBOARD_MESSAGE_ID in Render speichern.');
+} catch (err) {
+console.error('[DASHBOARD] Konnte Dashboard nicht in den Textkanal senden:', safeError(err));
 }
 }
 // ============================================================
@@ -880,7 +902,7 @@ console.log('[DISCORD] Slash Commands registriert.');
 console.error('[DISCORD] Slash-Registrierung fehlgeschlagen:', safeError(err));
 }
 dashboardTimerStarten();
-await dashboardNachNeustartLaden();
+await dashboardImTextkanalSenden();
 });
 // ============================================================
 // INTERACTIONS
@@ -996,13 +1018,13 @@ if (mcOnline) {
 minecraftStoppen();
 await dashboardAktualisieren();
 await interaction.reply({
-content: '  LiveSinger9275 wurde ausgeschaltet.',
+content: '  LiveSinger9275 wurde ausgeschaltet und die Minecraft-Verbindung beendet.',
 flags: MessageFlags.Ephemeral,
 });
 } else {
 minecraftStarten();
 await interaction.reply({
-content: '  LiveSinger9275 wird gestartet.',
+content: '  Minecraft-Anmeldung wurde gestartet. Falls ein Microsoft-Code erscheint, folge dem Link und gib den Code ein.',
 flags: MessageFlags.Ephemeral,
 });
 }
