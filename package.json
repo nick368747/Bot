@@ -1,17 +1,19 @@
 {
-  "name": "discord-minecraft-bot",
+  "name": "frozenrun",
   "version": "1.0.0",
-  "description": "Discord Bot für FrozenRun auf BlockBande",
-  "main": "index.js",
+  "private": true,
+  "description": "FrozenRun Discord + Minecraft Bedrock Bot",
+  "main": "FrozenRun_Render_optimiert.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node FrozenRun_Render_optimiert.js",
+    "check": "node --check FrozenRun_Render_optimiert.js"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   },
   "dependencies": {
-    "discord.js": "^14.15.3",
-    "bedrock-protocol": "^3.60.1",
-    "prismarine-auth": "^3.1.1"
+    "bedrock-protocol": "latest",
+    "discord.js": "latest",
+    "prismarine-auth": "latest"
   }
 }
