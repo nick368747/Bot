@@ -1,19 +1,17 @@
 {
   "name": "frozenrun",
   "version": "1.0.0",
-  "private": true,
   "description": "FrozenRun Discord + Minecraft Bedrock Bot",
-  "main": "FrozenRun_Render_optimiert.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node FrozenRun_Render_optimiert.js",
-    "check": "node --check FrozenRun_Render_optimiert.js"
+    "start": "node index.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=20"
   },
   "dependencies": {
-    "bedrock-protocol": "latest",
-    "discord.js": "latest",
-    "prismarine-auth": "latest"
+    "discord.js": "^14.25.1",
+    "bedrock-protocol": "^3.60.1",
+    "prismarine-auth": "^3.1.1"
   }
 }
