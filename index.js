@@ -29,11 +29,14 @@ path.join(
 process.cwd(),
 ".minecraft"
 );
-if (process.env.RESET_MINECRAFT_LOGIN === "true") {
-  try {
+if (
+"true"
+) {
+process.env.RESET_MINECRAFT_LOGIN ===
+try {
 fs.rmSync(
-{
 minecraftProfilOrdner,
+{
 recursive: true,
 force: true
 }
@@ -85,29 +88,20 @@ const MC_AUTH_DEVICE =
 const webServer =
 http.createServer(
 (req, res) => {
-if (req.url === "/health") {
-res.writeHead(
-200,
-{
-"Content-Type":
-"application/json; charset=utf-8"
-}
-);
-res.end(
-JSON.stringify({
-ok: true,
-minecraftOnline: mcOnline
-})
-);
-return;
-}
-res.writeHead(
-200,
-{
+const url =
+String(req.url || "/").split("?")[0];
+if (url === "/health") {
+res.writeHead(200, {
 "Content-Type":
 "text/plain; charset=utf-8"
+});
+res.end("OK");
+return;
 }
-);
+res.writeHead(200, {
+"Content-Type":
+"text/plain; charset=utf-8"
+});
 res.end(
 "LiveSinger9275 Discord/Minecraft Bot läuft."
 );
@@ -128,9 +122,7 @@ console.log(
 const discord =
 new Client({
 intents: [
-GatewayIntentBits.Guilds,
-GatewayIntentBits.GuildMessages,
-GatewayIntentBits.MessageContent
+GatewayIntentBits.Guilds
 ]
 });
 // ==================================================
@@ -149,8 +141,6 @@ let manuellGestoppt =
 true;
 let reconnectTimer =
 null;
-let minecraftVerbindungsVersuchAktiv =
-false;
 let minecraftUuid =
 null;
 let playerEntityId =
@@ -220,6 +210,12 @@ return "0 $";
 }
 return `${Math.floor(Number(betrag)).toLocaleString("de-DE")} $`;
 }
+function formatKoordinaten() {
+const x = Number(aktuelleKoordinaten.x);
+const y = Number(aktuelleKoordinaten.y);
+const z = Number(aktuelleKoordinaten.z);
+return `${Number.isFinite(x) ? Math.round(x) : 0}, ${Number.isFinite(y) ? Math.round(y) : 0}, ${Number.isFinite(z) ? Math.
+round(z) : 0}`;
 }
 // ==================================================
 // SERVER OWNER
@@ -259,11 +255,6 @@ text
 if (!text) {
 return null;
 }
-function formatKoordinaten() {
-const x = Number(aktuelleKoordinaten.x);
-const y = Number(aktuelleKoordinaten.y);
-const z = Number(aktuelleKoordinaten.z);
-return `${Number.isFinite(x) ? Math.round(x) : 0}, ${Number.isFinite(y) ? Math.round(y) : 0}, ${Number.isFinite(z) ? Math.round(z) : 0}`;
 const clean =
 String(text).replace(
 /\u00a0/g,
@@ -325,17 +316,7 @@ wert
 // ==================================================
 // MINECRAFT COMMAND
 // ==================================================
-let minecraftCommandQueue = Promise.resolve();
-function minecraftCommandQueued(command) {
-const task = minecraftCommandQueue.then(
-() => minecraftCommand(command)
-);
-minecraftCommandQueue = task.catch(
-() => {}
-);
-return task;
-}
-function minecraftCommand(
+function minecraftCommandDirekt(
 command
 ) {
 return new Promise(
@@ -523,6 +504,46 @@ reject(err);
 );
 }
 // ==================================================
+// MINECRAFT COMMAND QUEUE
+// ==================================================
+const minecraftCommandQueue = [];
+let minecraftCommandQueueLaeuft = false;
+function minecraftCommand(command) {
+return new Promise((resolve, reject) => {
+minecraftCommandQueue.push({
+command,
+resolve,
+reject
+});
+minecraftCommandQueueVerarbeiten();
+});
+}
+async function minecraftCommandQueueVerarbeiten() {
+if (minecraftCommandQueueLaeuft) {
+return;
+}
+minecraftCommandQueueLaeuft = true;
+try {
+while (minecraftCommandQueue.length > 0) {
+const job = minecraftCommandQueue.shift();
+if (!job) {
+continue;
+}
+try {
+const result = await minecraftCommandDirekt(job.command);
+job.resolve(result);
+} catch (err) {
+job.reject(err);
+}
+}
+} finally {
+minecraftCommandQueueLaeuft = false;
+if (minecraftCommandQueue.length > 0) {
+void minecraftCommandQueueVerarbeiten();
+}
+}
+}
+// ==================================================
 // GELD AKTUALISIEREN
 // ==================================================
 async function geldAktualisieren() {
@@ -534,7 +555,7 @@ return null;
 }
 try {
 const output =
-await minecraftCommandQueued(
+await minecraftCommand(
 "/money"
 );
 if (!output) {
@@ -656,7 +677,7 @@ dx;
 aktuelleKoordinaten.z +=
 dz;
 try {
-await minecraftCommandQueued(
+await minecraftCommand(
 `/tp @s ${aktuelleKoordinaten.x.toFixed(
 2
 )} ${aktuelleKoordinaten.y.toFixed(
@@ -672,21 +693,13 @@ err?.message || err
 );
 }
 },
-1500
+3000
 );
 }
 // ==================================================
 // MINECRAFT VERBINDEN
 // ==================================================
 function minecraftVerbinden() {
-if (minecraftVerbindungsVersuchAktiv) {
-console.log(
-"Minecraft-Verbindungsversuch läuft bereits."
-);
-return;
-}
-minecraftVerbindungsVersuchAktiv =
-true;
 if (reconnectTimer) {
 clearTimeout(
 reconnectTimer
@@ -776,8 +789,6 @@ minecraftAuthflow
 mcBot.on(
 "start_game",
 async packet => {
-minecraftVerbindungsVersuchAktiv =
-false;
 mcOnline =
 true;
 minecraftStartzeit =
@@ -839,14 +850,6 @@ packet
 const username =
 packet.source_name ||
 "";
-const normalisierteUsername =
-String(username)
-.replace(/^!/, "")
-.toLowerCase();
-const normalisierterTpaName =
-String(TPA_PLAYER_NAME)
-.replace(/^!/, "")
-.toLowerCase();
 let message =
 packet.message ||
 "";
@@ -884,18 +887,28 @@ username ||
 // ==============================================
 // TPA AUTOMATIK
 // ==============================================
+const normalisierterUsername =
+String(username)
+.trim()
+.replace(/^!/, "")
+.toLowerCase();
+const normalisierterTpaSpieler =
+String(TPA_PLAYER_NAME)
+.trim()
+.replace(/^!/, "")
+.toLowerCase();
 if (
-normalisierteUsername ===
-normalisierterTpaName &&
-/\/(?:tpa|tpahere)\b/i.test(
-message
+normalisierterUsername ===
+normalisierterTpaSpieler &&
+/\/tpa(?:here)?\b/i.test(
+String(message)
 )
 ) {
 console.log(
 `TPA von ${TPA_PLAYER_NAME} erkannt.`
 );
 try {
-await minecraftCommandQueued(
+await minecraftCommand(
 "/tpaccept"
 );
 console.log(
@@ -917,7 +930,7 @@ if (
 return;
 }
 try {
-await minecraftCommandQueued(
+await minecraftCommand(
 "/sethome afk"
 );
 console.log(
@@ -1023,8 +1036,6 @@ reconnectTimer
 console.log(
 "Automatischer Reconnect in 30 Sekunden..."
 );
-minecraftVerbindungsVersuchAktiv =
-false;
 reconnectTimer =
 setTimeout(
 () => {
@@ -1042,8 +1053,6 @@ dashboardAktualisieren();
 }
 );
 } catch (err) {
-minecraftVerbindungsVersuchAktiv =
-false;
 console.log(
 "Minecraft Verbindungsfehler:",
 err?.message ||
@@ -1089,8 +1098,6 @@ mcOnline =
 false;
 minecraftStartzeit =
 null;
-minecraftVerbindungsVersuchAktiv =
-false;
 minecraftUuid =
 null;
 playerEntityId =
@@ -1126,8 +1133,6 @@ mcOnline =
 false;
 minecraftStartzeit =
 null;
-minecraftVerbindungsVersuchAktiv =
-false;
 minecraftUuid =
 null;
 playerEntityId =
@@ -1155,7 +1160,7 @@ throw new Error(
 "LiveSinger9275 ist offline."
 );
 }
-await minecraftCommandQueued(
+await minecraftCommand(
 "/home afk"
 );
 }
@@ -1220,8 +1225,8 @@ geldBetragNormalisieren(
 betragEingabe
 );
 if (
-) {
 betrag === null
+) {
 throw new Error(
 "Ungültiger Geldbetrag."
 );
@@ -1258,7 +1263,7 @@ console.log(
 payCommand
 );
 const output =
-await minecraftCommandQueued(
+await minecraftCommand(
 payCommand
 );
 console.log(
@@ -1279,7 +1284,7 @@ console.log(
 "Sende Pay-Bestätigung..."
 );
 const confirmOutput =
-await minecraftCommandQueued(
+await minecraftCommand(
 `${payCommand} confirm`
 );
 console.log(
@@ -1763,7 +1768,7 @@ minecraftBefehl =
 }
 try {
 const output =
-await minecraftCommandQueued(
+await minecraftCommand(
 minecraftBefehl
 );
 let antwort =
@@ -1799,9 +1804,9 @@ return;
 // /controller
 // ==============================================
 if (
-) {
 command ===
 "controller"
+) {
 if (
 !istServerOwner(
 interaction
@@ -1821,9 +1826,9 @@ interaction.options.getSubcommand();
 // CONTROLLER HINZUFÜGEN
 // ============================================
 if (
-) {
 subcommand ===
 "hinzufuegen"
+) {
 const user =
 interaction.options.getUser(
 "user",
@@ -1874,14 +1879,14 @@ if (
 0
 ) {
 erlaubteController.size ===
-await interaction.reply({
-content:
-flags:
 "  Es sind keine zusätzlichen Controller eingetragen.",
 MessageFlags.Ephemeral
 });
 return;
 }
+await interaction.reply({
+content:
+flags:
 const controllerListe =
 Array.from(
 erlaubteController
@@ -1928,9 +1933,9 @@ return;
 // EIN / AUS
 // ================================================
 if (
-) {
 interaction.customId ===
 "toggle_bot"
+) {
 if (
 ) {
 mcOnline
@@ -2211,40 +2216,44 @@ discord.login(
 DISCORD_TOKEN
 );
 // ==================================================
-// PROZESS FEHLER
+// GRACEFUL SHUTDOWN
 // ==================================================
-let shutdownGestartet =
-false;
 function sauberBeenden(signal) {
-if (shutdownGestartet) {
-return;
+console.log(`${signal} empfangen. Bot wird beendet...`);
+manuellGestoppt = true;
+laufenStoppen();
+if (reconnectTimer) {
+clearTimeout(reconnectTimer);
+reconnectTimer = null;
 }
-shutdownGestartet =
-true;
-console.log(
-`${signal}: Bot wird sauber beendet...`
-);
-try {
-minecraftStoppen();
-} catch (err) {
-console.log(
-"Minecraft beim Beenden:",
-err?.message || err
-);
+if (dashboardUptimeTimer) {
+clearInterval(dashboardUptimeTimer);
+dashboardUptimeTimer = null;
 }
+if (dashboardGeldTimer) {
+clearInterval(dashboardGeldTimer);
+dashboardGeldTimer = null;
+}
+if (mcBot) {
 try {
-webServer.close();
+mcBot.disconnect();
 } catch {}
+}
+mcBot = null;
+mcOnline = false;
 try {
 discord.destroy();
 } catch {}
-setTimeout(
-() => process.exit(0),
-1000
-).unref();
+webServer.close(() => {
+process.exit(0);
+});
+setTimeout(() => process.exit(0), 5000).unref();
 }
-process.on("SIGTERM", () => sauberBeenden("SIGTERM"));
-process.on("SIGINT", () => sauberBeenden("SIGINT"));
+process.once("SIGTERM", () => sauberBeenden("SIGTERM"));
+process.once("SIGINT", () => sauberBeenden("SIGINT"));
+// ==================================================
+// PROZESS FEHLER
+// ==================================================
 process.on(
 "unhandledRejection",
 err => {
