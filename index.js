@@ -29,27 +29,7 @@ path.join(
 process.cwd(),
 ".minecraft"
 );
-if (
-"true"
-) {
-process.env.RESET_MINECRAFT_LOGIN ===
-try {
-fs.rmSync(
-minecraftProfilOrdner,
-{
-recursive: true,
-force: true
-}
-);
-console.log(
-"Minecraft-Login wurde zurückgesetzt."
-);
-} catch (err) {
-console.log(
-"Fehler beim Zurücksetzen des Minecraft-Logins:",
-err?.message || err
-);
-}
+SyntaxError: Unexpected token 'try'
 }
 // ==================================================
 // KONFIGURATION
