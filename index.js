@@ -29,11 +29,8 @@ path.join(
 process.cwd(),
 ".minecraft"
 );
-if (
-"true"
-) {
-process.env.RESET_MINECRAFT_LOGIN ===
-try {
+if (process.env.RESET_MINECRAFT_LOGIN === "true") {
+  try {
 fs.rmSync(
 {
 minecraftProfilOrdner,
