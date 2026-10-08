@@ -689,7 +689,125 @@ $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').c
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
 refresh();setInterval(refresh,2000);
-</script></body></html>`;
+</script>
+<style>
+/* FrozenRun: Tabs + Steuerungs-Layout */
+.fr-tabs{display:flex;gap:8px;margin:0 0 14px;border-bottom:1px solid #24314b;padding-bottom:8px}
+.fr-tab{background:transparent;border:1px solid transparent;color:#8e9ab5;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer}
+.fr-tab.active{background:#171f35;color:#fff;border-color:#33415f}
+.fr-panel{display:none}
+.fr-panel.active{display:block}
+.fr-control-layout{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px;align-items:start}
+.fr-command textarea{width:100%;min-height:120px;resize:vertical;background:#0d1424;color:#fff;border:1px solid #2c3957;border-radius:12px;padding:12px;font:inherit}
+.fr-command .forms{grid-template-columns:1fr}
+.fr-note{font-size:13px;color:#8290ad;line-height:1.45;margin-top:8px}
+@media(max-width:950px){.fr-control-layout{grid-template-columns:1fr 1fr}.fr-command{grid-column:1/-1}}
+@media(max-width:700px){.fr-control-layout{grid-template-columns:1fr}.fr-command{grid-column:auto}}
+</style>
+<script>
+(function(){
+  const wrap=document.querySelector('.wrap');
+  if(!wrap || wrap.dataset.frLayoutReady==='1') return;
+  wrap.dataset.frLayoutReady='1';
+
+  const top=wrap.querySelector('.top');
+  const stats=wrap.querySelector('.grid');
+  const sections=Array.from(wrap.querySelectorAll('.card.section'));
+  const byTitle=function(title){
+    return sections.find(function(card){
+      const h=card.querySelector('h2');
+      return h && h.textContent.trim().toLowerCase()===title.toLowerCase();
+    });
+  };
+
+  const chatCard=byTitle('Minecraft-Chat');
+  const controlCard=byTitle('Steuerung');
+  const moneyCard=byTitle('Geld senden');
+  const commandCard=byTitle('Minecraft-Befehl');
+  const eventsCard=byTitle('Ereignisse');
+
+  if(!top || !stats || !chatCard || !controlCard || !moneyCard || !commandCard || !eventsCard) return;
+
+  const tabs=document.createElement('nav');
+  tabs.className='fr-tabs';
+  tabs.setAttribute('aria-label','FrozenRun Bereiche');
+
+  const chatTab=document.createElement('button');
+  chatTab.type='button';
+  chatTab.className='fr-tab active';
+  chatTab.textContent='Chat';
+  chatTab.dataset.frTab='chat';
+
+  const controlTab=document.createElement('button');
+  controlTab.type='button';
+  controlTab.className='fr-tab';
+  controlTab.textContent='Steuerung';
+  controlTab.dataset.frTab='control';
+
+  tabs.append(chatTab,controlTab);
+  top.insertAdjacentElement('afterend',tabs);
+
+  const chatPanel=document.createElement('section');
+  chatPanel.className='fr-panel active';
+  chatPanel.id='fr-panel-chat';
+
+  const controlPanel=document.createElement('section');
+  controlPanel.className='fr-panel';
+  controlPanel.id='fr-panel-control';
+
+  const controlLayout=document.createElement('div');
+  controlLayout.className='fr-control-layout';
+
+  const dataCard=document.createElement('div');
+  dataCard.className='card';
+  const dataTitle=document.createElement('h2');
+  dataTitle.textContent='Daten';
+  dataTitle.style.marginTop='0';
+  dataCard.appendChild(dataTitle);
+  dataCard.appendChild(stats);
+
+  const commandTitle=commandCard.querySelector('h2');
+  if(commandTitle) commandTitle.textContent='Befehlszeile';
+  const commandInput=commandCard.querySelector('#commandInput');
+  if(commandInput) commandInput.placeholder='/spawn oder /money';
+
+  const note=document.createElement('div');
+  note.className='fr-note';
+  note.textContent='Befehle können mit oder ohne führendes / eingegeben werden.';
+  commandCard.classList.add('fr-command');
+  const commandForms=commandCard.querySelector('.forms');
+  if(commandForms) commandForms.insertAdjacentElement('afterend',note);
+
+  chatPanel.appendChild(chatCard);
+  controlLayout.appendChild(dataCard);
+  controlLayout.appendChild(controlCard);
+  controlLayout.appendChild(commandCard);
+  controlPanel.appendChild(controlLayout);
+  controlPanel.appendChild(moneyCard);
+  controlPanel.appendChild(eventsCard);
+
+  const auth=wrap.querySelector('#auth');
+  if(auth){
+    auth.insertAdjacentElement('afterend',chatPanel);
+    chatPanel.insertAdjacentElement('afterend',controlPanel);
+  }else{
+    tabs.insertAdjacentElement('afterend',chatPanel);
+    chatPanel.insertAdjacentElement('afterend',controlPanel);
+  }
+
+  function activate(name){
+    const chat=name==='chat';
+    chatTab.classList.toggle('active',chat);
+    controlTab.classList.toggle('active',!chat);
+    chatPanel.classList.toggle('active',chat);
+    controlPanel.classList.toggle('active',!chat);
+  }
+
+  chatTab.addEventListener('click',function(){activate('chat');});
+  controlTab.addEventListener('click',function(){activate('control');});
+})();
+</script>
+</body></html>`;
 // ============================================================
 // HTTP API
 // ============================================================
