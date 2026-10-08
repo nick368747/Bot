@@ -57,6 +57,7 @@ let reconnectTimer = null;
 let connecting = false;
 let connectionGeneration = 0;
 let aktuelleKoordinaten = { x: 0, y: 0, z: 0 };
+let aktuelleRotation = { yaw: 0, pitch: 0, headYaw: 0 };
 let aktuellesGeld = 0;
 let laufenAktiv = false;
 let laufenTimer = null;
@@ -216,6 +217,7 @@ money: aktuellesGeld,
 moneyFormatted: formatGeld(aktuellesGeld),
 coordinates: { ...aktuelleKoordinaten },
 coordinatesFormatted: formatKoordinaten(),
+rotation: { ...aktuelleRotation },
 running: laufenAktiv,
 auth: authInfo,
 error: letzterFehler,
@@ -383,6 +385,7 @@ mcOnline = false;
 minecraftStartzeit = null;
 minecraftUuid = null;
 playerEntityId = 0;
+aktuelleRotation = { yaw: 0, pitch: 0, headYaw: 0 };
 laufenStoppen();
 }
 function scheduleReconnect() {
@@ -470,12 +473,20 @@ addEvent(`TPA-Annahme: ${err.message}`, "error");
 }
 });
 client.on("move_player", packet => {
-if (!packet?.position) return;
+if (packet?.position) {
 aktuelleKoordinaten = {
 x: Number(packet.position.x) || 0,
 y: Number(packet.position.y) || 0,
 z: Number(packet.position.z) || 0
 };
+}
+if (packet) {
+aktuelleRotation = {
+yaw: Number(packet.yaw ?? packet.rotation?.yaw) || 0,
+pitch: Number(packet.pitch ?? packet.rotation?.pitch) || 0,
+headYaw: Number(packet.head_yaw ?? packet.rotation?.head_yaw ?? packet.yaw) || 0
+};
+}
 });
 client.on("error", err => {
 letzterFehler = err?.message || String(err);
@@ -691,6 +702,27 @@ key==='Enter')$('commandSend').click()});
 refresh();setInterval(refresh,2000);
 </script>
 <style>
+/* FrozenRun: Live-Bildschirm */
+.fr-screen{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px}
+.fr-viewer{position:relative;overflow:hidden;border:1px solid #263451;border-radius:18px;background:#070b14;min-height:430px}
+.fr-viewer canvas{display:block;width:100%;height:100%;min-height:430px;touch-action:none}
+.fr-view-overlay{position:absolute;inset:0;pointer-events:none}
+.fr-view-top{position:absolute;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;gap:10px;font-size:12px}
+.fr-view-badge{background:rgba(7,11,20,.78);border:1px solid #33415f;border-radius:10px;padding:8px 10px;backdrop-filter:blur(6px)}
+.fr-crosshair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%)}
+.fr-crosshair:before,.fr-crosshair:after{content:"";position:absolute;background:rgba(255,255,255,.75)}
+.fr-crosshair:before{width:18px;height:1px;left:0;top:9px}.fr-crosshair:after{height:18px;width:1px;left:9px;top:0}
+.fr-view-side .value{font-size:18px}
+.fr-view-note{font-size:13px;color:#8290ad;line-height:1.5}
+.fr-compass{height:120px;display:grid;place-items:center;border:1px solid #263451;border-radius:14px;background:#0d1424;margin-top:10px;position:relative;overflow:hidden}
+.fr-compass-ring{width:82px;height:82px;border:1px solid #455575;border-radius:50%;position:relative}
+.fr-compass-ring span{position:absolute;font-size:11px;color:#aab5cc;font-weight:800}
+.fr-compass-n{left:50%;top:5px;transform:translateX(-50%)}.fr-compass-s{left:50%;bottom:5px;transform:translateX(-50%)}
+.fr-compass-w{left:7px;top:50%;transform:translateY(-50%)}.fr-compass-e{right:7px;top:50%;transform:translateY(-50%)}
+.fr-compass-arrow{position:absolute;left:50%;top:50%;width:3px;height:34px;background:#ff707d;transform-origin:50% 100%;border-radius:3px 3px 0 0}
+@media(max-width:850px){.fr-screen{grid-template-columns:1fr}.fr-view-side{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.fr-view-side .card{min-width:0}.fr-compass{margin-top:0}}
+@media(max-width:560px){.fr-viewer,.fr-viewer canvas{min-height:320px}.fr-view-side{grid-template-columns:1fr}}
+
 /* FrozenRun: Tabs + Steuerungs-Layout */
 .fr-tabs{display:flex;gap:8px;margin:0 0 14px;border-bottom:1px solid #24314b;padding-bottom:8px}
 .fr-tab{background:transparent;border:1px solid transparent;color:#8e9ab5;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer}
@@ -728,7 +760,46 @@ refresh();setInterval(refresh,2000);
 
   if(!top || !stats || !chatCard || !controlCard || !moneyCard || !commandCard || !eventsCard) return;
 
-  const tabs=document.createElement('nav');
+  const screenTab=document.createElement('button');
+  screenTab.type='button';
+  screenTab.className='fr-tab';
+  screenTab.textContent='Bildschirm';
+  screenTab.dataset.frTab='screen';
+
+  const screenPanel=document.createElement('section');
+  screenPanel.className='fr-panel';
+  screenPanel.id='fr-panel-screen';
+  screenPanel.innerHTML = `
+    <div class="fr-screen">
+      <div class="fr-viewer">
+        <canvas id="fr-viewCanvas" aria-label="Live-Ansicht des Minecraft-Bots"></canvas>
+        <div class="fr-view-overlay">
+          <div class="fr-view-top">
+            <div class="fr-view-badge" id="fr-viewStatus">Warte auf Bot…</div>
+            <div class="fr-view-badge">Live</div>
+          </div>
+          <div class="fr-crosshair"></div>
+        </div>
+      </div>
+      <div class="fr-view-side">
+        <div class="card"><div class="label">Position</div><div id="fr-viewPos" class="value">0, 0, 0</div></div>
+        <div class="card"><div class="label">Blickrichtung</div><div id="fr-viewRot" class="value">0° / 0°</div></div>
+        <div class="card"><div class="label">Bot</div><div id="fr-viewBot" class="value">Offline</div></div>
+        <div class="card">
+          <div class="label">Kompass</div>
+          <div class="fr-compass">
+            <div class="fr-compass-ring">
+              <span class="fr-compass-n">N</span><span class="fr-compass-e">O</span>
+              <span class="fr-compass-s">S</span><span class="fr-compass-w">W</span>
+              <div id="fr-compassArrow" class="fr-compass-arrow"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card"><div class="label">Hinweis</div><div class="fr-view-note">Das ist eine browserbasierte Live-Ansicht der Bot-Perspektive. Eine pixelgenaue Minecraft-Aufnahme ist damit noch nicht enthalten; dafür müsste Minecraft zusätzlich gerendert und als Videostream übertragen werden.</div></div>
+      </div>
+    </div>
+  `;
+const tabs=document.createElement('nav');
   tabs.className='fr-tabs';
   tabs.setAttribute('aria-label','FrozenRun Bereiche');
 
@@ -744,7 +815,7 @@ refresh();setInterval(refresh,2000);
   controlTab.textContent='Steuerung';
   controlTab.dataset.frTab='control';
 
-  tabs.append(chatTab,controlTab);
+  tabs.append(chatTab,controlTab,screenTab);
   top.insertAdjacentElement('afterend',tabs);
 
   const chatPanel=document.createElement('section');
@@ -790,6 +861,7 @@ refresh();setInterval(refresh,2000);
   if(auth){
     auth.insertAdjacentElement('afterend',chatPanel);
     chatPanel.insertAdjacentElement('afterend',controlPanel);
+    controlPanel.insertAdjacentElement('afterend',screenPanel);
   }else{
     tabs.insertAdjacentElement('afterend',chatPanel);
     chatPanel.insertAdjacentElement('afterend',controlPanel);
@@ -797,14 +869,102 @@ refresh();setInterval(refresh,2000);
 
   function activate(name){
     const chat=name==='chat';
+    const control=name==='control';
+    const screen=name==='screen';
     chatTab.classList.toggle('active',chat);
-    controlTab.classList.toggle('active',!chat);
+    controlTab.classList.toggle('active',control);
+    screenTab.classList.toggle('active',screen);
     chatPanel.classList.toggle('active',chat);
-    controlPanel.classList.toggle('active',!chat);
+    controlPanel.classList.toggle('active',control);
+    screenPanel.classList.toggle('active',screen);
+    if(screen) window.dispatchEvent(new Event('resize'));
   }
 
   chatTab.addEventListener('click',function(){activate('chat');});
   controlTab.addEventListener('click',function(){activate('control');});
+  screenTab.addEventListener('click',function(){activate('screen');});
+const viewCanvas=document.getElementById('fr-viewCanvas');
+  const viewStatus=document.getElementById('fr-viewStatus');
+  const viewPos=document.getElementById('fr-viewPos');
+  const viewRot=document.getElementById('fr-viewRot');
+  const viewBot=document.getElementById('fr-viewBot');
+  const compassArrow=document.getElementById('fr-compassArrow');
+  let viewState={position:{x:0,y:0,z:0},rotation:{yaw:0,pitch:0,headYaw:0},online:false};
+  let viewAnimation=0;
+
+  function drawView(){
+    if(!viewCanvas) return;
+    const rect=viewCanvas.getBoundingClientRect();
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const w=Math.max(1,Math.floor(rect.width*dpr));
+    const h=Math.max(1,Math.floor(rect.height*dpr));
+    if(viewCanvas.width!==w||viewCanvas.height!==h){viewCanvas.width=w;viewCanvas.height=h;}
+    const ctx=viewCanvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const cw=rect.width,ch=rect.height;
+    const pitch=Math.max(-45,Math.min(45,Number(viewState.rotation.pitch)||0));
+    const horizon=ch*0.50 + pitch*2.1;
+    const sky=ctx.createLinearGradient(0,0,0,Math.max(horizon,1));
+    sky.addColorStop(0,'#182b4a');sky.addColorStop(1,'#78a4c9');
+    ctx.fillStyle=sky;ctx.fillRect(0,0,cw,ch);
+    ctx.fillStyle='#26351f';ctx.fillRect(0,horizon,cw,ch-horizon);
+
+    // Distant horizon bands.
+    ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=1;
+    for(let i=1;i<7;i++){
+      const yy=horizon+(ch-horizon)*(i/7);
+      ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(cw,yy);ctx.stroke();
+    }
+    const yaw=(Number(viewState.rotation.yaw)||0)*Math.PI/180;
+    const gridSize=32;
+    for(let i=-8;i<=8;i++){
+      const offset=i*gridSize;
+      const spread=Math.abs(i)*0.018+0.05;
+      const x=cw/2 + offset;
+      ctx.strokeStyle='rgba(150,190,120,.22)';
+      ctx.beginPath();ctx.moveTo(cw/2,horizon);ctx.lineTo(x*1.05,horizon+(ch-horizon)*0.95);ctx.stroke();
+      if(i!==0){
+        ctx.strokeStyle='rgba(90,110,80,.28)';
+        ctx.beginPath();ctx.moveTo(cw/2+offset*0.25,horizon+20);ctx.lineTo(cw/2+offset*(1.8+spread),ch);ctx.stroke();
+      }
+    }
+    // Simple block silhouettes. They are anchored to the live position so the view moves with the bot.
+    const seed=Math.floor(Math.abs(viewState.position.x*31+viewState.position.z*17));
+    for(let i=0;i<18;i++){
+      const x=((seed+i*73)%1000)/1000*cw;
+      const base=horizon+(ch-horizon)*(0.18+((i*37)%70)/100);
+      const size=10+((i*29)%30);
+      ctx.fillStyle=i%3===0?'rgba(74,95,54,.82)':'rgba(87,78,60,.72)';
+      ctx.fillRect(x,base-size,size,size);
+    }
+    // Direction marker.
+    ctx.strokeStyle='rgba(255,255,255,.35)';
+    ctx.beginPath();ctx.moveTo(cw/2-55,horizon);ctx.lineTo(cw/2+55,horizon);ctx.stroke();
+
+    viewAnimation=requestAnimationFrame(drawView);
+  }
+  async function refreshView(){
+    try{
+      const r=await fetch('/api/view',{cache:'no-store'});
+      if(r.status===401){location.href='/login';return;}
+      const d=await r.json();
+      viewState=d;
+      const p=d.position||{x:0,y:0,z:0};
+      const ro=d.rotation||{yaw:0,pitch:0};
+      viewPos.textContent=[p.x,p.y,p.z].map(v=>Math.round(Number(v)||0)).join(', ');
+      viewRot.textContent=Math.round(Number(ro.yaw)||0)+'° / '+Math.round(Number(ro.pitch)||0)+'°';
+      viewBot.textContent=d.online?'Online':'Offline';
+      viewStatus.textContent=d.online?'Bot verbunden · Live':'Bot offline';
+      const yaw=Number(ro.yaw)||0;
+      compassArrow.style.transform='translate(-50%,-100%) rotate('+yaw+'deg)';
+    }catch(e){
+      viewStatus.textContent='Ansicht nicht erreichbar';
+    }
+  }
+  window.addEventListener('resize',function(){drawView();});
+  drawView();
+  refreshView();
+  setInterval(refreshView,500);
 })();
 </script>
 </body></html>`;
@@ -851,6 +1011,17 @@ return json(res, 400, { ok: false, error: err.message });
 if (req.method === "GET" && url === "/api/status") {
 if (!requireSession(req, res)) return;
 return json(res, 200, publicStatus());
+}
+if (req.method === "GET" && url === "/api/view") {
+if (!requireSession(req, res)) return;
+return json(res, 200, {
+ok: true,
+online: mcOnline,
+position: { ...aktuelleKoordinaten },
+rotation: { ...aktuelleRotation },
+username: MC_USERNAME,
+timestamp: Date.now()
+});
 }
 if (req.method === "POST" && url === "/api/logout") {
 const token = getCookies(req).frozenrun_session;
