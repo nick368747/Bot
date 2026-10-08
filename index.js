@@ -1056,7 +1056,7 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
 
       worldGroup=new three.Group();
       scene.add(worldGroup);
-      const surfaceGroup=new three.Group();
+      surfaceGroup=new three.Group();
       worldGroup.add(surfaceGroup);
 
       const cubeGeo=new three.BoxGeometry(1,1,1);
