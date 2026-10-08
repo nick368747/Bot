@@ -1,18 +1,21 @@
 {
-"name": "frozenrun-web",
-"version": "2.0.0",
-"private": true,
-"description": "FrozenRun Minecraft Bedrock Bot mit Web-Dashboard ohne Discord-Steuerung",
-"main": "index.js",
-"scripts": {
-"start": "node index.js",
-"check": "node --check index.js"
-},
-"engines": {
-"node": ">=22"
-},
-"dependencies": {
-"bedrock-protocol": "3.60.1",
-"prismarine-auth": "3.1.1"
-}
+  "name": "frozenrun-web",
+  "version": "2.0.0",
+  "private": true,
+  "description": "FrozenRun Minecraft Bedrock Bot mit Web-Dashboard ohne Discord-Steuerung",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "bedrock-protocol": "3.60.1",
+    "prismarine-auth": "3.1.1",
+    "prismarine-chunk": "1.41.0",
+    "prismarine-registry": "1.1.0",
+    "vec3": "0.1.3"
+  }
 }
