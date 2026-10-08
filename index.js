@@ -703,16 +703,25 @@ refresh();setInterval(refresh,2000);
 </script>
 <style>
 /* FrozenRun: Live-Bildschirm */
-.fr-screen{width:100%}
-.fr-viewer{position:relative;overflow:hidden;border:1px solid #263451;border-radius:18px;background:#070b14;min-height:560px}
-.fr-viewer canvas{display:block;width:100%;height:100%;min-height:560px;touch-action:none}
+.fr-screen{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px}
+.fr-viewer{position:relative;overflow:hidden;border:1px solid #263451;border-radius:18px;background:#070b14;min-height:430px}
+.fr-viewer canvas{display:block;width:100%;height:100%;min-height:430px;touch-action:none}
 .fr-view-overlay{position:absolute;inset:0;pointer-events:none}
 .fr-view-top{position:absolute;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;gap:10px;font-size:12px}
 .fr-view-badge{background:rgba(7,11,20,.78);border:1px solid #33415f;border-radius:10px;padding:8px 10px;backdrop-filter:blur(6px)}
 .fr-crosshair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%)}
-.fr-crosshair:before,.fr-crosshair:after{content:"";position:absolute;background:rgba(255,255,255,.8)}
+.fr-crosshair:before,.fr-crosshair:after{content:"";position:absolute;background:rgba(255,255,255,.75)}
 .fr-crosshair:before{width:18px;height:1px;left:0;top:9px}.fr-crosshair:after{height:18px;width:1px;left:9px;top:0}
-@media(max-width:560px){.fr-viewer,.fr-viewer canvas{min-height:360px}}
+.fr-view-side .value{font-size:18px}
+.fr-view-note{font-size:13px;color:#8290ad;line-height:1.5}
+.fr-compass{height:120px;display:grid;place-items:center;border:1px solid #263451;border-radius:14px;background:#0d1424;margin-top:10px;position:relative;overflow:hidden}
+.fr-compass-ring{width:82px;height:82px;border:1px solid #455575;border-radius:50%;position:relative}
+.fr-compass-ring span{position:absolute;font-size:11px;color:#aab5cc;font-weight:800}
+.fr-compass-n{left:50%;top:5px;transform:translateX(-50%)}.fr-compass-s{left:50%;bottom:5px;transform:translateX(-50%)}
+.fr-compass-w{left:7px;top:50%;transform:translateY(-50%)}.fr-compass-e{right:7px;top:50%;transform:translateY(-50%)}
+.fr-compass-arrow{position:absolute;left:50%;top:50%;width:3px;height:34px;background:#ff707d;transform-origin:50% 100%;border-radius:3px 3px 0 0}
+@media(max-width:850px){.fr-screen{grid-template-columns:1fr}.fr-view-side{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.fr-view-side .card{min-width:0}.fr-compass{margin-top:0}}
+@media(max-width:560px){.fr-viewer,.fr-viewer canvas{min-height:320px}.fr-view-side{grid-template-columns:1fr}}
 
 /* FrozenRun: Tabs + Steuerungs-Layout */
 .fr-tabs{display:flex;gap:8px;margin:0 0 14px;border-bottom:1px solid #24314b;padding-bottom:8px}
@@ -720,8 +729,9 @@ refresh();setInterval(refresh,2000);
 .fr-tab.active{background:#171f35;color:#fff;border-color:#33415f}
 .fr-panel{display:none}
 .fr-panel.active{display:block}
-.fr-control-layout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
-.fr-command .forms{grid-template-columns:1fr auto}
+.fr-control-layout{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px;align-items:start}
+.fr-command textarea{width:100%;min-height:120px;resize:vertical;background:#0d1424;color:#fff;border:1px solid #2c3957;border-radius:12px;padding:12px;font:inherit}
+.fr-command .forms{grid-template-columns:1fr}
 .fr-note{font-size:13px;color:#8290ad;line-height:1.45;margin-top:8px}
 @media(max-width:950px){.fr-control-layout{grid-template-columns:1fr 1fr}.fr-command{grid-column:1/-1}}
 @media(max-width:700px){.fr-control-layout{grid-template-columns:1fr}.fr-command{grid-column:auto}}
@@ -759,8 +769,8 @@ refresh();setInterval(refresh,2000);
   const screenPanel=document.createElement('section');
   screenPanel.className='fr-panel';
   screenPanel.id='fr-panel-screen';
-  screenPanel.innerHTML = "<div class=\"fr-screen\"><div class=\"fr-viewer\"><canvas id=\"fr-viewCanvas\" aria-label=\"3D-Ansicht des Minecraft-Bots\"></canvas><div class=\"fr-view-overlay\"><div class=\"fr-view-top\"><div class=\"fr-view-badge\" id=\"fr-viewStatus\">Warte auf Bot…</div><div class=\"fr-view-badge\">3D · Live</div></div><div class=\"fr-crosshair\"></div></div></div></div>";
-  const tabs=document.createElement('nav');
+  screenPanel.innerHTML = "\n    <div class=\"fr-screen\">\n      <div class=\"fr-viewer\">\n        <canvas id=\"fr-viewCanvas\" aria-label=\"Live-Ansicht des Minecraft-Bots\"></canvas>\n        <div class=\"fr-view-overlay\">\n          <div class=\"fr-view-top\">\n            <div class=\"fr-view-badge\" id=\"fr-viewStatus\">Warte auf Bot…</div>\n            <div class=\"fr-view-badge\">Live</div>\n          </div>\n          <div class=\"fr-crosshair\"></div>\n        </div>\n      </div>\n      <div class=\"fr-view-side\">\n        <div class=\"card\"><div class=\"label\">Position</div><div id=\"fr-viewPos\" class=\"value\">0, 0, 0</div></div>\n        <div class=\"card\"><div class=\"label\">Blickrichtung</div><div id=\"fr-viewRot\" class=\"value\">0° / 0°</div></div>\n        <div class=\"card\"><div class=\"label\">Bot</div><div id=\"fr-viewBot\" class=\"value\">Offline</div></div>\n        <div class=\"card\">\n          <div class=\"label\">Kompass</div>\n          <div class=\"fr-compass\">\n            <div class=\"fr-compass-ring\">\n              <span class=\"fr-compass-n\">N</span><span class=\"fr-compass-e\">O</span>\n              <span class=\"fr-compass-s\">S</span><span class=\"fr-compass-w\">W</span>\n              <div id=\"fr-compassArrow\" class=\"fr-compass-arrow\"></div>\n            </div>\n          </div>\n        </div>\n        <div class=\"card\"><div class=\"label\">Hinweis</div><div class=\"fr-view-note\">Das ist eine browserbasierte Live-Ansicht der Bot-Perspektive. Eine pixelgenaue Minecraft-Aufnahme ist damit noch nicht enthalten; dafür müsste Minecraft zusätzlich gerendert und als Videostream übertragen werden.</div></div>\n      </div>\n    </div>\n  ";
+const tabs=document.createElement('nav');
   tabs.className='fr-tabs';
   tabs.setAttribute('aria-label','FrozenRun Bereiche');
 
@@ -846,6 +856,10 @@ refresh();setInterval(refresh,2000);
   screenTab.addEventListener('click',function(){activate('screen');});
 const viewCanvas=document.getElementById('fr-viewCanvas');
   const viewStatus=document.getElementById('fr-viewStatus');
+  const viewPos=document.getElementById('fr-viewPos');
+  const viewRot=document.getElementById('fr-viewRot');
+  const viewBot=document.getElementById('fr-viewBot');
+  const compassArrow=document.getElementById('fr-compassArrow');
   let viewState={position:{x:0,y:0,z:0},rotation:{yaw:0,pitch:0,headYaw:0},online:false};
   let three=null,scene=null,camera=null,renderer=null,worldGroup=null,botMarker=null,raf=0;
 
@@ -969,7 +983,12 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
       viewState=d;
       const p=d.position||{x:0,y:0,z:0};
       const ro=d.rotation||{yaw:0,pitch:0};
+      viewPos.textContent=[p.x,p.y,p.z].map(v=>Math.round(Number(v)||0)).join(', ');
+      viewRot.textContent=Math.round(Number(ro.yaw)||0)+'° / '+Math.round(Number(ro.pitch)||0)+'°';
+      viewBot.textContent=d.online?'Online':'Offline';
       viewStatus.textContent=d.online?'3D-Ansicht · Live':'3D-Ansicht · Bot offline';
+      const yaw=Number(ro.yaw)||0;
+      compassArrow.style.transform='translate(-50%,-100%) rotate('+yaw+'deg)';
     }catch(e){
       viewStatus.textContent='Ansicht nicht erreichbar';
     }
