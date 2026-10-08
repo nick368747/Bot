@@ -4,6 +4,9 @@ const path = require("path");
 const crypto = require("crypto");
 const bedrock = require("bedrock-protocol");
 const { Authflow, Titles } = require("prismarine-auth");
+const prismarineChunk = require("prismarine-chunk");
+const prismarineRegistry = require("prismarine-registry");
+const { Vec3 } = require("vec3");
 // ============================================================
 // FrozenRun – Web-Version ohne Discord
 // ============================================================
@@ -67,6 +70,156 @@ let authInfo = null;
 let letzterFehler = null;
 const chatLog = [];
 const eventLog = [];
+// Tatsächliche Bedrock-Welt für die Bildschirm-Ansicht.
+// Die Browser-Ansicht verwendet daraus die echten Blockpositionen statt einer Demo-Welt.
+const worldChunks = new Map();
+const worldSurfaces = new Map();
+let worldChunkClass = null;
+let worldRegistry = null;
+let worldParserVersion = null;
+let worldParserError = null;
+function worldChunkKey(x, z) { return `${x},${z}`; }
+function worldParserVersionFor(clientVersion) {
+  const forced = String(process.env.BEDROCK_WORLD_VERSION || "").trim();
+  if (forced) return forced.startsWith("bedrock_") ? forced : `bedrock_${forced}`;
+  const v = String(clientVersion || "");
+  if (/^1\.21\./.test(v)) return `bedrock_${v}`;
+  return "bedrock_1.21.130";
+}
+function ensureWorldParser(clientVersion) {
+  if (worldChunkClass && worldRegistry) return true;
+  const version = worldParserVersionFor(clientVersion);
+  try {
+    worldRegistry = prismarineRegistry(version);
+    worldChunkClass = prismarineChunk(worldRegistry);
+    worldParserVersion = version;
+    worldParserError = null;
+    addEvent(`3D-Weltparser aktiv: ${version}.`, "info");
+    return true;
+  } catch (err) {
+    worldParserError = err?.message || String(err);
+    addEvent(`3D-Weltparser konnte nicht geladen werden: ${worldParserError}`, "error");
+    return false;
+  }
+}
+function resetWorldState() {
+  worldChunks.clear();
+  worldSurfaces.clear();
+}
+function isAirBlock(block) {
+  const name = String(block?.name || "").toLowerCase();
+  return !name || name === "air" || name === "cave_air" || name === "void_air";
+}
+function blockColor(name) {
+  const n = String(name || "").toLowerCase();
+  if (n.includes("grass")) return "#6fa34f";
+  if (n.includes("dirt") || n.includes("mud")) return "#795548";
+  if (n.includes("stone") || n.includes("deepslate") || n.includes("cobble")) return "#777b82";
+  if (n.includes("sand")) return "#d8c17a";
+  if (n.includes("gravel")) return "#8b8a82";
+  if (n.includes("water")) return "#3f7fc1";
+  if (n.includes("lava")) return "#d46a25";
+  if (n.includes("wood") || n.includes("log") || n.includes("planks")) return "#8b633f";
+  if (n.includes("leaves")) return "#4f8f45";
+  if (n.includes("snow") || n.includes("ice")) return "#d9edf7";
+  if (n.includes("glass")) return "#9fc7d9";
+  if (n.includes("brick")) return "#a55a4d";
+  return "#8a8f98";
+}
+function rebuildWorldSurface(chunk) {
+  const x0 = Number(chunk.x) * 16;
+  const z0 = Number(chunk.z) * 16;
+  const blocks = [];
+  const minY = Number(chunk.minY ?? -64);
+  const maxY = minY + Number(chunk.worldHeight ?? 384) - 1;
+  for (let lx = 0; lx < 16; lx++) {
+    for (let lz = 0; lz < 16; lz++) {
+      for (let y = maxY; y >= minY; y--) {
+        let block;
+        try { block = chunk.getBlock(new Vec3(lx, y, lz)); } catch { block = null; }
+        if (!isAirBlock(block)) {
+          blocks.push({
+            x: x0 + lx,
+            y,
+            z: z0 + lz,
+            name: String(block.name || "unknown"),
+            color: blockColor(block.name)
+          });
+          break;
+        }
+      }
+    }
+  }
+  worldSurfaces.set(worldChunkKey(chunk.x, chunk.z), blocks);
+}
+async function decodeLevelChunk(packet) {
+  if (!mcBot || !ensureWorldParser(mcBot.version)) return;
+  if (packet?.cache_enabled) {
+    // Caching braucht zusätzlich den Client-Blob-Store. Für die erste robuste Ansicht
+    // werden nur ungekachte LevelChunk-Pakete verarbeitet.
+    return;
+  }
+  const x = Number(packet?.x);
+  const z = Number(packet?.z);
+  if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+  try {
+    let chunk = worldChunks.get(worldChunkKey(x, z));
+    if (!chunk) {
+      chunk = new worldChunkClass({ x, z, minY: -64, worldHeight: 384 });
+      worldChunks.set(worldChunkKey(x, z), chunk);
+    }
+    const count = Number(packet.sub_chunk_count);
+    await chunk.networkDecodeNoCache(packet.payload || Buffer.alloc(0), Number.isFinite(count) ? count : -1);
+    rebuildWorldSurface(chunk);
+  } catch (err) {
+    worldParserError = err?.message || String(err);
+    addEvent(`3D-LevelChunk konnte nicht gelesen werden: ${worldParserError}`, "error");
+  }
+}
+async function decodeSubChunk(packet) {
+  if (!mcBot || !ensureWorldParser(mcBot.version) || !packet?.entries) return;
+  const origin = packet.origin || {};
+  if (packet.cache_enabled) return;
+  for (const entry of packet.entries) {
+    const result = String(entry?.result ?? "").toLowerCase();
+    if (!(result === "success" || Number(entry?.result) === 1)) continue;
+    const x = Number(origin.x) + Number(entry.dx || 0);
+    const y = Number(origin.y) + Number(entry.dy || 0);
+    const z = Number(origin.z) + Number(entry.dz || 0);
+    if (![x, y, z].every(Number.isFinite) || !entry.payload) continue;
+    try {
+      let chunk = worldChunks.get(worldChunkKey(x, z));
+      if (!chunk) {
+        chunk = new worldChunkClass({ x, z, minY: -64, worldHeight: 384 });
+        worldChunks.set(worldChunkKey(x, z), chunk);
+      }
+      await chunk.networkDecodeSubChunkNoCache(y, entry.payload);
+      rebuildWorldSurface(chunk);
+    } catch (err) {
+      worldParserError = err?.message || String(err);
+      addEvent(`3D-SubChunk konnte nicht gelesen werden: ${worldParserError}`, "error");
+    }
+  }
+}
+function getWorldView() {
+  const p = aktuelleKoordinaten;
+  const centerX = Math.floor(Number(p.x) / 16);
+  const centerZ = Math.floor(Number(p.z) / 16);
+  const blocks = [];
+  const radius = 2;
+  for (let cx = centerX - radius; cx <= centerX + radius; cx++) {
+    for (let cz = centerZ - radius; cz <= centerZ + radius; cz++) {
+      const part = worldSurfaces.get(worldChunkKey(cx, cz));
+      if (part) blocks.push(...part);
+    }
+  }
+  return {
+    parser: worldParserVersion,
+    parserError: worldParserError,
+    chunks: worldSurfaces.size,
+    blocks
+  };
+}
 const sessions = new Map();
 const loginAttempts = new Map();
 // ============================================================
@@ -432,6 +585,12 @@ authflow
 });
 mcBot = client;
 connecting = false;
+client.on("level_chunk", packet => {
+void decodeLevelChunk(packet);
+});
+client.on("subchunk", packet => {
+void decodeSubChunk(packet);
+});
 client.on("start_game", async packet => {
 if (generation !== connectionGeneration) return;
 mcOnline = true;
@@ -495,6 +654,7 @@ addEvent(`Minecraft-Fehler: ${letzterFehler}`, "error");
 client.on("close", () => {
 if (generation !== connectionGeneration) return;
 resetMinecraftState();
+resetWorldState();
 connecting = false;
 mcBot = null;
 addEvent("Minecraft-Verbindung geschlossen.", "warning");
@@ -1056,6 +1216,7 @@ online: mcOnline,
 position: { ...aktuelleKoordinaten },
 rotation: { ...aktuelleRotation },
 username: MC_USERNAME,
+world: getWorldView(),
 timestamp: Date.now()
 });
 }
