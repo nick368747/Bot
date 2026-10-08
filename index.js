@@ -769,36 +769,7 @@ refresh();setInterval(refresh,2000);
   const screenPanel=document.createElement('section');
   screenPanel.className='fr-panel';
   screenPanel.id='fr-panel-screen';
-  screenPanel.innerHTML = `
-    <div class="fr-screen">
-      <div class="fr-viewer">
-        <canvas id="fr-viewCanvas" aria-label="Live-Ansicht des Minecraft-Bots"></canvas>
-        <div class="fr-view-overlay">
-          <div class="fr-view-top">
-            <div class="fr-view-badge" id="fr-viewStatus">Warte auf Bot…</div>
-            <div class="fr-view-badge">Live</div>
-          </div>
-          <div class="fr-crosshair"></div>
-        </div>
-      </div>
-      <div class="fr-view-side">
-        <div class="card"><div class="label">Position</div><div id="fr-viewPos" class="value">0, 0, 0</div></div>
-        <div class="card"><div class="label">Blickrichtung</div><div id="fr-viewRot" class="value">0° / 0°</div></div>
-        <div class="card"><div class="label">Bot</div><div id="fr-viewBot" class="value">Offline</div></div>
-        <div class="card">
-          <div class="label">Kompass</div>
-          <div class="fr-compass">
-            <div class="fr-compass-ring">
-              <span class="fr-compass-n">N</span><span class="fr-compass-e">O</span>
-              <span class="fr-compass-s">S</span><span class="fr-compass-w">W</span>
-              <div id="fr-compassArrow" class="fr-compass-arrow"></div>
-            </div>
-          </div>
-        </div>
-        <div class="card"><div class="label">Hinweis</div><div class="fr-view-note">Das ist eine browserbasierte Live-Ansicht der Bot-Perspektive. Eine pixelgenaue Minecraft-Aufnahme ist damit noch nicht enthalten; dafür müsste Minecraft zusätzlich gerendert und als Videostream übertragen werden.</div></div>
-      </div>
-    </div>
-  `;
+  screenPanel.innerHTML = "\n    <div class=\"fr-screen\">\n      <div class=\"fr-viewer\">\n        <canvas id=\"fr-viewCanvas\" aria-label=\"Live-Ansicht des Minecraft-Bots\"></canvas>\n        <div class=\"fr-view-overlay\">\n          <div class=\"fr-view-top\">\n            <div class=\"fr-view-badge\" id=\"fr-viewStatus\">Warte auf Bot…</div>\n            <div class=\"fr-view-badge\">Live</div>\n          </div>\n          <div class=\"fr-crosshair\"></div>\n        </div>\n      </div>\n      <div class=\"fr-view-side\">\n        <div class=\"card\"><div class=\"label\">Position</div><div id=\"fr-viewPos\" class=\"value\">0, 0, 0</div></div>\n        <div class=\"card\"><div class=\"label\">Blickrichtung</div><div id=\"fr-viewRot\" class=\"value\">0° / 0°</div></div>\n        <div class=\"card\"><div class=\"label\">Bot</div><div id=\"fr-viewBot\" class=\"value\">Offline</div></div>\n        <div class=\"card\">\n          <div class=\"label\">Kompass</div>\n          <div class=\"fr-compass\">\n            <div class=\"fr-compass-ring\">\n              <span class=\"fr-compass-n\">N</span><span class=\"fr-compass-e\">O</span>\n              <span class=\"fr-compass-s\">S</span><span class=\"fr-compass-w\">W</span>\n              <div id=\"fr-compassArrow\" class=\"fr-compass-arrow\"></div>\n            </div>\n          </div>\n        </div>\n        <div class=\"card\"><div class=\"label\">Hinweis</div><div class=\"fr-view-note\">Das ist eine browserbasierte Live-Ansicht der Bot-Perspektive. Eine pixelgenaue Minecraft-Aufnahme ist damit noch nicht enthalten; dafür müsste Minecraft zusätzlich gerendert und als Videostream übertragen werden.</div></div>\n      </div>\n    </div>\n  ";
 const tabs=document.createElement('nav');
   tabs.className='fr-tabs';
   tabs.setAttribute('aria-label','FrozenRun Bereiche');
