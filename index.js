@@ -120,14 +120,13 @@ res.writeHead(status, {
 res.end(body);
 }
 function html(res, status, body) {
-res.writeHead(status, {
-"Content-Type": "text/html; charset=utf-8",
-"Cache-Control": "no-store",
-"X-Content-Type-Options": "nosniff",
-"Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';
-connect-src 'self'"
-});
-res.end(body);
+  res.writeHead(status, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff"
+  });
+
+  res.end(body);
 }
 function getCookies(req) {
 const result = {};
