@@ -837,3 +837,5 @@ async function homeAfk() {
 if (!mcOnline) throw new Error("Minecraft ist offline.");
 await minecraftCommand("/home afk");
 addChat("FrozenRun", "/home afk ausgeführt.", "system");
+
+}
