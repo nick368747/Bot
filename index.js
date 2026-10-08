@@ -724,11 +724,12 @@ refresh();setInterval(refresh,2000);
 @media(max-width:560px){.fr-viewer,.fr-viewer canvas{min-height:320px}.fr-view-side{grid-template-columns:1fr}}
 
 /* FrozenRun: Tabs + Steuerungs-Layout */
-.fr-tabs{display:flex;gap:8px;margin:0 0 14px;border-bottom:1px solid #24314b;padding-bottom:8px}
+.fr-tabs{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,1100px);display:flex;gap:8px;margin:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));border:1px solid #24314b;border-bottom:0;border-radius:14px 14px 0 0;background:rgba(10,15,28,.97);backdrop-filter:blur(12px);z-index:1000;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
 .fr-tab{background:transparent;border:1px solid transparent;color:#8e9ab5;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer}
 .fr-tab.active{background:#171f35;color:#fff;border-color:#33415f}
 .fr-panel{display:none}
 .fr-panel.active{display:block}
+.wrap{padding-bottom:86px}
 .fr-control-layout{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px;align-items:start}
 .fr-command textarea{width:100%;min-height:120px;resize:vertical;background:#0d1424;color:#fff;border:1px solid #2c3957;border-radius:12px;padding:12px;font:inherit}
 .fr-command .forms{grid-template-columns:1fr}
@@ -787,7 +788,6 @@ const tabs=document.createElement('nav');
   controlTab.dataset.frTab='control';
 
   tabs.append(chatTab,screenTab,controlTab);
-  top.insertAdjacentElement('afterend',tabs);
 
   const chatPanel=document.createElement('section');
   chatPanel.className='fr-panel active';
@@ -833,9 +833,12 @@ const tabs=document.createElement('nav');
     auth.insertAdjacentElement('afterend',chatPanel);
     chatPanel.insertAdjacentElement('afterend',controlPanel);
     controlPanel.insertAdjacentElement('afterend',screenPanel);
+    screenPanel.insertAdjacentElement('afterend',tabs);
   }else{
     tabs.insertAdjacentElement('afterend',chatPanel);
     chatPanel.insertAdjacentElement('afterend',controlPanel);
+    controlPanel.insertAdjacentElement('afterend',screenPanel);
+    screenPanel.insertAdjacentElement('afterend',tabs);
   }
 
   function activate(name){
