@@ -120,13 +120,12 @@ res.writeHead(status, {
 res.end(body);
 }
 function html(res, status, body) {
-  res.writeHead(status, {
-    "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff"
-  });
-
-  res.end(body);
+res.writeHead(status, {
+"Content-Type": "text/html; charset=utf-8",
+"Cache-Control": "no-store",
+"X-Content-Type-Options": "nosniff"
+});
+res.end(body);
 }
 function getCookies(req) {
 const result = {};
@@ -419,8 +418,8 @@ userCode: data.user_code || null,
 expiresIn: Number(data.expires_in || 0),
 receivedAt: Date.now()
 };
-});
 addEvent(`Microsoft-Anmeldung benötigt: ${data.user_code || "Code nicht vorhanden"}`, "auth");
+});
 const client = bedrock.createClient({
 host: MC_HOST,
 port: MC_PORT,
@@ -589,7 +588,7 @@ margin-bottom:8px}.muted{color:#9aa8c7;margin-bottom:22px}input,button{width:100
 1px solid #34415f;font-size:16px}input{background:#0d1425;color:#fff;padding:0 14px;margin-bottom:12px}button{background:
 #6d5dfc;color:#fff;font-weight:700;border:0;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;
 color:#ff9b9b;min-height:22px}.small{font-size:13px;color:#7f8dab;margin-top:18px}
-</style></head><body><main class="card"><div class="logo">❄  FrozenRun</div><div class="muted">Web-Steuerung für
+</style></head><body><main class="card"><div class="logo">❄ FrozenRun</div><div class="muted">Web-Steuerung für
 LiveSinger9275</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Web-
 Passwort" required><button>Anmelden</button></form><div id="msg"></div><div class="small">Kein Discord nötig.</div></
 main><script>
@@ -623,7 +622,7 @@ none!important}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)
 1fr)}}@media(max-width:520px){.wrap{padding:12px}.grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}.top{
 align-items:flex-start}.title{font-size:23px}.forms{grid-template-columns:1fr}.chat{height:300px}}
 </style></head><body><main class="wrap">
-<div class="top"><div><div class="title">❄  FrozenRun</div><div class="sub">Minecraft-Websteuerung · LiveSinger9275</div></
+<div class="top"><div><div class="title">❄ FrozenRun</div><div class="sub">Minecraft-Websteuerung · LiveSinger9275</div></
 div><button class="btn" id="logout">Abmelden</button></div>
 <div class="grid">
 <div class="card"><div class="label">Status</div><div id="status" class="value offline">Offline</div></div>
@@ -635,9 +634,9 @@ div><button class="btn" id="logout">Abmelden</button></div>
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
 id="authCode" class="value"></div></div>
 <div class="card section"><h2>Steuerung</h2><div class="actions">
-<button class="btn primary" data-action="start">  Ein</button><button class="btn danger" data-action="stop">  Aus</
-button><button class="btn" data-action="reconnect">  Neu verbinden</button><button class="btn" data-action="home">  Home
-AFK</button><button class="btn" data-action="run">  Laufen</button><button class="btn danger" data-action="stoprun">  Laufen
+<button class="btn primary" data-action="start"> Ein</button><button class="btn danger" data-action="stop"> Aus</
+button><button class="btn" data-action="reconnect"> Neu verbinden</button><button class="btn" data-action="home"> Home
+AFK</button><button class="btn" data-action="run"> Laufen</button><button class="btn danger" data-action="stoprun"> Laufen
 stoppen</button>
 </div></div>
 <div class="card section"><h2>Minecraft-Chat</h2><div id="chat" class="chat"></div><div class="forms" style="margin-top:
@@ -717,8 +716,7 @@ if (req.method === "POST" && url === "/api/login") {
 if (loginRateLimited(req)) return json(res, 429, { ok: false, error: "Zu viele Login-Versuche. Warte eine Minute." });
 try {
 const body = await readJson(req);
-if (!constantTimeEqual(body.password || "", WEB_PASSWORD)) return json(res, 401, { ok: false, error: "Falsches
-Passwort." });
+if (!constantTimeEqual(body.password || "", WEB_PASSWORD)) return json(res, 401, { ok: false, error: "Falsches Passwort." });
 const token = crypto.randomBytes(32).toString("hex");
 sessions.set(token, { createdAt: Date.now() });
 res.writeHead(200, {
@@ -839,4 +837,3 @@ async function homeAfk() {
 if (!mcOnline) throw new Error("Minecraft ist offline.");
 await minecraftCommand("/home afk");
 addChat("FrozenRun", "/home afk ausgeführt.", "system");
-}
