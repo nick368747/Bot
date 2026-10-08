@@ -1024,13 +1024,13 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
   const viewBot=document.getElementById('fr-viewBot');
   const compassArrow=document.getElementById('fr-compassArrow');
   let viewState={position:{x:0,y:0,z:0},rotation:{yaw:0,pitch:0,headYaw:0},online:false};
-  let three=null,scene=null,camera=null,renderer=null,worldGroup=null,botMarker=null,raf=0;
+  let three=null,scene=null,camera=null,renderer=null,worldGroup=null,surfaceGroup=null,surfaceMesh=null,botMarker=null,raf=0;
 
   function dispose3D(){
     if(raf) cancelAnimationFrame(raf);
     raf=0;
     if(renderer){renderer.dispose();renderer=null;}
-    three=null;scene=null;camera=null;worldGroup=null;botMarker=null;
+    three=null;scene=null;camera=null;renderer=null;worldGroup=null;surfaceGroup=null;surfaceMesh=null;botMarker=null;
   }
 
   async function init3D(){
@@ -1056,49 +1056,24 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
 
       worldGroup=new three.Group();
       scene.add(worldGroup);
-
-      const grassMat=new three.MeshLambertMaterial({color:0x5f8d4e});
-      const dirtMat=new three.MeshLambertMaterial({color:0x765638});
-      const stoneMat=new three.MeshLambertMaterial({color:0x777b82});
-      const leafMat=new three.MeshLambertMaterial({color:0x3e7438});
-      const woodMat=new three.MeshLambertMaterial({color:0x7d5736});
+      const surfaceGroup=new three.Group();
+      worldGroup.add(surfaceGroup);
 
       const cubeGeo=new three.BoxGeometry(1,1,1);
-      const floor= new three.Mesh(new three.BoxGeometry(80,0.25,80),grassMat);
-      floor.position.y=-0.15;
-      worldGroup.add(floor);
-
-      for(let x=-18;x<=18;x++){
-        for(let z=-18;z<=18;z++){
-          if((Math.abs(x)+Math.abs(z))%7===0){
-            const block=new three.Mesh(cubeGeo,Math.random()>.55?stoneMat:dirtMat);
-            block.position.set(x+0.5,0.5,z+0.5);
-            worldGroup.add(block);
-          }
-        }
-      }
-
-      for(let i=0;i<28;i++){
-        const x=((i*17)%34)-17, z=((i*29)%34)-17;
-        if(Math.abs(x)<3&&Math.abs(z)<3) continue;
-        const trunk=new three.Mesh(cubeGeo,woodMat);
-        trunk.position.set(x,1,z);
-        worldGroup.add(trunk);
-        const leaves=new three.Mesh(new three.BoxGeometry(3,2.5,3),leafMat);
-        leaves.position.set(x,2.7,z);
-        worldGroup.add(leaves);
-      }
+      const botMaterial=new three.MeshLambertMaterial({color:0x6d5dfc});
+      const headMaterial=new three.MeshLambertMaterial({color:0xd7b38a});
 
       botMarker=new three.Group();
-      const body=new three.Mesh(new three.BoxGeometry(.65,1.25,.38),new three.MeshLambertMaterial({color:0x6d5dfc}));
+      const body=new three.Mesh(new three.BoxGeometry(.65,1.25,.38),botMaterial);
       body.position.y=.7;
       botMarker.add(body);
-      const head=new three.Mesh(new three.BoxGeometry(.55,.55,.55),new three.MeshLambertMaterial({color:0xd7b38a}));
+      const head=new three.Mesh(new three.BoxGeometry(.55,.55,.55),headMaterial);
       head.position.y=1.6;
       botMarker.add(head);
       worldGroup.add(botMarker);
 
       resize3D();
+
       render3D();
       viewStatus.textContent='3D-Ansicht · Live';
     }catch(e){
@@ -1114,6 +1089,35 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
     renderer.setSize(w,h,false);
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
+  }
+
+  function updateSurface(blocks){
+    if(!surfaceGroup || !three) return;
+    if(surfaceMesh){
+      surfaceGroup.remove(surfaceMesh);
+      surfaceMesh.geometry.dispose();
+      surfaceMesh.material.dispose();
+      surfaceMesh=null;
+    }
+    const list=Array.isArray(blocks)?blocks:[];
+    if(!list.length) return;
+    const geometry=new three.BoxGeometry(1,1,1);
+    const material=new three.MeshLambertMaterial({color:0xffffff,vertexColors:true});
+    surfaceMesh=new three.InstancedMesh(geometry,material,list.length);
+    const dummy=new three.Object3D();
+    const color=new three.Color();
+    list.forEach((b,i)=>{
+      dummy.position.set(Number(b.x)||0,(Number(b.y)||0)+0.5,Number(b.z)||0);
+      dummy.rotation.set(0,0,0);
+      dummy.scale.set(1,1,1);
+      dummy.updateMatrix();
+      surfaceMesh.setMatrixAt(i,dummy.matrix);
+      color.set(b.color||'#8a8f98');
+      surfaceMesh.setColorAt(i,color);
+    });
+    surfaceMesh.instanceMatrix.needsUpdate=true;
+    if(surfaceMesh.instanceColor) surfaceMesh.instanceColor.needsUpdate=true;
+    surfaceGroup.add(surfaceMesh);
   }
 
   function render3D(){
@@ -1144,12 +1148,15 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
       if(r.status===401){location.href='/login';return;}
       const d=await r.json();
       viewState=d;
+      updateSurface(d.world&&d.world.blocks);
       const p=d.position||{x:0,y:0,z:0};
       const ro=d.rotation||{yaw:0,pitch:0};
       viewPos.textContent=[p.x,p.y,p.z].map(v=>Math.round(Number(v)||0)).join(', ');
       viewRot.textContent=Math.round(Number(ro.yaw)||0)+'° / '+Math.round(Number(ro.pitch)||0)+'°';
       viewBot.textContent=d.online?'Online':'Offline';
-      viewStatus.textContent=d.online?'3D-Ansicht · Live':'3D-Ansicht · Bot offline';
+      viewStatus.textContent=d.online
+        ? ((d.world&&d.world.blocks&&d.world.blocks.length)?'3D-Welt · Live':'3D-Welt · Warte auf Chunks')
+        : '3D-Welt · Bot offline';
       const yaw=Number(ro.yaw)||0;
       compassArrow.style.transform='translate(-50%,-100%) rotate('+yaw+'deg)';
     }catch(e){
