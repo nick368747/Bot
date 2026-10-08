@@ -786,7 +786,7 @@ const tabs=document.createElement('nav');
   controlTab.textContent='Steuerung';
   controlTab.dataset.frTab='control';
 
-  tabs.append(chatTab,controlTab,screenTab);
+  tabs.append(chatTab,screenTab,controlTab);
   top.insertAdjacentElement('afterend',tabs);
 
   const chatPanel=document.createElement('section');
@@ -861,59 +861,120 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
   const viewBot=document.getElementById('fr-viewBot');
   const compassArrow=document.getElementById('fr-compassArrow');
   let viewState={position:{x:0,y:0,z:0},rotation:{yaw:0,pitch:0,headYaw:0},online:false};
-  let viewAnimation=0;
+  let three=null,scene=null,camera=null,renderer=null,worldGroup=null,botMarker=null,raf=0;
 
-  function drawView(){
-    if(!viewCanvas) return;
-    const rect=viewCanvas.getBoundingClientRect();
-    const dpr=Math.min(window.devicePixelRatio||1,2);
-    const w=Math.max(1,Math.floor(rect.width*dpr));
-    const h=Math.max(1,Math.floor(rect.height*dpr));
-    if(viewCanvas.width!==w||viewCanvas.height!==h){viewCanvas.width=w;viewCanvas.height=h;}
-    const ctx=viewCanvas.getContext('2d');
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    const cw=rect.width,ch=rect.height;
-    const pitch=Math.max(-45,Math.min(45,Number(viewState.rotation.pitch)||0));
-    const horizon=ch*0.50 + pitch*2.1;
-    const sky=ctx.createLinearGradient(0,0,0,Math.max(horizon,1));
-    sky.addColorStop(0,'#182b4a');sky.addColorStop(1,'#78a4c9');
-    ctx.fillStyle=sky;ctx.fillRect(0,0,cw,ch);
-    ctx.fillStyle='#26351f';ctx.fillRect(0,horizon,cw,ch-horizon);
-
-    // Distant horizon bands.
-    ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=1;
-    for(let i=1;i<7;i++){
-      const yy=horizon+(ch-horizon)*(i/7);
-      ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(cw,yy);ctx.stroke();
-    }
-    const yaw=(Number(viewState.rotation.yaw)||0)*Math.PI/180;
-    const gridSize=32;
-    for(let i=-8;i<=8;i++){
-      const offset=i*gridSize;
-      const spread=Math.abs(i)*0.018+0.05;
-      const x=cw/2 + offset;
-      ctx.strokeStyle='rgba(150,190,120,.22)';
-      ctx.beginPath();ctx.moveTo(cw/2,horizon);ctx.lineTo(x*1.05,horizon+(ch-horizon)*0.95);ctx.stroke();
-      if(i!==0){
-        ctx.strokeStyle='rgba(90,110,80,.28)';
-        ctx.beginPath();ctx.moveTo(cw/2+offset*0.25,horizon+20);ctx.lineTo(cw/2+offset*(1.8+spread),ch);ctx.stroke();
-      }
-    }
-    // Simple block silhouettes. They are anchored to the live position so the view moves with the bot.
-    const seed=Math.floor(Math.abs(viewState.position.x*31+viewState.position.z*17));
-    for(let i=0;i<18;i++){
-      const x=((seed+i*73)%1000)/1000*cw;
-      const base=horizon+(ch-horizon)*(0.18+((i*37)%70)/100);
-      const size=10+((i*29)%30);
-      ctx.fillStyle=i%3===0?'rgba(74,95,54,.82)':'rgba(87,78,60,.72)';
-      ctx.fillRect(x,base-size,size,size);
-    }
-    // Direction marker.
-    ctx.strokeStyle='rgba(255,255,255,.35)';
-    ctx.beginPath();ctx.moveTo(cw/2-55,horizon);ctx.lineTo(cw/2+55,horizon);ctx.stroke();
-
-    viewAnimation=requestAnimationFrame(drawView);
+  function dispose3D(){
+    if(raf) cancelAnimationFrame(raf);
+    raf=0;
+    if(renderer){renderer.dispose();renderer=null;}
+    three=null;scene=null;camera=null;worldGroup=null;botMarker=null;
   }
+
+  async function init3D(){
+    if(!viewCanvas || renderer) return;
+    try{
+      three=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
+      scene=new three.Scene();
+      scene.background=new three.Color(0x182b4a);
+      scene.fog=new three.Fog(0x182b4a,28,110);
+
+      camera=new three.PerspectiveCamera(70,1,0.05,160);
+      camera.position.set(0,1.65,0);
+
+      renderer=new three.WebGLRenderer({canvas:viewCanvas,antialias:true,preserveDrawingBuffer:false});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+      renderer.outputColorSpace=three.SRGBColorSpace;
+
+      const hemi=new three.HemisphereLight(0xbfdcff,0x38452f,2.2);
+      scene.add(hemi);
+      const sun=new three.DirectionalLight(0xffffff,2.4);
+      sun.position.set(20,40,15);
+      scene.add(sun);
+
+      worldGroup=new three.Group();
+      scene.add(worldGroup);
+
+      const grassMat=new three.MeshLambertMaterial({color:0x5f8d4e});
+      const dirtMat=new three.MeshLambertMaterial({color:0x765638});
+      const stoneMat=new three.MeshLambertMaterial({color:0x777b82});
+      const leafMat=new three.MeshLambertMaterial({color:0x3e7438});
+      const woodMat=new three.MeshLambertMaterial({color:0x7d5736});
+
+      const cubeGeo=new three.BoxGeometry(1,1,1);
+      const floor= new three.Mesh(new three.BoxGeometry(80,0.25,80),grassMat);
+      floor.position.y=-0.15;
+      worldGroup.add(floor);
+
+      for(let x=-18;x<=18;x++){
+        for(let z=-18;z<=18;z++){
+          if((Math.abs(x)+Math.abs(z))%7===0){
+            const block=new three.Mesh(cubeGeo,Math.random()>.55?stoneMat:dirtMat);
+            block.position.set(x+0.5,0.5,z+0.5);
+            worldGroup.add(block);
+          }
+        }
+      }
+
+      for(let i=0;i<28;i++){
+        const x=((i*17)%34)-17, z=((i*29)%34)-17;
+        if(Math.abs(x)<3&&Math.abs(z)<3) continue;
+        const trunk=new three.Mesh(cubeGeo,woodMat);
+        trunk.position.set(x,1,z);
+        worldGroup.add(trunk);
+        const leaves=new three.Mesh(new three.BoxGeometry(3,2.5,3),leafMat);
+        leaves.position.set(x,2.7,z);
+        worldGroup.add(leaves);
+      }
+
+      botMarker=new three.Group();
+      const body=new three.Mesh(new three.BoxGeometry(.65,1.25,.38),new three.MeshLambertMaterial({color:0x6d5dfc}));
+      body.position.y=.7;
+      botMarker.add(body);
+      const head=new three.Mesh(new three.BoxGeometry(.55,.55,.55),new three.MeshLambertMaterial({color:0xd7b38a}));
+      head.position.y=1.6;
+      botMarker.add(head);
+      worldGroup.add(botMarker);
+
+      resize3D();
+      render3D();
+      viewStatus.textContent='3D-Ansicht · Live';
+    }catch(e){
+      console.error('3D-Ansicht konnte nicht geladen werden:',e);
+      viewStatus.textContent='3D-Ansicht konnte nicht geladen werden';
+    }
+  }
+
+  function resize3D(){
+    if(!renderer||!camera||!viewCanvas) return;
+    const rect=viewCanvas.getBoundingClientRect();
+    const w=Math.max(1,rect.width),h=Math.max(1,rect.height);
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+
+  function render3D(){
+    if(!renderer||!scene||!camera) return;
+    const p=viewState.position||{x:0,y:0,z:0};
+    const r=viewState.rotation||{yaw:0,pitch:0};
+    const x=Number(p.x)||0, y=Number(p.y)||0, z=Number(p.z)||0;
+    const yaw=(Number(r.yaw)||0)*Math.PI/180;
+    const pitch=(Number(r.pitch)||0)*Math.PI/180;
+
+    // The browser camera follows the bot's live position and rotation.
+    camera.position.set(x,y+1.62,z);
+    camera.rotation.order='YXZ';
+    camera.rotation.y=-yaw;
+    camera.rotation.x=pitch;
+
+    if(botMarker){
+      botMarker.position.set(x, y, z);
+      botMarker.rotation.y=-yaw;
+    }
+    renderer.render(scene,camera);
+    raf=requestAnimationFrame(render3D);
+  }
+
   async function refreshView(){
     try{
       const r=await fetch('/api/view',{cache:'no-store'});
@@ -925,15 +986,16 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
       viewPos.textContent=[p.x,p.y,p.z].map(v=>Math.round(Number(v)||0)).join(', ');
       viewRot.textContent=Math.round(Number(ro.yaw)||0)+'° / '+Math.round(Number(ro.pitch)||0)+'°';
       viewBot.textContent=d.online?'Online':'Offline';
-      viewStatus.textContent=d.online?'Bot verbunden · Live':'Bot offline';
+      viewStatus.textContent=d.online?'3D-Ansicht · Live':'3D-Ansicht · Bot offline';
       const yaw=Number(ro.yaw)||0;
       compassArrow.style.transform='translate(-50%,-100%) rotate('+yaw+'deg)';
     }catch(e){
       viewStatus.textContent='Ansicht nicht erreichbar';
     }
   }
-  window.addEventListener('resize',function(){drawView();});
-  drawView();
+
+  window.addEventListener('resize',resize3D);
+  init3D();
   refreshView();
   setInterval(refreshView,500);
 })();
