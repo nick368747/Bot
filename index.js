@@ -1022,6 +1022,15 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
  .fr-main-panels{padding:4px!important}
 }
 
+
+/* Fix: Hauptbereich darf unter dem Header nicht auf 0px kollabieren */
+.wrap>.fr-app-layout{display:grid!important;grid-template-columns:minmax(150px,25%) minmax(0,1fr)!important;flex:1 1 auto!important;width:100%!important;height:calc(100dvh - 82px)!important;min-height:420px!important;max-height:none!important;visibility:visible!important;opacity:1!important;overflow:hidden!important;position:relative!important;}
+.wrap>.fr-app-layout>.fr-sidebar,.wrap>.fr-app-layout>.fr-main-panels{display:block!important;height:100%!important;min-height:0!important;max-height:none!important;visibility:visible!important;opacity:1!important;overflow:auto!important;}
+.wrap>.fr-app-layout>.fr-main-panels{display:flex!important;flex-direction:column!important;min-width:0!important;}
+.wrap>.fr-app-layout .fr-panel.active{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;width:100%!important;height:100%!important;min-height:0!important;visibility:visible!important;opacity:1!important;overflow:auto!important;}
+.wrap>.fr-app-layout .fr-control-area,.wrap>.fr-app-layout .fr-control-card,.wrap>.fr-app-layout .fr-command,#fr-panel-chat .card.section{visibility:visible!important;opacity:1!important;}
+.wrap>.fr-app-layout .fr-control-card .actions,.wrap>.fr-app-layout .fr-control-card .actions>.btn{visibility:visible!important;opacity:1!important;}
+@media(max-width:720px){.wrap>.fr-app-layout{grid-template-columns:minmax(105px,28%) minmax(0,1fr)!important;height:calc(100dvh - 82px)!important;min-height:360px!important;}}
 /* Reparatur: Steuerungsbuttons, Dashboard-Kopf und stabiler Bildschirm */
 .wrap>.top .title:after{content:" · Dashboard";font-size:.48em;font-weight:700;opacity:.8;vertical-align:middle}
 .fr-control-card,.fr-control-card .actions{visibility:visible!important;opacity:1!important}
