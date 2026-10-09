@@ -1244,7 +1244,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.textContent='Version 2.0.3';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.innerHTML='<span>Version</span> <strong>2.0.3</strong>';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
@@ -1512,7 +1512,34 @@ body{position:fixed!important;inset:0!important}
  .wrap>.fr-app-layout{height:0!important;min-height:0!important;flex:1 1 0!important}
 }
 
-</style><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
+</style><script>
+/* Robuster Abmelden-Fallback: unabhängig von den Dashboard-Event-Listenern. */
+(function(){
+  document.addEventListener('click', async function(event){
+    const button=event.target && event.target.closest ? event.target.closest('#logout') : null;
+    if(!button) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if(button.dataset.logoutBusy==='1') return;
+    button.dataset.logoutBusy='1';
+    button.disabled=true;
+    const previous=button.textContent;
+    button.textContent='Melde ab…';
+    try {
+      const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});
+      if(!response.ok && response.status!==0 && response.status!==303) throw new Error('HTTP '+response.status);
+      window.location.replace('/login?loggedout=1&v='+Date.now());
+    } catch(error) {
+      button.disabled=false;
+      button.dataset.logoutBusy='0';
+      button.textContent=previous || 'Abmelden';
+      /* Normale Formularnavigation als Fallback, falls fetch blockiert wird. */
+      const form=button.closest('form');
+      if(form){ form.removeEventListener('submit', arguments.callee); form.submit(); }
+    }
+  }, true);
+})();
+</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
 // ============================================================
 // HTTP API
 // ============================================================
