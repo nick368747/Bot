@@ -751,7 +751,7 @@ return { amount, output: firstOutput };
 const LOGIN_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-
 scale=1"><title>Block Bande – Botportal</title>
-<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:20px}.card{width:min(620px,100%);min-height:340px;background:#e8e8e8;border:4px solid #202020;border-radius:7px;padding:34px 28px;box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 46px}.muted{color:#333;text-align:center;margin-bottom:22px}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px}.small{position:absolute;right:12px;bottom:8px;font-size:13px;color:#333;margin:0}</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button>Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0</div></
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:20px}.card{width:min(620px,100%);min-height:340px;background:#e8e8e8;border:4px solid #202020;border-radius:7px;padding:34px 28px;box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 46px}.muted{color:#333;text-align:center;margin-bottom:22px}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px}.small{position:absolute;right:12px;bottom:8px;font-size:13px;color:#333;margin:0}</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button style="position:absolute;left:-9999px;width:1px;height:1px;min-height:1px;padding:0;border:0" tabindex="-1" aria-hidden="true">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0</div></
 main><script>
 document.getElementById('form').addEventListener('submit',async e=>{e.preventDefault();const msg=document.getElementById(
 'msg');msg.textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -782,7 +782,66 @@ scale=1"><title>Block Bande – Botportal</title>
 .dashboard-tabs a:focus-visible{outline:3px solid #4779c7;outline-offset:2px}
 @media(max-width:900px){.wrap{grid-template-columns:minmax(150px,.7fr) minmax(0,1.3fr);grid-template-areas:"head head" "tabs tabs" "stats control" "chat chat" "money command" "events events" "foot foot"}#chatPanel .chat{height:300px}}
 @media(max-width:560px){.wrap{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "tabs" "stats" "control" "chat" "money" "command" "events" "foot";padding:10px}.top{align-items:flex-start}.logout-button{margin-left:auto}.dashboard-tabs{gap:6px}.dashboard-tabs a{padding:8px 10px;font-size:14px}.wrap>.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap>.grid>.card{min-width:0}.value{font-size:18px}#control .actions{grid-template-columns:repeat(2,minmax(0,1fr))}#chatPanel .chat{height:260px}.forms{grid-template-columns:minmax(0,1fr) auto!important}.forms input,.forms button{min-width:0;font-size:15px;padding:9px 7px}}
-@media(max-width:800px){.actions{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.wrap{padding:10px}.top{gap:8px;flex-wrap:wrap}.title{font-size:25px}.forms{grid-template-columns:1fr}.chat{height:300px}}</style></head><body><main class="wrap">
+@media(max-width:800px){.actions{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.wrap{padding:10px}.top{gap:8px;flex-wrap:wrap}.title{font-size:25px}.forms{grid-template-columns:1fr}.chat{height:300px}}
+/* Layout exakt nach der Zeichnung */
+body{background:#fff;color:#171717}
+.wrap{width:min(100%,1240px);padding:6px;margin:0 auto}
+.top{display:grid;grid-template-columns:minmax(210px,1fr) auto;gap:0;align-items:stretch;margin:0;padding:0;border:3px solid #202020;border-radius:6px;background:#e8e8e8}
+.top .title{font-size:clamp(25px,3.2vw,38px);padding:8px 12px;align-self:center}
+.top #logout{grid-column:1/-1;justify-self:end;margin:4px;border:0;background:transparent;min-height:0;padding:4px 8px;font-size:13px}
+.fr-tabs{grid-column:2;grid-row:1;display:flex;align-items:stretch;gap:0;margin:0;padding:0;border:0;min-width:0}
+.fr-tab{font:inherit;font-size:clamp(16px,2.4vw,25px);padding:8px 12px;border:0;border-left:2px solid #202020;border-radius:0;background:#e8e8e8;color:#171717;white-space:nowrap;cursor:pointer}
+.fr-tab.active{background:#858585}
+.fr-app-layout{display:grid;grid-template-columns:minmax(185px,30%) minmax(0,1fr);gap:0;margin-top:0;border:3px solid #202020;border-top:0;border-radius:0 0 6px 6px;min-height:460px;background:#e8e8e8}
+.fr-sidebar{border-right:2px solid #202020;padding:12px 14px;display:flex;flex-direction:column;min-width:0}
+.fr-side-brand{font-size:clamp(23px,3vw,34px);font-weight:900;border-bottom:2px solid #202020;padding:0 0 12px;white-space:nowrap}
+.fr-sidebar .grid{display:flex;flex-direction:column;gap:0;margin-top:8px}
+.fr-sidebar .grid>div{background:transparent;border:0;border-radius:0;padding:7px 0;border-bottom:0}
+.fr-sidebar .label{font-size:clamp(17px,2vw,24px);color:#171717}
+.fr-sidebar .value{font-size:clamp(16px,2vw,22px);font-weight:500}
+.fr-version{margin-top:auto;padding-top:18px;font-size:18px;font-weight:700}
+.fr-main-panels{min-width:0;min-height:455px;padding:12px}
+.fr-panel{display:none;min-height:425px;margin:0!important}
+.fr-panel.active{display:block}
+.fr-control-area{height:calc(100% - 62px);min-height:340px;display:flex;align-items:flex-start;justify-content:center;padding:20px}
+.fr-control-card{width:100%;min-height:300px;border:0;background:transparent;display:flex;align-items:flex-start;justify-content:center}
+.fr-control-card h2{display:none}
+.fr-control-card .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(100%,520px);margin:8px auto}
+.fr-control-card .btn{min-height:54px;font-size:18px}
+.fr-command{margin:0!important;background:#d5d5d5;border:3px solid #202020;padding:0;border-radius:6px}
+.fr-command .forms{grid-template-columns:minmax(0,1fr) 48px;gap:0}
+.fr-command .forms input{min-height:44px;border:0;border-radius:0;background:transparent;font-size:21px;padding:5px 12px}
+.fr-command .forms input::placeholder{color:#171717;opacity:1}
+.fr-command .forms .btn{border:0;border-left:3px solid #202020;border-radius:0;background:transparent;min-height:44px;font-size:20px}
+.fr-command .sub,.fr-note{display:none}
+#fr-panel-chat .card.section{margin:0;border:0;padding:0;background:transparent}
+#fr-panel-chat h2{display:none}
+#fr-panel-chat .chat{height:420px;min-height:300px;background:#d5d5d5;border:3px solid #202020;border-radius:4px}
+#fr-panel-chat .forms{grid-template-columns:minmax(0,1fr) auto}
+#fr-panel-screen .fr-viewer{height:420px;min-height:300px;width:100%;border:3px solid #202020;border-radius:4px;background:#d5d5d5;overflow:hidden}
+#fr-viewCanvas{display:block;width:100%;height:100%}
+#moneyPanel,#eventsPanel{display:none!important}
+@media(max-width:720px){
+ .wrap{padding:4px}
+ .top{grid-template-columns:1fr}
+ .top .title{grid-column:1;grid-row:1;padding:7px 9px}
+ .fr-tabs{grid-column:1;grid-row:2;border-top:2px solid #202020}
+ .fr-tab{flex:1;padding:8px 4px;font-size:clamp(14px,3.6vw,20px)}
+ .top #logout{grid-column:1;grid-row:3}
+ .fr-app-layout{grid-template-columns:30% minmax(0,1fr);min-height:420px}
+ .fr-sidebar{padding:8px 7px}
+ .fr-side-brand{font-size:clamp(16px,4vw,25px);white-space:normal;line-height:1.1}
+ .fr-sidebar .label{font-size:clamp(14px,3.4vw,18px)}
+ .fr-sidebar .value{font-size:clamp(13px,3.2vw,17px)}
+ .fr-version{font-size:14px}
+ .fr-main-panels{padding:8px;min-height:415px}
+ .fr-panel{min-height:390px}
+ .fr-control-area{min-height:310px;padding:5px}
+ .fr-control-card .actions{grid-template-columns:1fr;gap:8px}
+ .fr-control-card .btn{min-height:42px;font-size:15px;padding:5px}
+ #fr-panel-chat .chat,#fr-panel-screen .fr-viewer{height:380px;min-height:250px}
+}
+</style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
 div><button class="btn" id="logout">Abmelden</button></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#status">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
@@ -893,124 +952,81 @@ refresh();setInterval(refresh,2000);
   const wrap=document.querySelector('.wrap');
   if(!wrap || wrap.dataset.frLayoutReady==='1') return;
   wrap.dataset.frLayoutReady='1';
-
   const top=wrap.querySelector('.top');
   const stats=wrap.querySelector('.grid');
   const sections=Array.from(wrap.querySelectorAll('.card.section'));
-  const byTitle=function(title){
-    return sections.find(function(card){
-      const h=card.querySelector('h2');
-      return h && h.textContent.trim().toLowerCase()===title.toLowerCase();
-    });
-  };
-
+  const byTitle=title=>sections.find(card=>{const h=card.querySelector('h2');return h&&h.textContent.trim().toLowerCase()===title.toLowerCase();});
   const chatCard=byTitle('Minecraft-Chat');
   const controlCard=byTitle('Steuerung');
   const moneyCard=byTitle('Geld senden');
   const commandCard=byTitle('Minecraft-Befehl');
   const eventsCard=byTitle('Ereignisse');
+  if(!top||!stats||!chatCard||!controlCard||!moneyCard||!commandCard||!eventsCard)return;
 
-  if(!top || !stats || !chatCard || !controlCard || !moneyCard || !commandCard || !eventsCard){console.error('Block Bande Layout: Ein Dashboard-Bereich wurde nicht gefunden.',{top:!!top,stats:!!stats,chat:!!chatCard,control:!!controlCard,money:!!moneyCard,command:!!commandCard,events:!!eventsCard});return;}
-
+  const oldNav=wrap.querySelector('.dashboard-tabs');
+  if(oldNav)oldNav.remove();
   const screenTab=document.createElement('button');
-  screenTab.type='button';
-  screenTab.className='fr-tab';
-  screenTab.textContent='Bildschirm';
-  screenTab.dataset.frTab='screen';
-
-  const screenPanel=document.createElement('section');
-  screenPanel.className='fr-panel';
-  screenPanel.id='fr-panel-screen';
-  screenPanel.innerHTML = "\n    <div class=\"fr-screen\">\n      <div class=\"fr-viewer\">\n        <canvas id=\"fr-viewCanvas\" aria-label=\"Live-Ansicht des Minecraft-Bots\"></canvas>\n        <div class=\"fr-view-overlay\">\n          <div class=\"fr-view-top\">\n            <div class=\"fr-view-badge\" id=\"fr-viewStatus\">Warte auf Bot…</div>\n            <div class=\"fr-view-badge\">Live</div>\n          </div>\n          <div class=\"fr-crosshair\"></div>\n        </div>\n      </div>\n      <div class=\"fr-view-side\">\n        <div class=\"card\"><div class=\"label\">Position</div><div id=\"fr-viewPos\" class=\"value\">0, 0, 0</div></div>\n        <div class=\"card\"><div class=\"label\">Blickrichtung</div><div id=\"fr-viewRot\" class=\"value\">0° / 0°</div></div>\n        <div class=\"card\"><div class=\"label\">Bot</div><div id=\"fr-viewBot\" class=\"value\">Offline</div></div>\n        <div class=\"card\">\n          <div class=\"label\">Kompass</div>\n          <div class=\"fr-compass\">\n            <div class=\"fr-compass-ring\">\n              <span class=\"fr-compass-n\">N</span><span class=\"fr-compass-e\">O</span>\n              <span class=\"fr-compass-s\">S</span><span class=\"fr-compass-w\">W</span>\n              <div id=\"fr-compassArrow\" class=\"fr-compass-arrow\"></div>\n            </div>\n          </div>\n        </div>\n        <div class=\"card\"><div class=\"label\">Hinweis</div><div class=\"fr-view-note\">Hier werden die verfügbaren Welt-Chunks in einer vereinfachten 3D-Ansicht dargestellt.</div></div>\n      </div>\n    </div>\n  ";
-const tabs=document.createElement('nav');
-  tabs.className='fr-tabs';
-  tabs.setAttribute('aria-label','Block Bande Bereiche');
-
+  screenTab.type='button';screenTab.className='fr-tab';screenTab.textContent='Bildschirm';screenTab.dataset.frTab='screen';
   const chatTab=document.createElement('button');
-  chatTab.type='button';
-  chatTab.className='fr-tab';
-  chatTab.textContent='Chat';
-  chatTab.dataset.frTab='chat';
-
+  chatTab.type='button';chatTab.className='fr-tab';chatTab.textContent='Chat';chatTab.dataset.frTab='chat';
   const controlTab=document.createElement('button');
-  controlTab.type='button';
-  controlTab.className='fr-tab active';
-  controlTab.textContent='Steuerung';
-  controlTab.dataset.frTab='control';
-
+  controlTab.type='button';controlTab.className='fr-tab active';controlTab.textContent='Steuerung';controlTab.dataset.frTab='control';
+  const tabs=document.createElement('nav');
+  tabs.className='fr-tabs';tabs.setAttribute('aria-label','Bereiche');
   tabs.append(controlTab,chatTab,screenTab);
 
+  const screenPanel=document.createElement('section');
+  screenPanel.className='fr-panel';screenPanel.id='fr-panel-screen';
+  screenPanel.innerHTML='<div class="fr-viewer"><canvas id="fr-viewCanvas" aria-label="Minecraft-Bildschirmansicht"></canvas></div>';
+
   const chatPanel=document.createElement('section');
-  chatPanel.className='fr-panel';
-  chatPanel.id='fr-panel-chat';
-
+  chatPanel.className='fr-panel';chatPanel.id='fr-panel-chat';chatPanel.appendChild(chatCard);
   const controlPanel=document.createElement('section');
-  controlPanel.className='fr-panel active';
-  controlPanel.id='fr-panel-control';
-
-  const controlLayout=document.createElement('div');
-  controlLayout.className='fr-control-layout';
-
-  const dataCard=document.createElement('div');
-  dataCard.className='card';
-  const dataTitle=document.createElement('h2');
-  dataTitle.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
-  dataTitle.style.marginTop='0';
-  dataCard.appendChild(dataTitle);
-  dataCard.appendChild(stats);
-
-  const commandTitle=commandCard.querySelector('h2');
-  if(commandTitle) commandTitle.textContent='Befehlszeile';
-  const commandInput=commandCard.querySelector('#commandInput');
-  if(commandInput) commandInput.placeholder='/spawn oder /money';
-
-  const note=document.createElement('div');
-  note.className='fr-note';
-  note.textContent='Befehle können mit oder ohne führendes / eingegeben werden.';
+  controlPanel.className='fr-panel active';controlPanel.id='fr-panel-control';
+  const controls=document.createElement('div');controls.className='fr-control-area';
+  controlCard.classList.add('fr-control-card');
+  const commandTitle=commandCard.querySelector('h2');if(commandTitle)commandTitle.remove();
   commandCard.classList.add('fr-command');
-  const commandForms=commandCard.querySelector('.forms');
-  if(commandForms) commandForms.insertAdjacentElement('afterend',note);
+  const commandInput=commandCard.querySelector('#commandInput');if(commandInput)commandInput.placeholder='/Befehl';
+  const commandButton=commandCard.querySelector('#commandSend');if(commandButton)commandButton.textContent='↵';
+  controls.appendChild(controlCard);
+  controlPanel.append(controls,commandCard);
 
-  chatPanel.appendChild(chatCard);
-  controlLayout.appendChild(controlCard);
-  controlLayout.appendChild(commandCard);
-  controlPanel.appendChild(controlLayout);
-  controlPanel.appendChild(moneyCard);
-  controlPanel.appendChild(eventsCard);
+  const sidebar=document.createElement('aside');sidebar.className='fr-sidebar';
+  const brand=document.createElement('div');brand.className='fr-side-brand';
+  brand.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
+  sidebar.appendChild(brand);
+  const values=Array.from(stats.children);
+  const money=values.find(el=>el.querySelector('#money'));
+  const uptime=values.find(el=>el.querySelector('#uptime'));
+  const coords=values.find(el=>el.querySelector('#coords'));
+  const status=values.find(el=>el.querySelector('#status'));
+  stats.id='fr-status-list';
+  if(status){const value=status.querySelector('#status');if(value)value.id='botStatus';}
+  stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
+  sidebar.appendChild(stats);
+  const version=document.createElement('div');version.className='fr-version';version.textContent='Version';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
-  const appLayout=document.createElement('div');
-  appLayout.className='fr-app-layout';
-  const sidebar=document.createElement('aside');
-  sidebar.className='fr-sidebar';
-  sidebar.appendChild(dataCard);
-  const mainPanels=document.createElement('div');
-  mainPanels.className='fr-main-panels';
-  mainPanels.append(chatPanel,controlPanel,screenPanel);
-  if(auth){auth.insertAdjacentElement('afterend',appLayout);}else{top.insertAdjacentElement('afterend',appLayout);}
+  const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
+  const mainPanels=document.createElement('div');mainPanels.className='fr-main-panels';
+  mainPanels.append(controlPanel,chatPanel,screenPanel);
+  if(auth)auth.insertAdjacentElement('afterend',appLayout);else top.insertAdjacentElement('afterend',appLayout);
   appLayout.append(sidebar,mainPanels);
+  const titleNode=top.querySelector('.title');if(titleNode)titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
+  const subtitle=top.querySelector('.sub');if(subtitle)subtitle.remove();
   top.appendChild(tabs);
-  const titleNode=top.querySelector('.title');
-  if(titleNode) titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
-  const logoutButton=top.querySelector('#logout');
-  if(logoutButton){logoutButton.style.marginLeft='0';top.appendChild(logoutButton);}
+  const logoutButton=top.querySelector('#logout');if(logoutButton){logoutButton.textContent='Abmelden';top.appendChild(logoutButton);}
 
   function activate(name){
-    const chat=name==='chat';
-    const control=name==='control';
-    const screen=name==='screen';
-    chatTab.classList.toggle('active',chat);
-    controlTab.classList.toggle('active',control);
-    screenTab.classList.toggle('active',screen);
-    chatPanel.classList.toggle('active',chat);
-    controlPanel.classList.toggle('active',control);
-    screenPanel.classList.toggle('active',screen);
-    if(screen) window.dispatchEvent(new Event('resize'));
+    const chat=name==='chat',control=name==='control',screen=name==='screen';
+    chatTab.classList.toggle('active',chat);controlTab.classList.toggle('active',control);screenTab.classList.toggle('active',screen);
+    chatPanel.classList.toggle('active',chat);controlPanel.classList.toggle('active',control);screenPanel.classList.toggle('active',screen);
+    if(screen)window.dispatchEvent(new Event('resize'));
   }
-
-  chatTab.addEventListener('click',function(){activate('chat');});
-  controlTab.addEventListener('click',function(){activate('control');});
-  screenTab.addEventListener('click',function(){activate('screen');});
+  chatTab.addEventListener('click',()=>activate('chat'));
+  controlTab.addEventListener('click',()=>activate('control'));
+  screenTab.addEventListener('click',()=>activate('screen'));
 const viewCanvas=document.getElementById('fr-viewCanvas');
   const viewStatus=document.getElementById('fr-viewStatus');
   const viewPos=document.getElementById('fr-viewPos');
