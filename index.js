@@ -1021,6 +1021,27 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
  .fr-sidebar{padding:6px 4px!important}
  .fr-main-panels{padding:4px!important}
 }
+
+/* Reparatur: Steuerungsbuttons, Dashboard-Kopf und stabiler Bildschirm */
+.wrap>.top .title:after{content:" · Dashboard";font-size:.48em;font-weight:700;opacity:.8;vertical-align:middle}
+.fr-control-card,.fr-control-card .actions{visibility:visible!important;opacity:1!important}
+.fr-control-card .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-content:start!important;justify-content:center!important;width:100%!important;max-width:440px!important;margin:12px auto!important;gap:10px!important}
+.fr-control-card .actions>.btn{display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:46px!important;color:#171717!important;background:rgba(235,240,255,.78)!important;border:2px solid #202020!important;z-index:1!important}
+.fr-control-area{display:flex!important;flex:1 1 auto!important;height:auto!important;min-height:0!important;align-items:flex-start!important;justify-content:center!important;overflow:auto!important}
+.fr-control-card{display:flex!important;flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:0!important;align-items:flex-start!important;justify-content:center!important;overflow:visible!important}
+.fr-command{display:block!important;flex:0 0 auto!important;width:100%!important;min-height:44px!important}
+.fr-main-panels{display:flex!important;flex-direction:column!important}
+.fr-panel{display:none!important;flex:1 1 auto!important;width:100%!important;min-height:0!important}
+.fr-panel.active{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-control .fr-control-area{flex:1 1 auto!important}
+#fr-panel-screen .fr-viewer{position:relative!important;display:block!important;flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+#fr-panel-screen #fr-viewCanvas{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important}
+#fr-panel-chat .card.section{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-chat .chat{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important}
+@media(max-width:900px){
+ .fr-control-card .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:100%!important}
+ .fr-control-card .actions>.btn{min-height:42px!important;font-size:14px!important}
+}
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
 div><button class="btn" id="logout">Abmelden</button></div>
@@ -1197,7 +1218,7 @@ refresh();setInterval(refresh,2000);
   function activate(name){
     const chat=name==='chat',control=name==='control',screen=name==='screen';
     const alreadyActive=(chat&&chatPanel.classList.contains('active'))||(control&&controlPanel.classList.contains('active'))||(screen&&screenPanel.classList.contains('active'));
-    if(alreadyActive) return;
+    if(alreadyActive){ if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); }); return; }
     chatTab.classList.toggle('active',chat);controlTab.classList.toggle('active',control);screenTab.classList.toggle('active',screen);
     chatPanel.classList.toggle('active',chat);controlPanel.classList.toggle('active',control);screenPanel.classList.toggle('active',screen);
     if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); });
@@ -1353,6 +1374,7 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
   }
 
   window.addEventListener('resize',resize3D);
+  if(typeof ResizeObserver!=='undefined' && viewCanvas){ const viewerObserver=new ResizeObserver(()=>resize3D()); viewerObserver.observe(viewCanvas.parentElement); }
   init3D();
   refreshView();
   setInterval(refreshView,500);
