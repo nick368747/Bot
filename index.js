@@ -1461,6 +1461,25 @@ body{overflow:auto!important}
  #fr-panel-control #control .actions button{font-size:14px!important;min-height:44px!important;padding:6px 3px!important}
  .wrap>.top .fr-tab{font-size:14px!important}
 }
+
+/* Scroll-Fix: nur die Ansichtsflächen bleiben intern bedienbar; die Seite selbst bleibt auf einen Viewport begrenzt. */
+html,body{width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:fixed!important;inset:0!important}
+.wrap{width:100%!important;height:100vh!important;height:100dvh!important;min-height:0!important;max-height:100vh!important;max-height:100dvh!important;overflow:hidden!important}
+.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.wrap>.fr-app-layout>.fr-sidebar{min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+.wrap>.fr-app-layout>.fr-main-panels{height:100%!important;min-height:0!important;overflow:hidden!important}
+.wrap>.fr-app-layout .fr-panel.active{height:100%!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-control .fr-control-area{min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+#fr-panel-control #control{min-height:0!important}
+#fr-panel-chat #chatPanel{min-height:0!important}
+#fr-panel-chat #chat{min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+#fr-panel-screen .fr-viewer{min-height:0!important;overflow:hidden!important}
+@media(max-width:900px){
+ .wrap>.top{flex:0 0 auto!important}
+ .wrap>.fr-app-layout{height:0!important;min-height:0!important;flex:1 1 0!important}
+}
+
 </style></body></html>`;
 // ============================================================
 // HTTP API
