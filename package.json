@@ -1,15 +1,16 @@
 {
   "name": "frozenrun-web",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "private": true,
-  "description": "FrozenRun Minecraft Bedrock Bot mit Web-Dashboard ohne Discord-Steuerung",
+  "description": "FrozenRun Minecraft Bedrock Bot mit lokalem PC-Start und Web-Dashboard",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "check": "node --check index.js"
+    "check": "node --check index.js",
+    "start:local": "node index.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24.21.0"
   },
   "dependencies": {
     "bedrock-protocol": "3.60.1",
