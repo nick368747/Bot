@@ -755,7 +755,7 @@ return { amount, output: firstOutput };
 // ============================================================
 const LOGIN_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-
-scale=1"><title>Block Bande – Botportal</title>
+scale=1"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#4267d5"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Block Bande"><link rel="icon" href="/app-icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/app-icon.svg"><title>Block Bande – Botportal</title>
 <style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:20px}.card{width:min(620px,100%);min-height:340px;background:#e8e8e8;border:4px solid #202020;border-radius:7px;padding:34px 28px;box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 46px}.muted{color:#333;text-align:center;margin-bottom:22px}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px}.small{position:absolute;right:12px;bottom:8px;font-size:13px;color:#333;margin:0}
 /* Korrektur: Kopfzeile oben, Seitenleiste und Inhalt darunter */
 body{overflow:auto!important}
@@ -802,7 +802,7 @@ document.getElementById('form').addEventListener('submit',async e=>{e.preventDef
 'msg');msg.textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
 body:JSON.stringify({password:document.getElementById('password').value})});const d=await r.json();if(!r.ok)throw new Error(
 d.error||'Login fehlgeschlagen');location.href='/';}catch(err){msg.textContent=err.message;}});
-</script></body></html>`;
+</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
 const DASHBOARD_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-
 scale=1"><title>Block Bande – Botportal</title>
@@ -1497,6 +1497,21 @@ res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
+if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-icon.svg" || url === "/sw.js")) {
+  const assets = {
+    "/manifest.webmanifest": { file: "manifest.webmanifest", type: "application/manifest+json; charset=utf-8", cache: "no-cache" },
+    "/app-icon.svg": { file: "app-icon.svg", type: "image/svg+xml; charset=utf-8", cache: "public, max-age=3600" },
+    "/sw.js": { file: "sw.js", type: "application/javascript; charset=utf-8", cache: "no-cache" }
+  };
+  const asset = assets[url];
+  try {
+    const body = fs.readFileSync(path.join(__dirname, asset.file));
+    res.writeHead(200, { "Content-Type": asset.type, "Cache-Control": asset.cache, "X-Content-Type-Options": "nosniff", "Service-Worker-Allowed": "/" });
+    return res.end(body);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "App-Datei fehlt." });
+  }
+}
 if (req.method === "GET" && url === "/health") {
 return json(res, 200, { ok: true, minecraftOnline: mcOnline });
 }
