@@ -1073,9 +1073,9 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
 id="authCode" class="value"></div></div>
 <div class="card section" id="control"><h2>Steuerung</h2><div class="actions">
-<button class="btn primary" data-action="start"> Ein</button><button class="btn danger" data-action="stop"> Aus</
-button><button class="btn" data-action="reconnect"> Neu verbinden</button><button class="btn" data-action="home"> Home
-AFK</button><button class="btn" data-action="run"> Laufen</button><button class="btn danger" data-action="stoprun"> Laufen
+<button class="btn primary" data-action="start"><span aria-hidden="true">▶</span> Ein</button><button class="btn danger" data-action="stop"><span aria-hidden="true">■</span> Aus</
+button><button class="btn" data-action="reconnect"><span aria-hidden="true">↻</span> Neu verbinden</button><button class="btn" data-action="home"><span aria-hidden="true">⌂</span> Home
+AFK</button><button class="btn" data-action="run"><span aria-hidden="true">➜</span> Laufen</button><button class="btn danger" data-action="stoprun"><span aria-hidden="true">■</span> Laufen
 stoppen</button><button class="btn" data-action="mc-login" type="button">MC Anmeldung</button>
 </div></div>
 <div class="card section" id="chatPanel"><h2>Minecraft-Chat</h2><div id="chat" class="chat"></div><div class="forms" style="margin-top:
