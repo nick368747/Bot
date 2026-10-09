@@ -1052,8 +1052,8 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
  .fr-control-card .actions>.btn{min-height:42px!important;font-size:14px!important}
 }
 </style></head><body><main class="wrap">
-<div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
-div><button class="btn" id="logout">Abmelden</button></div>
+<div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung <span style="display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid #777;border-radius:5px;font-weight:800">Version 2.0</span></div></
+div><button class="btn" id="logout" type="button" onclick="this.disabled=true;this.textContent='Abmelden…';fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'}).catch(()=>{}).finally(()=>location.replace('/login?loggedout='+Date.now()))">Abmelden</button></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#status">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
 <div class="grid" id="status">
 <div class="card"><div class="label">Status</div><div id="status" class="value offline">Offline</div></div>
@@ -1115,7 +1115,7 @@ $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').va
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
 command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
-const logoutButton=$('logout');if(logoutButton){logoutButton.type='button';logoutButton.addEventListener('click',async()=>{logoutButton.disabled=true;logoutButton.textContent='Abmelden…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'});if(!response.ok)throw new Error('Abmeldung konnte nicht bestätigt werden');}catch(e){console.warn('Logout:',e.message);}finally{location.replace('/login?loggedout='+Date.now());}});}
+// Abmelden wird direkt am Button ausgelöst, auch wenn andere Dashboard-Skripte fehlschlagen.
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
