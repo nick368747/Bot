@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "Block Bande – Botportal",
+  "short_name": "Block Bande",
+  "description": "Installierbare App für das Block-Bande-Botportal",
+  "lang": "de-DE",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#e9efff",
+  "theme_color": "#4267d5",
+  "icons": [
+    { "src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
