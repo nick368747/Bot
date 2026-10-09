@@ -1210,7 +1210,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.textContent='Version '+require('./package.json').version;sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.textContent='Version 2.0.0';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
