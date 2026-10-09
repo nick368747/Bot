@@ -853,18 +853,17 @@ refresh();setInterval(refresh,2000);
 @media(max-width:560px){.fr-viewer,.fr-viewer canvas{min-height:320px}.fr-view-side{grid-template-columns:1fr}}
 
 /* FrozenRun: Tabs + Steuerungs-Layout */
-.fr-tabs{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,1100px);display:flex;gap:8px;margin:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));border:1px solid #24314b;border-bottom:0;border-radius:14px 14px 0 0;background:rgba(10,15,28,.97);backdrop-filter:blur(12px);z-index:1000;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
-.fr-tab{background:transparent;border:1px solid transparent;color:#8e9ab5;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer}
-.fr-tab.active{background:#171f35;color:#fff;border-color:#33415f}
+.fr-tabs{display:flex;gap:0;flex:1;min-width:220px;align-self:stretch;border:3px solid #202020;border-radius:6px;background:#d5d5d5;overflow:hidden}
+.fr-tab{flex:1;background:#e8e8e8;border:0;border-right:2px solid #202020;color:#171717;border-radius:0;padding:10px 12px;font-weight:800;cursor:pointer;font-family:inherit;font-size:16px}.fr-tab:last-child{border-right:0}.fr-tab.active{background:#aaa;color:#171717;box-shadow:inset 0 0 0 2px #777}
 .fr-panel{display:none}
 .fr-panel.active{display:block}
-.wrap{padding-bottom:86px}
-.fr-control-layout{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px;align-items:start}
+.wrap{padding-bottom:16px}
+.fr-control-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .fr-command textarea{width:100%;min-height:120px;resize:vertical;background:#0d1424;color:#fff;border:1px solid #2c3957;border-radius:12px;padding:12px;font:inherit}
 .fr-command .forms{grid-template-columns:1fr}
-.fr-note{font-size:13px;color:#8290ad;line-height:1.45;margin-top:8px}
+.fr-note{font-size:13px;color:#333;line-height:1.45;margin-top:8px}.fr-app-layout{display:grid;grid-template-columns:185px minmax(0,1fr);gap:14px;align-items:start}.fr-sidebar{min-width:0}.fr-sidebar .card{padding:12px}.fr-sidebar .grid>div{padding:0;border:0;border-bottom:1px solid #aaa;border-radius:0;background:transparent}.fr-sidebar .grid>div:last-child{border-bottom:0}.fr-main-panels{min-width:0}.fr-main-panels>.fr-panel{margin-top:0}.fr-sidebar .label{font-size:15px}.fr-sidebar .value{font-size:18px}.top .title{flex-shrink:0}.top .sub{display:none}
 @media(max-width:950px){.fr-control-layout{grid-template-columns:1fr 1fr}.fr-command{grid-column:1/-1}}
-@media(max-width:700px){.fr-control-layout{grid-template-columns:1fr}.fr-command{grid-column:auto}}
+@media(max-width:700px){.fr-control-layout{grid-template-columns:1fr}.fr-command{grid-column:auto}.fr-tabs{width:100%;min-width:0}.fr-tab{padding:9px 5px;font-size:14px}.fr-app-layout{grid-template-columns:1fr}.fr-sidebar .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.fr-sidebar .grid>div{border-bottom:0;border-right:1px solid #aaa;padding:4px}.fr-sidebar .grid>div:nth-child(even){border-right:0}.top .title{font-size:24px}}
 </style>
 <script>
 (function(){
@@ -899,31 +898,31 @@ refresh();setInterval(refresh,2000);
   const screenPanel=document.createElement('section');
   screenPanel.className='fr-panel';
   screenPanel.id='fr-panel-screen';
-  screenPanel.innerHTML = "\n    <div class=\"fr-screen\">\n      <div class=\"fr-viewer\">\n        <canvas id=\"fr-viewCanvas\" aria-label=\"Live-Ansicht des Minecraft-Bots\"></canvas>\n        <div class=\"fr-view-overlay\">\n          <div class=\"fr-view-top\">\n            <div class=\"fr-view-badge\" id=\"fr-viewStatus\">Warte auf Bot…</div>\n            <div class=\"fr-view-badge\">Live</div>\n          </div>\n          <div class=\"fr-crosshair\"></div>\n        </div>\n      </div>\n      <div class=\"fr-view-side\">\n        <div class=\"card\"><div class=\"label\">Position</div><div id=\"fr-viewPos\" class=\"value\">0, 0, 0</div></div>\n        <div class=\"card\"><div class=\"label\">Blickrichtung</div><div id=\"fr-viewRot\" class=\"value\">0° / 0°</div></div>\n        <div class=\"card\"><div class=\"label\">Bot</div><div id=\"fr-viewBot\" class=\"value\">Offline</div></div>\n        <div class=\"card\">\n          <div class=\"label\">Kompass</div>\n          <div class=\"fr-compass\">\n            <div class=\"fr-compass-ring\">\n              <span class=\"fr-compass-n\">N</span><span class=\"fr-compass-e\">O</span>\n              <span class=\"fr-compass-s\">S</span><span class=\"fr-compass-w\">W</span>\n              <div id=\"fr-compassArrow\" class=\"fr-compass-arrow\"></div>\n            </div>\n          </div>\n        </div>\n        <div class=\"card\"><div class=\"label\">Hinweis</div><div class=\"fr-view-note\">Das ist eine browserbasierte Live-Ansicht der Bot-Perspektive. Eine pixelgenaue Minecraft-Aufnahme ist damit noch nicht enthalten; dafür müsste Minecraft zusätzlich gerendert und als Videostream übertragen werden.</div></div>\n      </div>\n    </div>\n  ";
+  screenPanel.innerHTML = "\n    <div class=\"fr-screen\">\n      <div class=\"fr-viewer\">\n        <canvas id=\"fr-viewCanvas\" aria-label=\"Live-Ansicht des Minecraft-Bots\"></canvas>\n        <div class=\"fr-view-overlay\">\n          <div class=\"fr-view-top\">\n            <div class=\"fr-view-badge\" id=\"fr-viewStatus\">Warte auf Bot…</div>\n            <div class=\"fr-view-badge\">Live</div>\n          </div>\n          <div class=\"fr-crosshair\"></div>\n        </div>\n      </div>\n      <div class=\"fr-view-side\">\n        <div class=\"card\"><div class=\"label\">Position</div><div id=\"fr-viewPos\" class=\"value\">0, 0, 0</div></div>\n        <div class=\"card\"><div class=\"label\">Blickrichtung</div><div id=\"fr-viewRot\" class=\"value\">0° / 0°</div></div>\n        <div class=\"card\"><div class=\"label\">Bot</div><div id=\"fr-viewBot\" class=\"value\">Offline</div></div>\n        <div class=\"card\">\n          <div class=\"label\">Kompass</div>\n          <div class=\"fr-compass\">\n            <div class=\"fr-compass-ring\">\n              <span class=\"fr-compass-n\">N</span><span class=\"fr-compass-e\">O</span>\n              <span class=\"fr-compass-s\">S</span><span class=\"fr-compass-w\">W</span>\n              <div id=\"fr-compassArrow\" class=\"fr-compass-arrow\"></div>\n            </div>\n          </div>\n        </div>\n        <div class=\"card\"><div class=\"label\">Hinweis</div><div class=\"fr-view-note\">Hier werden die verfügbaren Welt-Chunks in einer vereinfachten 3D-Ansicht dargestellt.</div></div>\n      </div>\n    </div>\n  ";
 const tabs=document.createElement('nav');
   tabs.className='fr-tabs';
   tabs.setAttribute('aria-label','FrozenRun Bereiche');
 
   const chatTab=document.createElement('button');
   chatTab.type='button';
-  chatTab.className='fr-tab active';
+  chatTab.className='fr-tab';
   chatTab.textContent='Chat';
   chatTab.dataset.frTab='chat';
 
   const controlTab=document.createElement('button');
   controlTab.type='button';
-  controlTab.className='fr-tab';
+  controlTab.className='fr-tab active';
   controlTab.textContent='Steuerung';
   controlTab.dataset.frTab='control';
 
-  tabs.append(chatTab,screenTab,controlTab);
+  tabs.append(controlTab,chatTab,screenTab);
 
   const chatPanel=document.createElement('section');
-  chatPanel.className='fr-panel active';
+  chatPanel.className='fr-panel';
   chatPanel.id='fr-panel-chat';
 
   const controlPanel=document.createElement('section');
-  controlPanel.className='fr-panel';
+  controlPanel.className='fr-panel active';
   controlPanel.id='fr-panel-control';
 
   const controlLayout=document.createElement('div');
@@ -932,7 +931,7 @@ const tabs=document.createElement('nav');
   const dataCard=document.createElement('div');
   dataCard.className='card';
   const dataTitle=document.createElement('h2');
-  dataTitle.textContent='Daten';
+  dataTitle.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
   dataTitle.style.marginTop='0';
   dataCard.appendChild(dataTitle);
   dataCard.appendChild(stats);
@@ -950,7 +949,6 @@ const tabs=document.createElement('nav');
   if(commandForms) commandForms.insertAdjacentElement('afterend',note);
 
   chatPanel.appendChild(chatCard);
-  controlLayout.appendChild(dataCard);
   controlLayout.appendChild(controlCard);
   controlLayout.appendChild(commandCard);
   controlPanel.appendChild(controlLayout);
@@ -958,17 +956,21 @@ const tabs=document.createElement('nav');
   controlPanel.appendChild(eventsCard);
 
   const auth=wrap.querySelector('#auth');
-  if(auth){
-    auth.insertAdjacentElement('afterend',chatPanel);
-    chatPanel.insertAdjacentElement('afterend',controlPanel);
-    controlPanel.insertAdjacentElement('afterend',screenPanel);
-    screenPanel.insertAdjacentElement('afterend',tabs);
-  }else{
-    tabs.insertAdjacentElement('afterend',chatPanel);
-    chatPanel.insertAdjacentElement('afterend',controlPanel);
-    controlPanel.insertAdjacentElement('afterend',screenPanel);
-    screenPanel.insertAdjacentElement('afterend',tabs);
-  }
+  const appLayout=document.createElement('div');
+  appLayout.className='fr-app-layout';
+  const sidebar=document.createElement('aside');
+  sidebar.className='fr-sidebar';
+  sidebar.appendChild(dataCard);
+  const mainPanels=document.createElement('div');
+  mainPanels.className='fr-main-panels';
+  mainPanels.append(chatPanel,controlPanel,screenPanel);
+  if(auth){auth.insertAdjacentElement('afterend',appLayout);}else{top.insertAdjacentElement('afterend',appLayout);}
+  appLayout.append(sidebar,mainPanels);
+  top.appendChild(tabs);
+  const titleNode=top.querySelector('.title');
+  if(titleNode) titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
+  const logoutButton=top.querySelector('#logout');
+  if(logoutButton) logoutButton.style.marginLeft='0';
 
   function activate(name){
     const chat=name==='chat';
