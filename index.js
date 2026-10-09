@@ -1209,7 +1209,7 @@ refresh();setInterval(refresh,2000);
   const money=values.find(el=>el.querySelector('#money'));
   const uptime=values.find(el=>el.querySelector('#uptime'));
   const coords=values.find(el=>el.querySelector('#coords'));
-  const status=values.find(el=>el.querySelector('#status'));
+  const status=values.find(el=>el.querySelector('#statusValue'));
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
