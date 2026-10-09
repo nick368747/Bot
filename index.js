@@ -761,10 +761,32 @@ d.error||'Login fehlgeschlagen');location.href='/';}catch(err){msg.textContent=e
 const DASHBOARD_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-
 scale=1"><title>Block Bande – Botportal</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif}.wrap{width:min(1440px,100%);margin:auto;padding:20px}.brand-wrap{min-width:0}.logout-button{margin-left:auto}.top .title{font-size:clamp(28px,3vw,40px)}.top{display:flex;align-items:center;gap:18px;margin-bottom:12px;padding:0 0 10px;border-bottom:3px solid #202020}.title{font-size:clamp(25px,4vw,38px);font-weight:900;white-space:nowrap}.sub{color:#444;font-size:13px}.btn{border:3px solid #202020;background:#d5d5d5;color:#171717;border-radius:6px;padding:10px 12px;font-weight:800;cursor:pointer;font-family:inherit}.btn.primary,.btn.danger{background:#d5d5d5;border-color:#202020;color:#171717}.grid{display:grid;grid-template-columns:1fr;gap:14px}.card{background:#e8e8e8;border:3px solid #202020;border-radius:6px;padding:12px;box-shadow:none}.label{font-size:13px;color:#333;text-transform:none;letter-spacing:0}.value{font-size:20px;font-weight:800;margin-top:4px;word-break:break-word}.online{color:#26713c}.offline{color:#a51d1d}.auth{margin-top:14px;border-color:#202020;background:#e8e8e8}.auth a{color:#315ca0}.actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}section{margin-top:12px}.section h2{font-size:18px;margin:0 0 10px}.chat{height:360px;overflow:auto;background:#d5d5d5;border:3px solid #202020;border-radius:6px;padding:10px}.line{padding:8px 4px;border-bottom:1px solid #aaa;white-space:pre-wrap;overflow-wrap:anywhere}.time{color:#555;font-size:12px}.name{font-weight:800;color:#315ca0}.forms{display:grid;grid-template-columns:1fr auto;gap:8px}.forms input,.forms textarea{width:100%;background:#d5d5d5;color:#171717;border:3px solid #202020;border-radius:6px;padding:10px;font:inherit}.forms input::placeholder{color:#333;opacity:1}.events{max-height:220px;overflow:auto}.event{padding:7px 0;border-bottom:1px solid #bbb;font-size:13px}.event.error{color:#a51d1d}.event.success{color:#26713c}.event.auth{color:#775b00}.logout{margin-left:auto}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#e8e8e8;border:3px solid #202020;border-radius:6px;padding:12px 16px;display:none;max-width:90%;z-index:10}.hidden{display:none!important}@media(max-width:800px){.actions{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.wrap{padding:10px}.top{gap:8px;flex-wrap:wrap}.title{font-size:25px}.forms{grid-template-columns:1fr}.chat{height:300px}}</style></head><body><main class="wrap">
+<style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif}.wrap{width:min(1440px,100%);margin:auto;padding:20px}.brand-wrap{min-width:0}.logout-button{margin-left:auto}.top .title{font-size:clamp(28px,3vw,40px)}.top{display:flex;align-items:center;gap:18px;margin-bottom:12px;padding:0 0 10px;border-bottom:3px solid #202020}.title{font-size:clamp(25px,4vw,38px);font-weight:900;white-space:nowrap}.sub{color:#444;font-size:13px}.btn{border:3px solid #202020;background:#d5d5d5;color:#171717;border-radius:6px;padding:10px 12px;font-weight:800;cursor:pointer;font-family:inherit}.btn.primary,.btn.danger{background:#d5d5d5;border-color:#202020;color:#171717}.grid{display:grid;grid-template-columns:1fr;gap:14px}.card{background:#e8e8e8;border:3px solid #202020;border-radius:6px;padding:12px;box-shadow:none}.label{font-size:13px;color:#333;text-transform:none;letter-spacing:0}.value{font-size:20px;font-weight:800;margin-top:4px;word-break:break-word}.online{color:#26713c}.offline{color:#a51d1d}.auth{margin-top:14px;border-color:#202020;background:#e8e8e8}.auth a{color:#315ca0}.actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}section{margin-top:12px}.section h2{font-size:18px;margin:0 0 10px}.chat{height:360px;overflow:auto;background:#d5d5d5;border:3px solid #202020;border-radius:6px;padding:10px}.line{padding:8px 4px;border-bottom:1px solid #aaa;white-space:pre-wrap;overflow-wrap:anywhere}.time{color:#555;font-size:12px}.name{font-weight:800;color:#315ca0}.forms{display:grid;grid-template-columns:1fr auto;gap:8px}.forms input,.forms textarea{width:100%;background:#d5d5d5;color:#171717;border:3px solid #202020;border-radius:6px;padding:10px;font:inherit}.forms input::placeholder{color:#333;opacity:1}.events{max-height:220px;overflow:auto}.event{padding:7px 0;border-bottom:1px solid #bbb;font-size:13px}.event.error{color:#a51d1d}.event.success{color:#26713c}.event.auth{color:#775b00}.logout{margin-left:auto}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#e8e8e8;border:3px solid #202020;border-radius:6px;padding:12px 16px;display:none;max-width:90%;z-index:10}.hidden{display:none!important}
+.dashboard-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:0 0 12px;border-bottom:3px solid #202020}
+.dashboard-tabs a{display:block;padding:9px 13px;border:3px solid #202020;border-radius:6px;background:#d5d5d5;color:#171717;text-decoration:none;font-weight:900}
+.dashboard-tabs a:active{background:#c4c4c4}
+.wrap{display:grid;grid-template-columns:minmax(190px,230px) minmax(210px,.85fr) minmax(300px,1.35fr);grid-template-areas:"head head head" "tabs tabs tabs" "stats control chat" "stats money chat" "stats command events" "foot foot foot";align-items:start;gap:14px;max-width:1440px}
+.wrap>.top{grid-area:head;margin:0}
+.wrap>.dashboard-tabs{grid-area:tabs}
+.wrap>.grid{grid-area:stats;grid-template-columns:1fr;gap:12px;margin:0}
+.wrap>#auth{grid-column:1/-1}
+.wrap>#control{grid-area:control;margin:0}
+.wrap>#chatPanel{grid-area:chat;margin:0}
+.wrap>#moneyPanel{grid-area:money;margin:0}
+.wrap>#commandPanel{grid-area:command;margin:0}
+.wrap>#eventsPanel{grid-area:events;margin:0}
+.wrap>.logout{grid-area:foot}
+#control .actions{grid-template-columns:1fr}
+#chatPanel .chat{height:390px}
+#moneyPanel .forms,#commandPanel .forms{grid-template-columns:minmax(0,1fr) auto}
+.dashboard-tabs a:focus-visible{outline:3px solid #4779c7;outline-offset:2px}
+@media(max-width:900px){.wrap{grid-template-columns:minmax(150px,.7fr) minmax(0,1.3fr);grid-template-areas:"head head" "tabs tabs" "stats control" "chat chat" "money command" "events events" "foot foot"}#chatPanel .chat{height:300px}}
+@media(max-width:560px){.wrap{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "tabs" "stats" "control" "chat" "money" "command" "events" "foot";padding:10px}.top{align-items:flex-start}.logout-button{margin-left:auto}.dashboard-tabs{gap:6px}.dashboard-tabs a{padding:8px 10px;font-size:14px}.wrap>.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap>.grid>.card{min-width:0}.value{font-size:18px}#control .actions{grid-template-columns:repeat(2,minmax(0,1fr))}#chatPanel .chat{height:260px}.forms{grid-template-columns:minmax(0,1fr) auto!important}.forms input,.forms button{min-width:0;font-size:15px;padding:9px 7px}}
+@media(max-width:800px){.actions{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.wrap{padding:10px}.top{gap:8px;flex-wrap:wrap}.title{font-size:25px}.forms{grid-template-columns:1fr}.chat{height:300px}}</style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
 div><button class="btn" id="logout">Abmelden</button></div>
-<div class="grid">
+<nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#status">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
+<div class="grid" id="status">
 <div class="card"><div class="label">Status</div><div id="status" class="value offline">Offline</div></div>
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
@@ -773,21 +795,21 @@ div><button class="btn" id="logout">Abmelden</button></div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
 id="authCode" class="value"></div></div>
-<div class="card section"><h2>Steuerung</h2><div class="actions">
+<div class="card section" id="control"><h2>Steuerung</h2><div class="actions">
 <button class="btn primary" data-action="start"> Ein</button><button class="btn danger" data-action="stop"> Aus</
 button><button class="btn" data-action="reconnect"> Neu verbinden</button><button class="btn" data-action="home"> Home
 AFK</button><button class="btn" data-action="run"> Laufen</button><button class="btn danger" data-action="stoprun"> Laufen
 stoppen</button>
 </div></div>
-<div class="card section"><h2>Minecraft-Chat</h2><div id="chat" class="chat"></div><div class="forms" style="margin-top:
+<div class="card section" id="chatPanel"><h2>Minecraft-Chat</h2><div id="chat" class="chat"></div><div class="forms" style="margin-top:
 10px"><input id="chatInput" maxlength="256" placeholder="Nachricht an den Minecraft-Chat"><button class="btn primary"
 id="chatSend">Senden</button></div></div>
-<div class="card section"><h2>Geld senden</h2><div class="forms"><input id="moneyInput" inputmode="decimal"
+<div class="card section" id="moneyPanel"><h2>Geld senden</h2><div class="forms"><input id="moneyInput" inputmode="decimal"
 placeholder="Betrag, z. B. 500"><button class="btn primary" id="moneySend">Senden</button></div><div class="sub"
 style="margin-top:8px">Ziel: !FrozenBoar16433 · Über 4.999 $ wird automatisch bestätigt.</div></div>
-<div class="card section"><h2>Minecraft-Befehl</h2><div class="forms"><input id="commandInput" maxlength="256"
+<div class="card section" id="commandPanel"><h2>Minecraft-Befehl</h2><div class="forms"><input id="commandInput" maxlength="256"
 placeholder="z. B. /spawn oder /money"><button class="btn" id="commandSend">Ausführen</button></div></div>
-<div class="card section"><h2>Ereignisse</h2><div id="events" class="events"></div></div>
+<div class="card section" id="eventsPanel"><h2>Ereignisse</h2><div id="events" class="events"></div></div>
 <div class="sub logout">Automatische Aktualisierung alle 2 Sekunden.</div>
 </main><div id="toast" class="toast"></div>
 <script>
