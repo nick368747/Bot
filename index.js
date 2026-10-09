@@ -1002,7 +1002,6 @@ refresh();setInterval(refresh,2000);
   const coords=values.find(el=>el.querySelector('#coords'));
   const status=values.find(el=>el.querySelector('#status'));
   stats.id='fr-status-list';
-  if(status){const value=status.querySelector('#status');if(value)value.id='botStatus';}
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
   const version=document.createElement('div');version.className='fr-version';version.textContent='Version';sidebar.appendChild(version);
