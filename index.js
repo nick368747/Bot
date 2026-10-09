@@ -986,6 +986,41 @@ body{background:#d3d3d3!important;overflow:hidden!important}
  #fr-panel-screen .fr-viewer{height:clamp(240px,58dvh,480px)!important;max-height:480px!important}
 }
 
+
+/* FINAL FIX: Vollbild-Layout ohne kumulierendes Wachstum */
+html,body{width:100%!important;height:100%!important;min-height:100%!important;margin:0!important}
+body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.22) 48%,rgba(255,55,105,.30) 100%)!important;background-color:transparent!important;background-attachment:fixed!important;overflow:hidden!important}
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;margin:0!important;padding:0!important;gap:0!important;overflow:hidden!important;background:transparent!important}
+.wrap>.top{flex:0 0 auto!important;min-height:0!important;background:rgba(70,110,235,.14)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.fr-app-layout{display:grid!important;grid-template-columns:minmax(145px,25%) minmax(0,1fr)!important;flex:1 1 0px!important;width:100%!important;height:0!important;min-height:0!important;margin:0!important;overflow:hidden!important;background:rgba(100,130,245,.13)!important;border-color:rgba(35,45,90,.72)!important}
+.fr-sidebar{min-height:0!important;height:100%!important;overflow:auto!important;background:rgba(65,120,255,.13)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.fr-main-panels{height:100%!important;min-height:0!important;min-width:0!important;padding:10px!important;overflow:hidden!important;background:rgba(255,70,115,.10)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.fr-panel{display:none!important;height:100%!important;min-height:0!important;margin:0!important;overflow:hidden!important}
+.fr-panel.active{display:flex!important;flex-direction:column!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-control.fr-panel.active{display:flex!important}
+#fr-panel-chat.fr-panel.active{display:flex!important}
+#fr-panel-screen.fr-panel.active{display:flex!important}
+#fr-panel-screen .fr-viewer{display:block!important;flex:1 1 0px!important;width:100%!important;height:0!important;min-height:0!important;max-height:none!important;box-sizing:border-box!important;overflow:hidden!important;background:rgba(55,115,255,.24)!important;border-color:rgba(40,55,110,.8)!important}
+#fr-panel-screen #fr-viewCanvas{display:block!important;width:100%!important;height:100%!important;max-height:100%!important}
+#fr-panel-chat .chat{flex:1 1 0px!important;height:0!important;min-height:0!important;max-height:none!important;background:rgba(70,125,255,.17)!important}
+#fr-panel-chat .card.section{display:flex!important;flex:1 1 0px!important;flex-direction:column!important;min-height:0!important}
+#fr-panel-chat .forms{flex:0 0 auto!important}
+.fr-control-area{flex:1 1 0px!important;height:auto!important;min-height:0!important}
+.fr-control-card{min-height:0!important}
+.fr-command{flex:0 0 auto!important}
+.card{background:rgba(100,125,245,.13)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.wrap>.top .fr-tab{min-width:0!important;flex:1 1 0px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+@media(max-width:900px){
+ .wrap>.top{flex:0 0 auto!important}
+ .fr-app-layout{grid-template-columns:minmax(108px,29%) minmax(0,1fr)!important}
+ .fr-main-panels{padding:6px!important}
+ .wrap>.top .fr-tab{font-size:clamp(12px,2.2vw,18px)!important;padding:8px 4px!important}
+}
+@media(max-width:560px){
+ .fr-app-layout{grid-template-columns:minmax(96px,29%) minmax(0,1fr)!important}
+ .fr-sidebar{padding:6px 4px!important}
+ .fr-main-panels{padding:4px!important}
+}
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
 div><button class="btn" id="logout">Abmelden</button></div>
