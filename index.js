@@ -1060,8 +1060,11 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
 #control .actions button.state-selected{background:linear-gradient(135deg,#b8f5cf,#55d98b)!important;border:3px solid #087a3b!important;color:#073b20!important;box-shadow:0 0 0 3px rgba(8,122,59,.18),inset 0 1px 2px rgba(255,255,255,.8)!important;transform:translateY(-1px)}
 #control .actions button[data-action="stop"].state-selected{background:linear-gradient(135deg,#ffd0d0,#ff7777)!important;border-color:#b42323!important;color:#5e1010!important;box-shadow:0 0 0 3px rgba(180,35,35,.16),inset 0 1px 2px rgba(255,255,255,.7)!important}
 #control .actions button:focus-visible{outline:3px solid #2459d3!important;outline-offset:3px}
+#appVersion{position:fixed;right:10px;bottom:8px;z-index:10000;font-size:12px;font-weight:700;color:#25324b;background:rgba(255,255,255,.78);border:1px solid rgba(60,75,110,.35);border-radius:8px;padding:5px 9px;pointer-events:none}
+#microsoftLogout{background:#fff!important;color:#243b73!important;border:1px solid #4267d5!important;font-weight:800!important;min-height:44px}
+@media(max-width:700px){.top{flex-wrap:wrap!important;gap:8px!important}.top #microsoftLogout,.top #logoutForm{margin-left:0!important}.top #microsoftLogout{font-size:12px!important;padding:8px!important}}
 </style></head><body><main class="wrap">
-<div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="POST" action="/api/logout" style="margin-left:auto"><button class="btn" id="logout" type="submit">Abmelden</button></form></div>
+<div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><button class="btn" id="microsoftLogout" type="button" style="margin-left:auto">Microsoft-Konto abmelden</button><form id="logoutForm" method="POST" action="/api/logout" style="margin-left:0"><button class="btn" id="logout" type="submit">Portal abmelden</button></form></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
 <div class="grid" id="statusGrid">
 <div class="card"><div class="label">Status</div><div id="statusValue" class="value offline">Offline</div></div>
@@ -1088,9 +1091,25 @@ style="margin-top:8px">Ziel: !FrozenBoar16433 · Über 4.999 $ wird automatisch 
 placeholder="z. B. /spawn oder /money"><button class="btn" id="commandSend">Ausführen</button></div></div>
 <div class="card section" id="eventsPanel"><h2>Ereignisse</h2><div id="events" class="events"></div></div>
 <div class="sub logout">Automatische Aktualisierung alle 2 Sekunden.</div>
-</main><div id="toast" class="toast"></div>
+</main><div id="appVersion" aria-label="Version 2.0.3">Version 2.0.3</div><div id="toast" class="toast"></div>
 <script>
 const $=id=>document.getElementById(id);let lastChat=0,lastEvents=0;
+const microsoftLogoutButton=$('microsoftLogout');
+if(microsoftLogoutButton){
+ microsoftLogoutButton.addEventListener('click',async()=>{
+  if(!confirm('Minecraft-Bot stoppen und die lokal gespeicherten Microsoft-Anmeldedaten entfernen? Danach ist eine neue Microsoft-Anmeldung erforderlich.'))return;
+  microsoftLogoutButton.disabled=true;
+  const oldText=microsoftLogoutButton.textContent;
+  microsoftLogoutButton.textContent='Melde Microsoft ab…';
+  try{
+   const response=await fetch('/api/minecraft/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(data.error||'Microsoft-Abmeldung fehlgeschlagen');
+   toast('Lokale Microsoft-Anmeldedaten entfernt. Bitte den Bot neu starten und den neuen Microsoft-Code verwenden.');
+   microsoftLogoutButton.textContent='Microsoft abgemeldet';
+  }catch(err){toast(err.message||'Microsoft-Abmeldung fehlgeschlagen');microsoftLogoutButton.disabled=false;microsoftLogoutButton.textContent=oldText;}
+ });
+}
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
@@ -1578,6 +1597,19 @@ return res.end();
 if (req.method !== "POST") return json(res, 405, { ok: false, error: "Methode nicht erlaubt." });
 if (!requireSession(req, res)) return;
 try {
+if (url === "/api/minecraft/logout") {
+  // Beendet die Bot-Sitzung und entfernt ausschließlich die lokal gespeicherten Minecraft/Microsoft-Authdaten.
+  minecraftStoppen();
+  authInfo = null;
+  try {
+    fs.rmSync(MC_PROFILES_FOLDER, { recursive: true, force: true });
+    fs.mkdirSync(MC_PROFILES_FOLDER, { recursive: true });
+  } catch (err) {
+    return json(res, 500, { ok: false, error: "Microsoft-Anmeldedaten konnten nicht entfernt werden." });
+  }
+  addEvent("Lokale Microsoft-Anmeldedaten wurden entfernt. Neue Anmeldung erforderlich.", "auth");
+  return json(res, 200, { ok: true, message: "Lokale Microsoft-Anmeldedaten entfernt." });
+}
 if (url === "/api/minecraft/start") {
 minecraftStarten();
 return json(res, 200, publicStatus());
