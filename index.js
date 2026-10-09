@@ -1115,7 +1115,7 @@ $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').va
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
 command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
-$('logout').addEventListener('click',async()=>{const b=$('logout');if(b){b.disabled=true;b.textContent='Abmelden…'}try{await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}})}catch(e){}location.replace('/login?loggedout='+Date.now())});
+const logoutButton=$('logout');if(logoutButton){logoutButton.type='button';logoutButton.addEventListener('click',async()=>{logoutButton.disabled=true;logoutButton.textContent='Abmelden…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'});if(!response.ok)throw new Error('Abmeldung konnte nicht bestätigt werden');}catch(e){console.warn('Logout:',e.message);}finally{location.replace('/login?loggedout='+Date.now());}});}
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
@@ -1210,7 +1210,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.textContent='Version';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.textContent='Version '+require('./package.json').version;sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
@@ -1458,6 +1458,12 @@ body{overflow:auto!important}
 // HTTP API
 // ============================================================
 async function handleRequest(req, res) {
+// Sicherheitsheader für alle Antworten; die Anmeldung bleibt auf HTTPS-Cookies beschränkt.
+res.setHeader("X-Content-Type-Options", "nosniff");
+res.setHeader("X-Frame-Options", "DENY");
+res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
 if (req.method === "GET" && url === "/health") {
 return json(res, 200, { ok: true, minecraftOnline: mcOnline });
