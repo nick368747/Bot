@@ -1248,6 +1248,9 @@ refresh();setInterval(refresh,2000);
     if(alreadyActive){ if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); }); return; }
     chatTab.classList.toggle('active',chat);controlTab.classList.toggle('active',control);screenTab.classList.toggle('active',screen);
     chatPanel.classList.toggle('active',chat);controlPanel.classList.toggle('active',control);screenPanel.classList.toggle('active',screen);
+    controlPanel.style.display=control?'flex':'none';
+    chatPanel.style.display=chat?'flex':'none';
+    screenPanel.style.display=screen?'flex':'none';
     if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); });
   }
   chatTab.addEventListener('click',()=>activate('chat'));
