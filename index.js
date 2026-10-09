@@ -1058,7 +1058,7 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
 #control .actions button:focus-visible{outline:3px solid #2459d3!important;outline-offset:3px}
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung <span style="display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid #777;border-radius:5px;font-weight:800">Version 2.0</span></div></
-div><button class="btn" id="logout" type="button" onclick="this.disabled=true;this.textContent='Abmelden…';fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'}).catch(()=>{}).finally(()=>location.replace('/login?loggedout='+Date.now()))">Abmelden</button></div>
+div><button class="btn" id="logout" type="button" onclick="this.disabled=true;this.textContent='Abmelden…';const f=document.createElement('form');f.method='POST';f.action='/api/logout';document.body.appendChild(f);f.submit()">Abmelden</button></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
 <div class="grid" id="statusGrid">
 <div class="card"><div class="label">Status</div><div id="statusValue" class="value offline">Offline</div></div>
@@ -1214,7 +1214,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.textContent='Version 2.0.0';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.textContent='Version: 2.0.0';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
@@ -1523,12 +1523,13 @@ timestamp: Date.now()
 if (req.method === "POST" && url === "/api/logout") {
 const token = getCookies(req).frozenrun_session;
 if (token) sessions.delete(token);
-res.writeHead(200, {
-"Content-Type": "application/json; charset=utf-8",
+res.writeHead(303, {
+"Location": "/login?loggedout=1",
 "Set-Cookie": "frozenrun_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0",
-"Cache-Control": "no-store"
+"Cache-Control": "no-store",
+"Content-Length": "0"
 });
-return res.end(JSON.stringify({ ok: true }));
+return res.end();
 }
 if (req.method !== "POST") return json(res, 405, { ok: false, error: "Methode nicht erlaubt." });
 if (!requireSession(req, res)) return;
