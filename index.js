@@ -1268,7 +1268,8 @@ refresh();setInterval(refresh,2000);
   chatCard.style.cssText='display:flex;flex-direction:column;flex:1 1 auto;min-height:280px;visibility:visible;opacity:1;';
   const chatNode=chatCard.querySelector('#chat');
   if(chatNode)chatNode.style.cssText='display:block;flex:1 1 auto;min-height:220px;height:auto;max-height:none;overflow:auto;';
-  if(auth)auth.style.display='none';
+  // Microsoft-Anmeldekarte nicht per Inline-CSS verstecken: render() steuert sie anhand des Device-Codes.
+  if(auth)auth.style.removeProperty('display');
   const logoutForm=top.querySelector('#logoutForm');
   const logoutButtonEarly=logoutForm&&logoutForm.querySelector('#logout');
   if(logoutForm)logoutForm.style.cssText='display:flex;align-items:center;margin-left:auto;flex:0 0 auto;';
