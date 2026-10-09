@@ -969,6 +969,22 @@ body{background:#d3d3d3!important;overflow:hidden!important}
  .fr-main-panels{padding:5px!important}
  #fr-panel-chat .chat{height:55dvh!important;min-height:230px!important}
 }
+/* Bildschirm-Tab: feste Viewer-Höhe verhindert Wachstum bei wiederholtem Öffnen */
+.fr-app-layout{flex:1 0 auto!important;min-height:0!important}
+.fr-main-panels{min-height:0!important;align-self:stretch!important}
+.fr-panel.active{height:auto!important;min-height:0!important;overflow:visible!important}
+#fr-panel-screen.fr-panel.active{display:block!important;height:auto!important;min-height:0!important}
+#fr-panel-screen .fr-viewer{display:block!important;position:relative!important;width:100%!important;height:clamp(280px,62dvh,560px)!important;min-height:0!important;max-height:560px!important;box-sizing:border-box!important;overflow:hidden!important;flex:none!important}
+#fr-panel-screen #fr-viewCanvas{display:block!important;width:100%!important;height:100%!important;max-height:100%!important}
+.wrap>.top .fr-tabs{overflow:hidden!important}
+.wrap>.top .fr-tab{flex:1 1 0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+@media(max-width:900px){
+ .wrap>.top{grid-template-columns:minmax(0,1fr) max-content!important}
+ .wrap>.top .fr-tabs{grid-column:1/-1!important;grid-row:2!important;width:100%!important;min-width:0!important}
+ .wrap>.top .fr-tab{font-size:clamp(13px,2.2vw,18px)!important;padding:9px 5px!important}
+ .fr-app-layout{min-height:0!important}
+ #fr-panel-screen .fr-viewer{height:clamp(240px,58dvh,480px)!important;max-height:480px!important}
+}
 
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
@@ -1145,9 +1161,11 @@ refresh();setInterval(refresh,2000);
 
   function activate(name){
     const chat=name==='chat',control=name==='control',screen=name==='screen';
+    const alreadyActive=(chat&&chatPanel.classList.contains('active'))||(control&&controlPanel.classList.contains('active'))||(screen&&screenPanel.classList.contains('active'));
+    if(alreadyActive) return;
     chatTab.classList.toggle('active',chat);controlTab.classList.toggle('active',control);screenTab.classList.toggle('active',screen);
     chatPanel.classList.toggle('active',chat);controlPanel.classList.toggle('active',control);screenPanel.classList.toggle('active',screen);
-    if(screen)window.dispatchEvent(new Event('resize'));
+    if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); });
   }
   chatTab.addEventListener('click',()=>activate('chat'));
   controlTab.addEventListener('click',()=>activate('control'));
