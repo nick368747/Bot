@@ -1152,17 +1152,16 @@ refresh();setInterval(refresh,2000);
 (function(){
   const wrap=document.querySelector('.wrap');
   if(!wrap || wrap.dataset.frLayoutReady==='1') return;
-  wrap.dataset.frLayoutReady='1';
   const top=wrap.querySelector('.top');
-  const stats=wrap.querySelector('.grid');
-  const sections=Array.from(wrap.querySelectorAll('.card.section'));
-  const byTitle=title=>sections.find(card=>{const h=card.querySelector('h2');return h&&h.textContent.trim().toLowerCase()===title.toLowerCase();});
-  const chatCard=byTitle('Minecraft-Chat');
-  const controlCard=byTitle('Steuerung');
-  const moneyCard=byTitle('Geld senden');
-  const commandCard=byTitle('Minecraft-Befehl');
-  const eventsCard=byTitle('Ereignisse');
+  const stats=wrap.querySelector('#status.grid, .grid');
+  // Robuste Zuordnung über feste IDs statt über sichtbare Überschriften.
+  const chatCard=wrap.querySelector('#chatPanel');
+  const controlCard=wrap.querySelector('#control');
+  const moneyCard=wrap.querySelector('#moneyPanel');
+  const commandCard=wrap.querySelector('#commandPanel');
+  const eventsCard=wrap.querySelector('#eventsPanel');
   if(!top||!stats||!chatCard||!controlCard||!moneyCard||!commandCard||!eventsCard)return;
+  wrap.dataset.frLayoutReady='1';
 
   const oldNav=wrap.querySelector('.dashboard-tabs');
   if(oldNav)oldNav.remove();
