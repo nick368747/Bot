@@ -750,18 +750,8 @@ return { amount, output: firstOutput };
 // ============================================================
 const LOGIN_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-
-scale=1"><title>FrozenRun Login</title>
-<style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0b1020;color:#eef2ff;font-family:system-ui,-apple-system,
-Segoe UI,Roboto,sans-serif;display:grid;place-items:center;padding:20px}.card{width:min(420px,100%);background:#121a2d;
-border:1px solid #263250;border-radius:22px;padding:28px;box-shadow:0 20px 60px #0006}.logo{font-size:30px;font-weight:800;
-margin-bottom:8px}.muted{color:#9aa8c7;margin-bottom:22px}input,button{width:100%;min-height:48px;border-radius:12px;border:
-1px solid #34415f;font-size:16px}input{background:#0d1425;color:#fff;padding:0 14px;margin-bottom:12px}button{background:
-#6d5dfc;color:#fff;font-weight:700;border:0;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;
-color:#ff9b9b;min-height:22px}.small{font-size:13px;color:#7f8dab;margin-top:18px}
-</style></head><body><main class="card"><div class="logo">❄ FrozenRun</div><div class="muted">Web-Steuerung für
-LiveSinger9275</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Web-
-Passwort" required><button>Anmelden</button></form><div id="msg"></div><div class="small">Kein Discord nötig.</div></
+scale=1"><title>Block Bande – Botportal</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:20px}.card{width:min(620px,100%);min-height:340px;background:#e8e8e8;border:4px solid #202020;border-radius:7px;padding:34px 28px;box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 46px}.muted{color:#333;text-align:center;margin-bottom:22px}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px}.small{position:absolute;right:12px;bottom:8px;font-size:13px;color:#333;margin:0}</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button>Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0</div></
 main><script>
 document.getElementById('form').addEventListener('submit',async e=>{e.preventDefault();const msg=document.getElementById(
 'msg');msg.textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -771,28 +761,7 @@ d.error||'Login fehlgeschlagen');location.href='/';}catch(err){msg.textContent=e
 const DASHBOARD_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-
 scale=1"><title>FrozenRun</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#0a0f1d;color:#edf2ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,
-sans-serif}.wrap{width:min(1100px,100%);margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:12px;
-align-items:center;margin-bottom:18px}.title{font-size:28px;font-weight:850}.sub{color:#8e9ab5;font-size:14px}.btn{border:
-1px solid #2c3957;background:#151e33;color:#fff;border-radius:12px;padding:12px 15px;font-weight:700;cursor:pointer}.btn.
-primary{background:#6d5dfc;border-color:#6d5dfc}.btn.danger{background:#8e3040;border-color:#8e3040}.grid{display:grid;grid-
-template-columns:repeat(4,1fr);gap:12px}.card{background:#111a2d;border:1px solid #263451;border-radius:18px;padding:16px}.
-label{font-size:12px;color:#8290ad;text-transform:uppercase;letter-spacing:.06em}.value{font-size:22px;font-weight:800;
-margin-top:6px;word-break:break-word}.online{color:#5ce58c}.offline{color:#ff707d}.auth{margin-top:14px;border-color:#7d6dff;
-background:#171d38}.auth a{color:#bdb5ff}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.
-section{margin-top:16px}.section h2{font-size:17px;margin:0 0 10px}.chat{height:360px;overflow:auto;background:#0d1424;
-border:1px solid #263451;border-radius:14px;padding:10px}.line{padding:8px 4px;border-bottom:1px solid #1b263e;white-space:
-pre-wrap;overflow-wrap:anywhere}.time{color:#687795;font-size:12px}.name{font-weight:800;color:#bdb5ff}.forms{display:grid;
-grid-template-columns:1fr auto;gap:10px}.forms input,.forms textarea{width:100%;background:#0d1424;color:#fff;border:1px
-solid #2c3957;border-radius:12px;padding:12px;font:inherit}.events{max-height:220px;overflow:auto}.event{padding:7px 0;
-border-bottom:1px solid #1b263e;font-size:13px}.event.error{color:#ff858f}.event.success{color:#6ee7a0}.event.auth{color:
-#f7d774}.logout{margin-top:12px}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#171f33;
-border:1px solid #33415f;border-radius:12px;padding:12px 16px;display:none;max-width:90%;z-index:10}.hidden{display:
-none!important}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.actions{grid-template-columns:repeat(2,
-1fr)}}@media(max-width:520px){.wrap{padding:12px}.grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}.top{
-align-items:flex-start}.title{font-size:23px}.forms{grid-template-columns:1fr}.chat{height:300px}}
-</style></head><body><main class="wrap">
+<style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif}.wrap{width:min(1180px,100%);margin:auto;padding:16px}.top{display:flex;align-items:center;gap:18px;margin-bottom:12px;padding:0 0 10px;border-bottom:3px solid #202020}.title{font-size:clamp(25px,4vw,38px);font-weight:900;white-space:nowrap}.sub{color:#444;font-size:13px}.btn{border:3px solid #202020;background:#d5d5d5;color:#171717;border-radius:6px;padding:10px 12px;font-weight:800;cursor:pointer;font-family:inherit}.btn.primary,.btn.danger{background:#d5d5d5;border-color:#202020;color:#171717}.grid{display:grid;grid-template-columns:1fr;gap:14px}.card{background:#e8e8e8;border:3px solid #202020;border-radius:6px;padding:12px;box-shadow:none}.label{font-size:13px;color:#333;text-transform:none;letter-spacing:0}.value{font-size:20px;font-weight:800;margin-top:4px;word-break:break-word}.online{color:#26713c}.offline{color:#a51d1d}.auth{margin-top:14px;border-color:#202020;background:#e8e8e8}.auth a{color:#315ca0}.actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}section{margin-top:12px}.section h2{font-size:18px;margin:0 0 10px}.chat{height:360px;overflow:auto;background:#d5d5d5;border:3px solid #202020;border-radius:6px;padding:10px}.line{padding:8px 4px;border-bottom:1px solid #aaa;white-space:pre-wrap;overflow-wrap:anywhere}.time{color:#555;font-size:12px}.name{font-weight:800;color:#315ca0}.forms{display:grid;grid-template-columns:1fr auto;gap:8px}.forms input,.forms textarea{width:100%;background:#d5d5d5;color:#171717;border:3px solid #202020;border-radius:6px;padding:10px;font:inherit}.forms input::placeholder{color:#333;opacity:1}.events{max-height:220px;overflow:auto}.event{padding:7px 0;border-bottom:1px solid #bbb;font-size:13px}.event.error{color:#a51d1d}.event.success{color:#26713c}.event.auth{color:#775b00}.logout{margin-left:auto}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#e8e8e8;border:3px solid #202020;border-radius:6px;padding:12px 16px;display:none;max-width:90%;z-index:10}.hidden{display:none!important}@media(max-width:800px){.actions{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.wrap{padding:10px}.top{gap:8px;flex-wrap:wrap}.title{font-size:25px}.forms{grid-template-columns:1fr}.chat{height:300px}}</style></head><body><main class="wrap">
 <div class="top"><div><div class="title">❄ FrozenRun</div><div class="sub">Minecraft-Websteuerung · LiveSinger9275</div></
 div><button class="btn" id="logout">Abmelden</button></div>
 <div class="grid">
