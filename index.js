@@ -751,7 +751,47 @@ return { amount, output: firstOutput };
 const LOGIN_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-
 scale=1"><title>Block Bande – Botportal</title>
-<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:20px}.card{width:min(620px,100%);min-height:340px;background:#e8e8e8;border:4px solid #202020;border-radius:7px;padding:34px 28px;box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 46px}.muted{color:#333;text-align:center;margin-bottom:22px}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px}.small{position:absolute;right:12px;bottom:8px;font-size:13px;color:#333;margin:0}</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button style="position:absolute;left:-9999px;width:1px;height:1px;min-height:1px;padding:0;border:0" tabindex="-1" aria-hidden="true">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0</div></
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:20px}.card{width:min(620px,100%);min-height:340px;background:#e8e8e8;border:4px solid #202020;border-radius:7px;padding:34px 28px;box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 46px}.muted{color:#333;text-align:center;margin-bottom:22px}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px}.small{position:absolute;right:12px;bottom:8px;font-size:13px;color:#333;margin:0}
+/* Korrektur: Kopfzeile oben, Seitenleiste und Inhalt darunter */
+body{overflow:auto!important}
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;max-width:1240px!important;height:auto!important;min-height:0!important;margin:0 auto!important;padding:8px!important;overflow:visible!important;box-sizing:border-box!important;gap:0!important}
+.wrap>.top{order:0!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;width:100%!important;min-height:76px!important;box-sizing:border-box!important;border:3px solid #202020!important;border-radius:0!important;padding:4px 8px!important;background:#d3d3d3!important}
+.top .title{flex:0 1 auto!important;white-space:nowrap!important;font-size:clamp(24px,3vw,38px)!important;padding:8px!important}
+.top .sub{display:none!important}
+.top #logout{order:3!important;grid-column:auto!important;flex:0 0 auto!important;margin:0 0 0 8px!important;white-space:nowrap!important}
+.fr-tabs{order:2!important;display:flex!important;flex:1 1 auto!important;min-width:0!important;width:auto!important;justify-content:center!important;align-self:stretch!important}
+.fr-tab{flex:1 1 0!important;min-width:0!important;white-space:normal!important;overflow-wrap:normal!important;padding:10px 8px!important;font-size:clamp(14px,1.7vw,22px)!important;border-radius:0!important}
+.fr-app-layout{order:1!important;display:grid!important;grid-template-columns:minmax(200px,26%) minmax(0,1fr)!important;width:100%!important;height:auto!important;min-height:440px!important;margin-top:0!important;overflow:visible!important;box-sizing:border-box!important;border:3px solid #202020!important;border-top:0!important;border-radius:0!important;background:#d3d3d3!important}
+.fr-sidebar,.fr-main-panels{min-width:0!important;min-height:440px!important;box-sizing:border-box!important}
+.fr-sidebar{padding:12px!important}
+.fr-sidebar .grid{display:flex!important;flex-direction:column!important;gap:0!important}
+.fr-sidebar .grid>div{min-width:0!important;padding:7px 0!important;border:0!important;border-radius:0!important;background:transparent!important}
+.fr-main-panels{height:auto!important;overflow:visible!important;padding:12px!important}
+.fr-panel{display:none!important;height:auto!important;min-height:410px!important;overflow:visible!important}
+.fr-panel.active{display:block!important}
+.fr-control-area{height:auto!important;min-height:330px!important;padding:16px!important;align-items:flex-start!important}
+.fr-control-card{height:auto!important;min-height:0!important;align-items:flex-start!important}
+.fr-control-card .actions{display:grid!important;grid-template-columns:repeat(2,minmax(120px,180px))!important;justify-content:center!important;align-items:stretch!important;width:100%!important;max-width:420px!important;gap:12px!important;margin:8px auto!important}
+.fr-control-card .btn{display:block!important;width:100%!important;max-width:none!important;min-width:0!important;min-height:48px!important;padding:8px!important;font-size:16px!important;line-height:1.25!important;white-space:normal!important;word-break:normal!important;overflow-wrap:anywhere!important;box-sizing:border-box!important}
+.fr-command{margin-top:10px!important}
+#fr-panel-chat .chat{height:340px!important;min-height:260px!important}
+#fr-panel-screen .fr-viewer{height:340px!important;min-height:260px!important}
+@media(max-width:720px){
+ .wrap{padding:4px!important}
+ .wrap>.top{flex-wrap:wrap!important;gap:4px!important;min-height:0!important}
+ .top .title{width:100%!important;white-space:normal!important}
+ .fr-tabs{order:2!important;flex:1 1 100%!important;width:100%!important;min-height:44px!important}
+ .top #logout{order:3!important;margin:4px 8px 4px auto!important}
+ .fr-app-layout{grid-template-columns:minmax(115px,30%) minmax(0,1fr)!important;min-height:400px!important}
+ .fr-sidebar,.fr-main-panels{min-height:400px!important}
+ .fr-main-panels{padding:6px!important}
+ .fr-control-area{padding:4px!important}
+ .fr-control-card .actions{grid-template-columns:minmax(0,1fr)!important;max-width:220px!important;gap:8px!important}
+ .fr-control-card .btn{min-height:42px!important;font-size:14px!important}
+ #fr-panel-chat .chat,#fr-panel-screen .fr-viewer{height:300px!important;min-height:220px!important}
+}
+
+</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button style="position:absolute;left:-9999px;width:1px;height:1px;min-height:1px;padding:0;border:0" tabindex="-1" aria-hidden="true">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0</div></
 main><script>
 document.getElementById('form').addEventListener('submit',async e=>{e.preventDefault();const msg=document.getElementById(
 'msg');msg.textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
