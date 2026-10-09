@@ -878,7 +878,7 @@ refresh();setInterval(refresh,2000);
   const byTitle=function(title){
     return sections.find(function(card){
       const h=card.querySelector('h2');
-      return h && h.textContent.replace(/\\s+/g,' ').trim().toLowerCase()===title.replace(/\\s+/g,' ').trim().toLowerCase();
+      return h && h.textContent.trim().toLowerCase()===title.toLowerCase();
     });
   };
 
