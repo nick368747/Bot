@@ -923,6 +923,53 @@ body{background:#d3d3d3!important;overflow:hidden!important}
  .fr-control-card .btn{max-width:135px!important;min-height:38px!important;font-size:14px!important}
  #fr-panel-chat .chat{height:calc(100% - 52px)!important}
 }
+/* Stabiler Header und iPad-Layout: feste Bereiche statt konkurrierender alter Regeln */
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:auto!important;min-height:100dvh!important;margin:0!important;padding:0!important;gap:0!important;overflow:visible!important;box-sizing:border-box!important}
+.wrap>.top{display:grid!important;grid-template-columns:max-content minmax(0,1fr) max-content!important;grid-template-rows:auto!important;align-items:stretch!important;gap:0!important;flex:0 0 auto!important;width:100%!important;min-width:0!important;overflow:visible!important;border:3px solid #202020!important;border-radius:0!important;box-sizing:border-box!important}
+.wrap>.top>div:first-child{display:flex!important;align-items:center!important;min-width:0!important}
+.wrap>.top .title{font-size:clamp(22px,3vw,36px)!important;white-space:nowrap!important;padding:8px 12px!important}
+.wrap>.top .fr-tabs{grid-column:2!important;grid-row:1!important;display:flex!important;flex:initial!important;flex-basis:auto!important;width:auto!important;min-width:0!important;min-height:0!important;align-self:stretch!important;justify-content:stretch!important;border:0!important;border-left:2px solid #202020!important;overflow:visible!important}
+.wrap>.top .fr-tab{flex:1 1 0!important;min-width:0!important;padding:10px 6px!important;font-size:clamp(14px,1.8vw,22px)!important;white-space:normal!important;border-left:1px solid #202020!important;border-right:0!important}
+.wrap>.top #logout{grid-column:3!important;grid-row:1!important;align-self:center!important;justify-self:end!important;margin:4px!important;padding:8px 10px!important;white-space:nowrap!important}
+.fr-app-layout{order:1!important;display:grid!important;grid-template-columns:minmax(170px,25%) minmax(0,1fr)!important;flex:1 0 auto!important;width:100%!important;height:auto!important;min-height:calc(100dvh - 64px)!important;margin:0!important;gap:0!important;border:3px solid #202020!important;border-top:0!important;overflow:visible!important;box-sizing:border-box!important}
+.fr-sidebar{min-width:0!important;overflow-wrap:anywhere!important}
+.fr-sidebar .grid{display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
+.fr-sidebar .grid>div{min-width:0!important;border:0!important;padding:9px 0!important}
+.fr-main-panels{min-width:0!important;min-height:0!important;height:auto!important;overflow:visible!important;padding:12px!important}
+.fr-panel{min-height:0!important}
+.fr-panel.active{height:auto!important;min-height:0!important;overflow:visible!important}
+.fr-control-area{height:auto!important;min-height:300px!important;padding:12px!important;align-items:center!important}
+.fr-control-card{width:100%!important;height:auto!important;min-height:280px!important;align-items:center!important}
+.fr-control-card .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,180px))!important;justify-content:center!important;align-content:center!important;gap:12px!important;width:100%!important;max-width:400px!important;margin:auto!important}
+.fr-control-card .btn{width:100%!important;max-width:none!important;min-width:0!important;min-height:48px!important;padding:8px!important;font-size:clamp(14px,1.6vw,18px)!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.25!important}
+.fr-command{width:100%!important;box-sizing:border-box!important}
+#fr-panel-chat .chat{height: min(58dvh,520px)!important;min-height:280px!important}
+#fr-panel-screen .fr-viewer{height:min(65dvh,620px)!important;min-height:320px!important}
+@media(max-width:900px){
+ .wrap>.top{grid-template-columns:minmax(0,1fr) max-content!important;grid-template-rows:auto auto!important}
+ .wrap>.top>div:first-child{grid-column:1!important;grid-row:1!important}
+ .wrap>.top #logout{grid-column:2!important;grid-row:1!important}
+ .wrap>.top .fr-tabs{grid-column:1/-1!important;grid-row:2!important;min-height:46px!important;border-top:2px solid #202020!important;border-left:0!important}
+ .wrap>.top .fr-tab{font-size:clamp(14px,2.5vw,19px)!important}
+ .fr-app-layout{grid-template-columns:minmax(145px,30%) minmax(0,1fr)!important;min-height:calc(100dvh - 112px)!important}
+ .fr-sidebar{padding:10px!important}
+ .fr-sidebar .label{font-size:clamp(13px,2.2vw,17px)!important}
+ .fr-sidebar .value{font-size:clamp(13px,2.1vw,17px)!important}
+ .fr-main-panels{padding:8px!important}
+}
+@media(max-width:560px){
+ .fr-app-layout{grid-template-columns:minmax(108px,30%) minmax(0,1fr)!important}
+ .fr-sidebar{padding:7px 5px!important}
+ .fr-sidebar .label{font-size:12px!important}
+ .fr-sidebar .value{font-size:12px!important}
+ .fr-version{font-size:12px!important}
+ .fr-control-area{padding:4px!important}
+ .fr-control-card .actions{grid-template-columns:minmax(0,1fr)!important;max-width:180px!important;gap:8px!important}
+ .fr-control-card .btn{font-size:13px!important;min-height:40px!important}
+ .fr-main-panels{padding:5px!important}
+ #fr-panel-chat .chat{height:55dvh!important;min-height:230px!important}
+}
+
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
 div><button class="btn" id="logout">Abmelden</button></div>
