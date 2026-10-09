@@ -1051,12 +1051,17 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
  .fr-control-card .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:100%!important}
  .fr-control-card .actions>.btn{min-height:42px!important;font-size:14px!important}
 }
+
+/* Aktiver Ein/Aus-Zustand folgt dem Live-Status. */
+#control .actions button.state-selected{background:linear-gradient(135deg,#b8f5cf,#55d98b)!important;border:3px solid #087a3b!important;color:#073b20!important;box-shadow:0 0 0 3px rgba(8,122,59,.18),inset 0 1px 2px rgba(255,255,255,.8)!important;transform:translateY(-1px)}
+#control .actions button[data-action="stop"].state-selected{background:linear-gradient(135deg,#ffd0d0,#ff7777)!important;border-color:#b42323!important;color:#5e1010!important;box-shadow:0 0 0 3px rgba(180,35,35,.16),inset 0 1px 2px rgba(255,255,255,.7)!important}
+#control .actions button:focus-visible{outline:3px solid #2459d3!important;outline-offset:3px}
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung <span style="display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid #777;border-radius:5px;font-weight:800">Version 2.0</span></div></
 div><button class="btn" id="logout" type="button" onclick="this.disabled=true;this.textContent='Abmelden…';fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','Content-Type':'application/json'},body:'{}'}).catch(()=>{}).finally(()=>location.replace('/login?loggedout='+Date.now()))">Abmelden</button></div>
-<nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#status">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
-<div class="grid" id="status">
-<div class="card"><div class="label">Status</div><div id="status" class="value offline">Offline</div></div>
+<nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
+<div class="grid" id="statusGrid">
+<div class="card"><div class="label">Status</div><div id="statusValue" class="value offline">Offline</div></div>
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
@@ -1086,8 +1091,7 @@ const $=id=>document.getElementById(id);let lastChat=0,lastEvents=0;
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function render(d){$('status').textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');$('status').
-className='value '+(d.online?'online':'offline');$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+function render(d){const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
 verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
