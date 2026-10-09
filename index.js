@@ -796,7 +796,7 @@ body{overflow:auto!important}
  #fr-panel-chat .chat,#fr-panel-screen .fr-viewer{height:300px!important;min-height:220px!important}
 }
 
-</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button style="position:absolute;left:-9999px;width:1px;height:1px;min-height:1px;padding:0;border:0" tabindex="-1" aria-hidden="true">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0.1</div></
+</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button style="position:absolute;left:-9999px;width:1px;height:1px;min-height:1px;padding:0;border:0" tabindex="-1" aria-hidden="true">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0.3</div></
 main><script>
 document.getElementById('form').addEventListener('submit',async e=>{e.preventDefault();const msg=document.getElementById(
 'msg');msg.textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1127,6 +1127,8 @@ command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
+const logoutForm=$('logoutForm'),logoutButton=$('logout');
+if(logoutForm&&logoutButton){logoutButton.addEventListener('click',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});if(!response.ok)throw new Error('Abmelden fehlgeschlagen');location.replace('/login?loggedout=1')}catch(err){logoutButton.dataset.busy='0';logoutButton.disabled=false;logoutButton.textContent='Abmelden';try{logoutForm.submit()}catch(_){toast('Abmelden fehlgeschlagen. Bitte Seite neu laden.')}}});}
 refresh();setInterval(refresh,2000);
 </script>
 <style>
@@ -1218,7 +1220,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.textContent='Version: 2.0.1';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.textContent='Version: 2.0.3';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
