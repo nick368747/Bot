@@ -841,6 +841,48 @@ body{background:#fff;color:#171717}
  .fr-control-card .btn{min-height:42px;font-size:15px;padding:5px}
  #fr-panel-chat .chat,#fr-panel-screen .fr-viewer{height:380px;min-height:250px}
 }
+
+/* Feinschliff nach dem Foto: eine Marke, kompakt, eckig, ohne leeren Scrollbereich */
+body{background:#d3d3d3!important;overflow:hidden!important}
+.wrap{width:100%!important;max-width:none!important;height:100vh;height:100dvh;min-height:0!important;margin:0!important;padding:6px!important;box-sizing:border-box;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr)!important;grid-template-areas:none!important;gap:0!important;overflow:hidden!important}
+.wrap>.top{grid-area:auto!important;min-width:0;border-radius:0!important;background:#d3d3d3!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important}
+.top .title{padding:7px 10px!important;white-space:nowrap}
+.top #logout{grid-column:auto!important;margin-left:8px!important}
+.fr-tabs{flex:1;min-width:0;justify-content:flex-end}
+.fr-tab{border-radius:0!important;padding:7px 10px!important}
+.fr-app-layout{height:100%;min-height:0!important;grid-template-columns:minmax(145px,25%) minmax(0,1fr)!important;border-radius:0!important;background:#d3d3d3!important;overflow:hidden!important}
+.fr-sidebar,.fr-main-panels,.fr-panel{min-height:0!important;min-width:0!important}
+.fr-sidebar{background:#d3d3d3!important}
+.fr-sidebar .grid>div,.fr-sidebar .card,.card,.btn,.forms input,.forms textarea,.chat,.fr-command,.fr-viewer{border-radius:0!important}
+.fr-main-panels{height:100%;padding:8px!important;overflow:hidden!important}
+.fr-panel.active{height:100%;overflow:hidden!important}
+.fr-control-panel,.fr-control-area{min-height:0!important}
+.fr-control-area{height:calc(100% - 52px)!important;min-height:0!important;padding:10px!important;align-items:center!important}
+.fr-control-card{min-height:0!important;height:100%;align-items:center!important}
+.fr-control-card .actions{width:100%!important;max-width:380px!important;grid-template-columns:repeat(2,minmax(0,150px))!important;justify-content:center!important;gap:10px!important}
+.fr-control-card .btn{width:100%!important;max-width:150px!important;min-height:42px!important;padding:6px 8px!important;font-size:16px!important;white-space:normal}
+.fr-command{flex-shrink:0}
+#fr-panel-chat .chat{height:calc(100% - 52px)!important;min-height:0!important}
+#fr-panel-screen .fr-viewer{height:100%!important;min-height:0!important}
+#fr-viewCanvas{height:100%!important}
+.fr-version{padding-top:8px!important}
+@media(max-width:720px){
+ .wrap{padding:4px!important;grid-template-rows:auto minmax(0,1fr)!important}
+ .top{flex-wrap:wrap!important}
+ .top .title{font-size:23px!important}
+ .fr-tabs{flex-basis:100%;width:100%;order:2;border-top:2px solid #202020}
+ .top #logout{margin-left:auto!important}
+ .fr-app-layout{grid-template-columns:minmax(105px,29%) minmax(0,1fr)!important}
+ .fr-sidebar{padding:7px 6px!important}
+ .fr-sidebar .label{font-size:14px!important}
+ .fr-sidebar .value{font-size:13px!important}
+ .fr-version{font-size:12px!important}
+ .fr-main-panels{padding:6px!important}
+ .fr-control-area{padding:3px!important}
+ .fr-control-card .actions{grid-template-columns:minmax(0,135px)!important;gap:8px!important}
+ .fr-control-card .btn{max-width:135px!important;min-height:38px!important;font-size:14px!important}
+ #fr-panel-chat .chat{height:calc(100% - 52px)!important}
+}
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></
 div><button class="btn" id="logout">Abmelden</button></div>
@@ -993,9 +1035,6 @@ refresh();setInterval(refresh,2000);
   controlPanel.append(controls,commandCard);
 
   const sidebar=document.createElement('aside');sidebar.className='fr-sidebar';
-  const brand=document.createElement('div');brand.className='fr-side-brand';
-  brand.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
-  sidebar.appendChild(brand);
   const values=Array.from(stats.children);
   const money=values.find(el=>el.querySelector('#money'));
   const uptime=values.find(el=>el.querySelector('#uptime'));
