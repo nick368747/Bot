@@ -1115,7 +1115,7 @@ $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').va
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
 command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
-$('logout').addEventListener('click',async()=>{await api('/api/logout');location.href='/login'});
+$('logout').addEventListener('click',async()=>{const b=$('logout');if(b){b.disabled=true;b.textContent='Abmelden…'}try{await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}})}catch(e){}location.replace('/login?loggedout='+Date.now())});
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
@@ -1388,7 +1388,50 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
   setInterval(refreshView,500);
 })();
 </script>
-</body></html>`;
+
+<style>
+/* Stabiler Fallback für iPad Safari und Desktop: der Hauptbereich darf nicht auf 0 px kollabieren. */
+html,body{width:100%;min-height:100%;margin:0}
+body{overflow:auto!important}
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:auto!important;min-height:100dvh!important;margin:0!important;padding:0!important;gap:0!important;overflow:visible!important}
+.wrap>.top{display:flex!important;flex-wrap:nowrap!important;align-items:stretch!important;flex:0 0 auto!important;min-height:68px!important;width:100%!important}
+.wrap>.top>div:first-child{display:flex!important;align-items:center!important;flex:1 1 auto!important;min-width:0!important}
+.wrap>.top .title{white-space:normal!important;line-height:1.1!important}
+.wrap>.top #logout{display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto!important;align-self:center!important;order:5!important;grid-column:auto!important;min-height:44px!important;padding:8px 12px!important;cursor:pointer!important}
+.wrap>.top .fr-tabs{display:flex!important;flex:0 1 auto!important;min-width:0!important;max-width:100%!important}
+.wrap>.top .fr-tab{display:block!important;visibility:visible!important;opacity:1!important;flex:1 1 0!important;min-width:0!important;padding:10px clamp(5px,1vw,16px)!important;white-space:normal!important;text-align:center!important}
+.wrap>.fr-app-layout{display:grid!important;grid-template-columns:minmax(150px,25%) minmax(0,1fr)!important;flex:1 0 auto!important;width:100%!important;height:calc(100dvh - 80px)!important;min-height:480px!important;margin:0!important;overflow:visible!important}
+.wrap>.fr-app-layout>.fr-sidebar{display:flex!important;visibility:visible!important;opacity:1!important;min-width:0!important}
+.wrap>.fr-app-layout>.fr-sidebar #fr-status-list{display:flex!important;visibility:visible!important;opacity:1!important}
+.wrap>.fr-app-layout>.fr-main-panels{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;height:100%!important;overflow:visible!important}
+.wrap>.fr-app-layout .fr-panel{display:none!important;width:100%!important;min-width:0!important;min-height:0!important;margin:0!important}
+.wrap>.fr-app-layout .fr-panel.active{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;height:100%!important;min-height:0!important;overflow:visible!important}
+#fr-panel-control .fr-control-area{display:flex!important;flex:1 1 auto!important;min-height:250px!important;height:auto!important;overflow:visible!important}
+#fr-panel-control #control{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:250px!important;visibility:visible!important;opacity:1!important}
+#fr-panel-control #control .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;width:min(100%,560px)!important;margin:12px auto!important}
+#fr-panel-control #control .actions button{display:block!important;visibility:visible!important;opacity:1!important;min-height:48px!important;width:100%!important;color:#171717!important;background:rgba(235,240,255,.9)!important;border:2px solid #202020!important;border-radius:6px!important;font-weight:800!important;cursor:pointer!important}
+#fr-panel-control #commandPanel{display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto!important;width:100%!important;margin-top:10px!important}
+#fr-panel-chat #chatPanel{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:0!important;visibility:visible!important;opacity:1!important}
+#fr-panel-chat #chat{display:block!important;flex:1 1 auto!important;height:auto!important;min-height:220px!important;max-height:none!important}
+#fr-panel-chat .forms,#fr-panel-control .forms{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important}
+#fr-panel-screen .fr-viewer{display:block!important;flex:1 1 auto!important;height:auto!important;min-height:300px!important}
+#fr-panel-screen #fr-viewCanvas{display:block!important;width:100%!important;height:100%!important}
+@media(max-width:900px){
+ .wrap>.top{flex-wrap:wrap!important}
+ .wrap>.top>div:first-child{flex:1 1 100%!important}
+ .wrap>.top .fr-tabs{order:3!important;flex:1 1 100%!important}
+ .wrap>.top #logout{position:absolute!important;right:8px!important;top:8px!important}
+ .wrap>.fr-app-layout{grid-template-columns:minmax(100px,28%) minmax(0,1fr)!important;height:calc(100dvh - 125px)!important;min-height:420px!important}
+ .wrap>.top .title{padding-right:95px!important}
+ .fr-control-area{padding:8px!important}
+}
+@media(max-width:560px){
+ .wrap>.fr-app-layout{grid-template-columns:minmax(88px,27%) minmax(0,1fr)!important;height:calc(100dvh - 135px)!important;min-height:400px!important}
+ #fr-panel-control #control .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+ #fr-panel-control #control .actions button{font-size:14px!important;min-height:44px!important;padding:6px 3px!important}
+ .wrap>.top .fr-tab{font-size:14px!important}
+}
+</style></body></html>`;
 // ============================================================
 // HTTP API
 // ============================================================
