@@ -1238,12 +1238,17 @@ refresh();setInterval(refresh,2000);
   const chatNode=chatCard.querySelector('#chat');
   if(chatNode)chatNode.style.cssText='display:block;flex:1 1 auto;min-height:220px;height:auto;max-height:none;overflow:auto;';
   if(auth)auth.style.display='none';
-  const logoutButtonEarly=top.querySelector('#logout');
+  const logoutForm=top.querySelector('#logoutForm');
+  const logoutButtonEarly=logoutForm&&logoutForm.querySelector('#logout');
+  if(logoutForm)logoutForm.style.cssText='display:flex;align-items:center;margin-left:auto;flex:0 0 auto;';
   if(logoutButtonEarly)logoutButtonEarly.style.cssText='display:block;visibility:visible;opacity:1;min-height:44px;cursor:pointer;';
   const titleNode=top.querySelector('.title');if(titleNode)titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
   const subtitle=top.querySelector('.sub');if(subtitle)subtitle.remove();
   top.appendChild(tabs);
-  const logoutButton=top.querySelector('#logout');if(logoutButton){logoutButton.textContent='Abmelden';top.appendChild(logoutButton);}
+  // Wichtig: Das Formular bleibt um den Button herum. Den Button allein aus dem Formular
+  // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
+  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';}
+  if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
 
   function activate(name){
     const chat=name==='chat',control=name==='control',screen=name==='screen';
