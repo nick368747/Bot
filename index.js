@@ -1107,14 +1107,40 @@ type)+'"><span class="time">'+fmtTime(x.time)+'</span> '+escapeHtml(x.message)+'
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[
 c]))}
-async function api(path,body){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.
-stringify(body||{})});const d=await r.json().catch(()=>({error:'Ungültige Serverantwort'}));if(r.status===401){location.
-href='/login';return null}if(!r.ok)throw new Error(d.error||'Aktion fehlgeschlagen');return d}
-async function refresh(){try{const r=await fetch('/api/status',{cache:'no-store'});if(r.status===401){location.href='/login';
-return}const d=await r.json();render(d);}catch(e){toast(e.message)}}
-for(const b of document.querySelectorAll('[data-action]'))b.addEventListener('click',async()=>{try{const a=b.dataset.action;
-if(a==='start')await api('/api/minecraft/start');if(a==='stop')await api('/api/minecraft/stop');if(a==='reconnect')await api(
-'/api/minecraft/reconnect');if(a==='home')await api('/api/minecraft/home');if(a==='run')await api('/api/minecraft/run');if(a==='stoprun')await api('/api/minecraft/stoprun');if(a==='mc-login'){await api('/api/minecraft/start');toast('Minecraft gestartet. Falls nötig, erscheint der Microsoft-Anmeldecode im Dashboard.');}else{toast('Aktion ausgeführt');}await refresh();}catch(e){toast(e.message)}});
+async function api(path,body){
+ const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body||{})});
+ const d=await r.json().catch(()=>({error:'Serverantwort konnte nicht gelesen werden (HTTP '+r.status+')'}));
+ if(r.status===401){location.href='/login';return null}
+ if(!r.ok)throw new Error(d.error||('Aktion fehlgeschlagen (HTTP '+r.status+')'));
+ return d;
+}
+async function refresh(){
+ try{
+  const r=await fetch('/api/status',{credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});
+  if(r.status===401){location.href='/login';return}
+  if(!r.ok)throw new Error('Status konnte nicht geladen werden (HTTP '+r.status+')');
+  render(await r.json());
+ }catch(e){toast('Verbindungsfehler: '+(e.message||'Unbekannter Fehler'));}
+}
+for(const b of document.querySelectorAll('[data-action]')){
+ b.type='button';
+ b.addEventListener('click',async()=>{
+  if(b.dataset.busy==='1')return;
+  const a=b.dataset.action;
+  const labels={start:'Ein',stop:'Aus',reconnect:'Neu verbinden',home:'Home AFK',run:'Laufen',stoprun:'Laufen stoppen','mc-login':'MC Anmeldung'};
+  const routes={start:'/api/minecraft/start',stop:'/api/minecraft/stop',reconnect:'/api/minecraft/reconnect',home:'/api/minecraft/home',run:'/api/minecraft/run',stoprun:'/api/minecraft/stoprun','mc-login':'/api/minecraft/start'};
+  const original=b.textContent.trim();
+  b.dataset.busy='1';b.disabled=true;b.textContent='Bitte warten…';
+  toast('Befehl wird gesendet: '+(labels[a]||a));
+  try{
+   if(!routes[a])throw new Error('Unbekannter Button-Befehl: '+a);
+   await api(routes[a]);
+   toast(a==='mc-login'?'Minecraft gestartet. Falls nötig, erscheint der Microsoft-Anmeldecode.':(labels[a]+' erfolgreich ausgeführt.'));
+   await refresh();
+  }catch(e){toast('Fehler bei '+(labels[a]||a)+': '+(e.message||'Unbekannter Fehler'));}
+  finally{b.dataset.busy='0';b.disabled=false;b.textContent=original;}
+ });
+}
 $('chatSend').addEventListener('click',async()=>{try{const v=$('chatInput').value;await api('/api/minecraft/chat',{message:
 v});$('chatInput').value='';toast('Nachricht gesendet');await refresh()}catch(e){toast(e.message)}});
 $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').value;await api('/api/minecraft/pay',{amount:
