@@ -970,7 +970,7 @@ const tabs=document.createElement('nav');
   const titleNode=top.querySelector('.title');
   if(titleNode) titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
   const logoutButton=top.querySelector('#logout');
-  if(logoutButton) logoutButton.style.marginLeft='0';
+  if(logoutButton){logoutButton.style.marginLeft='0';top.appendChild(logoutButton);}
 
   function activate(name){
     const chat=name==='chat';
