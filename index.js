@@ -281,6 +281,11 @@ res.writeHead(status, {
 });
 res.end(body);
 }
+function isSecureRequest(req) {
+  const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim().toLowerCase();
+  return forwardedProto === "https" || Boolean(req.socket && req.socket.encrypted);
+}
+
 function getCookies(req) {
 const result = {};
 const raw = req.headers.cookie || "";
@@ -1519,7 +1524,7 @@ sessions.set(token, { createdAt: Date.now() });
 res.writeHead(200, {
 "Content-Type": "application/json; charset=utf-8",
 "Cache-Control": "no-store",
-"Set-Cookie": `frozenrun_session=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${
+"Set-Cookie": `frozenrun_session=${encodeURIComponent(token)}; HttpOnly${isSecureRequest(req) ? "; Secure" : ""}; SameSite=Strict; Path=/; Max-Age=${
 Math.floor(SESSION_TTL_MS / 1000)}`
 });
 return res.end(JSON.stringify({ ok: true }));
@@ -1548,7 +1553,7 @@ const token = getCookies(req).frozenrun_session;
 if (token) sessions.delete(token);
 res.writeHead(303, {
 "Location": "/login?loggedout=1",
-"Set-Cookie": "frozenrun_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0",
+"Set-Cookie": `frozenrun_session=; HttpOnly${isSecureRequest(req) ? "; Secure" : ""}; SameSite=Strict; Path=/; Max-Age=0`,
 "Cache-Control": "no-store",
 "Content-Length": "0"
 });
