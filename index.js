@@ -791,7 +791,7 @@ body{overflow:auto!important}
  #fr-panel-chat .chat,#fr-panel-screen .fr-viewer{height:300px!important;min-height:220px!important}
 }
 
-</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button style="position:absolute;left:-9999px;width:1px;height:1px;min-height:1px;padding:0;border:0" tabindex="-1" aria-hidden="true">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0</div></
+</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button style="position:absolute;left:-9999px;width:1px;height:1px;min-height:1px;padding:0;border:0" tabindex="-1" aria-hidden="true">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0.1</div></
 main><script>
 document.getElementById('form').addEventListener('submit',async e=>{e.preventDefault();const msg=document.getElementById(
 'msg');msg.textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1057,8 +1057,7 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
 #control .actions button[data-action="stop"].state-selected{background:linear-gradient(135deg,#ffd0d0,#ff7777)!important;border-color:#b42323!important;color:#5e1010!important;box-shadow:0 0 0 3px rgba(180,35,35,.16),inset 0 1px 2px rgba(255,255,255,.7)!important}
 #control .actions button:focus-visible{outline:3px solid #2459d3!important;outline-offset:3px}
 </style></head><body><main class="wrap">
-<div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung <span style="display:inline-block;margin-left:8px;padding:2px 7px;border:1px solid #777;border-radius:5px;font-weight:800">Version 2.0</span></div></
-div><button class="btn" id="logout" type="button" onclick="this.disabled=true;this.textContent='Abmelden…';const f=document.createElement('form');f.method='POST';f.action='/api/logout';document.body.appendChild(f);f.submit()">Abmelden</button></div>
+<div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="POST" action="/api/logout" style="margin-left:auto"><button class="btn" id="logout" type="submit">Abmelden</button></form></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
 <div class="grid" id="statusGrid">
 <div class="card"><div class="label">Status</div><div id="statusValue" class="value offline">Offline</div></div>
@@ -1214,7 +1213,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.textContent='Version: 2.0.0';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.textContent='Version: 2.0.1';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
