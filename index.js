@@ -1152,7 +1152,7 @@ $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').c
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
 const logoutForm=$('logoutForm'),logoutButton=$('logout');
-if(logoutForm&&logoutButton){logoutButton.addEventListener('click',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});if(!response.ok)throw new Error('Abmelden fehlgeschlagen');location.replace('/login?loggedout=1')}catch(err){logoutButton.dataset.busy='0';logoutButton.disabled=false;logoutButton.textContent='Abmelden';try{logoutForm.submit()}catch(_){toast('Abmelden fehlgeschlagen. Bitte Seite neu laden.')}}});}
+if(logoutForm&&logoutButton){logoutForm.addEventListener('submit',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});if(!response.ok)throw new Error('HTTP '+response.status);location.assign('/login?loggedout=1&t='+Date.now())}catch(err){logoutButton.dataset.busy='0';logoutButton.disabled=false;logoutButton.textContent='Abmelden';toast('Abmelden fehlgeschlagen. Bitte erneut versuchen.')}});}
 refresh();setInterval(refresh,2000);
 </script>
 <style>
@@ -1244,7 +1244,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.textContent='Version: 2.0.3';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.textContent='Version 2.0.3';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
@@ -1601,6 +1601,11 @@ res.writeHead(303, {
 return res.end();
 }
 if (req.method !== "POST") return json(res, 405, { ok: false, error: "Methode nicht erlaubt." });
+// CSRF-Schutz: Browser-Steuerungsanfragen muessen dieselbe Origin verwenden.
+if (url.startsWith("/api/minecraft/") && req.headers.origin) {
+  try { if (new URL(req.headers.origin).host !== String(req.headers.host || "")) return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
+  catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
+}
 if (!requireSession(req, res)) return;
 try {
 if (url === "/api/minecraft/start") {
