@@ -1563,6 +1563,7 @@ if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-ic
   const assets = {
     "/manifest.webmanifest": { file: "manifest.webmanifest", type: "application/manifest+json; charset=utf-8", cache: "no-cache" },
     "/app-icon.svg": { file: "app-icon.svg", type: "image/svg+xml; charset=utf-8", cache: "public, max-age=3600" },
+    "/brand-logo.svg": { file: "brand-logo.svg", type: "image/svg+xml; charset=utf-8", cache: "public, max-age=3600" },
     "/sw.js": { file: "sw.js", type: "application/javascript; charset=utf-8", cache: "no-cache" }
   };
   const asset = assets[url];
