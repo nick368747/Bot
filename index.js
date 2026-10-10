@@ -1071,7 +1071,7 @@ body{position:fixed!important;inset:0!important;padding:0!important}
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
-<div class="card"><div class="label">Version</div><div id="versionValue" class="value">2.0.3</div></div>
+<div class="card"><div class="label">Version <span id="versionNumber">2.0.4</span></div><div id="versionValue" class="value">2.0.4</div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
@@ -1161,6 +1161,28 @@ $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').va
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
 command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
+// Abmelden: expliziter POST-Handler mit Redirect-Fallback für iPad/Safari und Desktop.
+(function(){
+ const form=document.getElementById('logoutForm');
+ const button=document.getElementById('logout');
+ if(!form||!button)return;
+ form.method='POST'; form.action='/api/logout';
+ button.type='button';
+ button.addEventListener('click',async function(e){
+   e.preventDefault();
+   if(button.dataset.busy==='1')return;
+   button.dataset.busy='1'; button.disabled=true;
+   try{
+     const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual'});
+     if(response.ok||response.type==='opaqueredirect'||response.status===0){
+       window.location.replace('/login?loggedout=1');
+       return;
+     }
+     // Falls Safari den Redirect nicht zugänglich macht, übernimmt das native Formular.
+     form.submit();
+   }catch(_){form.submit();}
+ });
+})();
 // Abmelden wird direkt am Button ausgelöst, auch wenn andere Dashboard-Skripte fehlschlagen.
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
@@ -1627,6 +1649,10 @@ timestamp: Date.now()
 });
 }
 if (req.method === "POST" && url === "/api/logout") {
+if (req.headers.origin) {
+  try { if (new URL(req.headers.origin).host !== String(req.headers.host || "")) return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
+  catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
+}
 const token = getCookies(req).frozenrun_session;
 if (token) sessions.delete(token);
 res.writeHead(303, {
