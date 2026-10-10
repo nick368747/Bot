@@ -1044,6 +1044,25 @@ button,a[role="button"],input[type="submit"]{-webkit-tap-highlight-color:rgba(25
 #control .actions button.state-selected{background:linear-gradient(135deg,#b8f5cf,#55d98b)!important;border:3px solid #087a3b!important;color:#073b20!important;box-shadow:0 0 0 3px rgba(8,122,59,.18),inset 0 1px 2px rgba(255,255,255,.8)!important;transform:translateY(-1px)}
 #control .actions button[data-action="stop"].state-selected{background:linear-gradient(135deg,#ffd0d0,#ff7777)!important;border-color:#b42323!important;color:#5e1010!important;box-shadow:0 0 0 3px rgba(180,35,35,.16),inset 0 1px 2px rgba(255,255,255,.7)!important}
 #control .actions button:focus-visible{outline:3px solid #2459d3!important;outline-offset:3px}
+
+/* iPad und Desktop: keine Seiten-Scrollbars; Oberfläche auf Viewport begrenzen */
+html,body{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:fixed!important;inset:0!important;padding:0!important}
+.wrap{height:100%!important;height:100dvh!important;max-height:100dvh!important;min-height:0!important;overflow:hidden!important}
+.wrap>.top{min-height:0!important;margin-bottom:0!important;flex-shrink:0!important}
+.fr-app-layout{height:calc(100% - 64px)!important;min-height:0!important;max-height:calc(100% - 64px)!important;overflow:hidden!important}
+.fr-sidebar,.fr-main-panels,.fr-panel,.fr-control-area,.fr-control-card,.fr-viewer,#fr-viewCanvas,#fr-panel-chat .chat{min-height:0!important;max-height:100%!important;overflow:hidden!important}
+.fr-sidebar{overscroll-behavior:none!important}
+.fr-main-panels{height:100%!important}
+.fr-panel.active{height:100%!important}
+.fr-control-card .actions{overflow:hidden!important}
+#logoutForm{flex-shrink:0!important}
+@media(max-width:900px){
+ .wrap{padding:4px!important}
+ .fr-app-layout{height:calc(100% - 56px)!important;max-height:calc(100% - 56px)!important}
+ .fr-sidebar{padding:6px 4px!important}
+ .fr-main-panels{padding:5px!important}
+}
 </style></head><body><main class="wrap">
 <div class="top"><div><div class="title"><span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="POST" action="/api/logout" style="margin-left:auto"><button class="btn" id="logout" type="submit">Abmelden</button></form></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
@@ -1276,28 +1295,12 @@ refresh();setInterval(refresh,2000);
   // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
   if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
   if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
-  // Robuster Logout für Safari/iPad und Desktop: Formular absenden, Session serverseitig löschen,
-  // danach immer zur Login-Seite wechseln. Bei Netzwerkfehler bleibt der native Formularweg möglich.
-  if(logoutForm && !logoutForm.dataset.logoutBound){
-    logoutForm.dataset.logoutBound='1';
-    logoutForm.addEventListener('submit',async function(event){
-      event.preventDefault();
-      if(logoutButtonEarly){logoutButtonEarly.disabled=true;logoutButtonEarly.textContent='Abmelden…';}
-      try{
-        const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'Accept':'application/json'}});
-        if(response.ok || response.status===303 || response.type==='opaqueredirect'){
-          window.location.replace('/login?loggedout=1');
-          return;
-        }
-        // Ein 303-Redirect kann von Safari als opaqueredirect erscheinen; bei jedem
-        // erfolgreichen Serverkontakt zur Login-Seite wechseln, damit der Zustand neu geprüft wird.
-        if(response.status>=200 && response.status<400){window.location.replace('/login?loggedout=1');return;}
-        throw new Error('Abmelden fehlgeschlagen');
-      }catch(error){
-        // Fallback auf das normale POST-Formular.
-        logoutForm.submit();
-      }
-    });
+  // Logout bewusst als normales HTML-POST ausführen: Safari/iPad folgt der
+  // serverseitigen 303-Weiterleitung zuverlässig und löscht das HttpOnly-Cookie.
+  if(logoutForm && logoutButtonEarly){
+    logoutButtonEarly.type='submit';
+    logoutForm.method='POST';
+    logoutForm.action='/api/logout';
   }
 
   function activate(name){
