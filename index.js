@@ -1381,6 +1381,22 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
       surfaceGroup=new three.Group();
       worldGroup.add(surfaceGroup);
 
+      // Sichtbarer Fallback, bis echte Chunk-Daten vom Server eintreffen.
+      // Er verhindert eine leere/dunkle Ansicht, behauptet aber nicht, ein Screenshot zu sein.
+      const fallbackGroup=new three.Group();
+      worldGroup.add(fallbackGroup);
+      const fallbackGround=new three.Mesh(
+        new three.PlaneGeometry(160,160),
+        new three.MeshLambertMaterial({color:0x527a45})
+      );
+      fallbackGround.rotation.x=-Math.PI/2;
+      fallbackGround.position.y=-1;
+      fallbackGroup.add(fallbackGround);
+      const fallbackGrid=new three.GridHelper(160,80,0xb9d4a4,0x79976b);
+      fallbackGrid.position.y=-0.98;
+      fallbackGroup.add(fallbackGrid);
+      window.__frViewFallback=fallbackGroup;
+
       const cubeGeo=new three.BoxGeometry(1,1,1);
       const botMaterial=new three.MeshLambertMaterial({color:0x6d5dfc});
       const headMaterial=new three.MeshLambertMaterial({color:0xd7b38a});
@@ -1422,6 +1438,8 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
       surfaceMesh=null;
     }
     const list=Array.isArray(blocks)?blocks:[];
+    const fallback=window.__frViewFallback;
+    if(fallback) fallback.visible=list.length===0;
     if(!list.length) return;
     const geometry=new three.BoxGeometry(1,1,1);
     const material=new three.MeshLambertMaterial({color:0xffffff,vertexColors:true});
