@@ -1036,6 +1036,11 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
 .wrap>.fr-app-layout .fr-control-card .actions,.wrap>.fr-app-layout .fr-control-card .actions>.btn{visibility:visible!important;opacity:1!important;}
 @media(max-width:720px){.wrap>.fr-app-layout{grid-template-columns:minmax(105px,28%) minmax(0,1fr)!important;height:calc(100dvh - 82px)!important;min-height:360px!important;}}
 /* Reparatur: Steuerungsbuttons, Dashboard-Kopf und stabiler Bildschirm */
+/* Touch-/Pointer-Sicherheit für Safari auf iPad und Desktop */
+.fr-app-layout,.fr-main-panels,.fr-panel,.fr-control-area,.fr-control-card,.fr-control-card .actions,.fr-control-card .actions button,.fr-command,.fr-tabs,.fr-tab,#logoutForm,#logout{pointer-events:auto!important;touch-action:manipulation}
+.fr-control-card .actions button{position:relative;z-index:3;cursor:pointer;-webkit-appearance:none;appearance:none}
+#logoutForm,#logout{position:relative;z-index:100}
+.toast{z-index:2147483000!important;pointer-events:none}
 .wrap>.top .title:after{content:" · Dashboard";font-size:.48em;font-weight:700;opacity:.8;vertical-align:middle}
 .fr-control-card,.fr-control-card .actions{visibility:visible!important;opacity:1!important}
 .fr-control-card .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-content:start!important;justify-content:center!important;width:100%!important;max-width:440px!important;margin:12px auto!important;gap:10px!important}
@@ -1152,7 +1157,7 @@ $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').c
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
 const logoutForm=$('logoutForm'),logoutButton=$('logout');
-if(logoutForm&&logoutButton){logoutForm.addEventListener('submit',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'follow',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});if(!response.ok)throw new Error('HTTP '+response.status);location.replace('/login?loggedout=1&t='+Date.now())}catch(err){/* Fallback: reguläres Formular statt den Nutzer auf dem Dashboard festzuhalten. */logoutButton.disabled=false;logoutButton.textContent='Abmelden';logoutButton.dataset.busy='0';logoutForm.removeEventListener('submit',arguments.callee);logoutForm.submit();}});}
+if(logoutForm&&logoutButton){logoutForm.addEventListener('submit',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'follow',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});if(!response.ok)throw new Error('HTTP '+response.status);location.replace('/login?loggedout=1&t='+Date.now())}catch(err){/* Fallback: reguläres Formular statt den Nutzer auf dem Dashboard festzuhalten. */logoutButton.disabled=false;logoutButton.textContent='Abmelden';logoutButton.dataset.busy='0';logoutForm.submit();}});}
 refresh();setInterval(refresh,2000);
 </script>
 <style>
