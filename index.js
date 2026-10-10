@@ -1527,6 +1527,18 @@ body{position:fixed!important;inset:0!important}
  .wrap>.fr-app-layout{height:0!important;min-height:0!important;flex:1 1 0!important}
 }
 
+/* Außenrahmen entfernen und Header sowie Inhaltsfläche bündig an den Viewport setzen. */
+html,body{margin:0!important;padding:0!important;width:100%!important;max-width:100%!important}
+body{overflow:hidden!important}
+.wrap{margin:0!important;padding:0!important;width:100%!important;max-width:none!important;border:0!important;border-radius:0!important;gap:0!important}
+.wrap>.top{margin:0!important;border:0!important;border-bottom:1px solid rgba(32,32,32,.45)!important;border-radius:0!important;box-shadow:none!important}
+.wrap>.fr-app-layout{margin:0!important;border:0!important;border-radius:0!important;width:100%!important;max-width:none!important;box-shadow:none!important}
+.wrap>.fr-app-layout>.fr-sidebar{border-right:1px solid rgba(32,32,32,.45)!important}
+.wrap>.fr-app-layout>.fr-main-panels{margin:0!important}
+@supports(padding:env(safe-area-inset-left)){
+ html,body{padding:0!important}
+ .wrap{padding:0!important}
+}
 </style><script>
 /* Robuster Abmelden-Fallback: unabhängig von den Dashboard-Event-Listenern. */
 (function(){
