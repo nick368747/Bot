@@ -755,7 +755,7 @@ return { amount, output: firstOutput };
 // ============================================================
 const LOGIN_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#4267d5"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Block Bande"><link rel="icon" href="/app-icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/app-icon.svg"><title>Block Bande – Botportal</title>
-<style>*{box-sizing:border-box}html,body{width:100%;height:100%;min-height:100%;margin:0;overflow:hidden!important}body{background:linear-gradient(125deg,#bfd7ff 0%,#d9d5ff 48%,#ffc4d4 100%);color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.card{width:min(620px,100%);max-height:100%;overflow:auto;background:transparent;border:0;border-radius:0;padding:clamp(12px,4vw,34px) clamp(8px,3vw,28px);box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 clamp(20px,6vh,46px)}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:disabled{opacity:.7;cursor:wait}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px;overflow-wrap:anywhere}.small{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:13px;color:#333;margin:0;z-index:5;pointer-events:none}</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button id="loginSubmit" type="submit" style="position:static;width:min(270px,100%);min-height:50px;margin:10px auto 0;padding:8px 14px;border:4px solid #202020;border-radius:6px;background:#d5d5d5;color:#171717;font-size:22px;font-weight:900;cursor:pointer">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0.3</div></
+<style>*{box-sizing:border-box}html,body{width:100%;height:100%;min-height:100%;margin:0;overflow:hidden!important}body{background:linear-gradient(125deg,#bfd7ff 0%,#d9d5ff 48%,#ffc4d4 100%);color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:grid;place-items:center;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.card{width:min(620px,100%);max-height:100%;overflow:auto;background:transparent;border:0;border-radius:0;padding:clamp(12px,4vw,34px) clamp(8px,3vw,28px);box-shadow:none;position:relative}.logo{font-size:clamp(32px,7vw,54px);font-weight:900;line-height:1.05;text-align:center;margin:0}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 clamp(20px,6vh,46px)}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:disabled{opacity:.7;cursor:wait}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px;overflow-wrap:anywhere}.small{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:13px;color:#333;margin:0;z-index:5;pointer-events:none}</style></head><body><main class="card"><div class="logo"><span class="brand-blue">Block</span> <span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button id="loginSubmit" type="submit" style="position:static;width:min(270px,100%);min-height:50px;margin:10px auto 0;padding:8px 14px;border:4px solid #202020;border-radius:6px;background:#d5d5d5;color:#171717;font-size:22px;font-weight:900;cursor:pointer">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0.4</div></
 main><script>
 (function(){
  var form=document.getElementById('form'),input=document.getElementById('password'),button=document.getElementById('loginSubmit'),msg=document.getElementById('msg'),busy=false;
@@ -1088,7 +1088,7 @@ document.addEventListener('click',event=>{
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent='2.0.3';const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent='2.0.4';const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
 verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
@@ -1146,28 +1146,8 @@ command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
-const logoutForm=$('logoutForm'),logoutButton=$('logout');
-if(logoutForm&&logoutButton){
- logoutForm.addEventListener('submit',async e=>{
-  e.preventDefault();
-  if(logoutButton.dataset.busy==='1')return;
-  logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';
-  try{
-   const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});
-   // Der Server antwortet beim Abmelden mit 303 und löscht das HttpOnly-Session-Cookie.
-   if(response.type==='opaqueredirect'||response.status===303||response.ok){
-    location.replace('/login?loggedout=1&t='+Date.now());
-    return;
-   }
-   throw new Error('Abmelden fehlgeschlagen (HTTP '+response.status+')');
-  }catch(err){
-   // Fallback über echtes Formular: Browser verarbeitet die 303-Weiterleitung direkt.
-   logoutButton.disabled=false;logoutButton.textContent='Abmelden';logoutButton.dataset.busy='0';
-   logoutForm.submit();
-  }
- });
-}
-
+// Abmelden verwendet das native POST-Formular. Safari/iPad verarbeitet so
+// die serverseitige Session-Löschung und 303-Weiterleitung ohne Fetch-Redirect-Probleme.
 refresh();setInterval(refresh,2000);
 </script>
 <style>
@@ -1259,7 +1239,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.innerHTML='<span>Version</span> <strong>2.0.3</strong>';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.innerHTML='<span>Version</span> <strong>2.0.4</strong>';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
@@ -1540,32 +1520,7 @@ body{overflow:hidden!important}
  .wrap{padding:0!important}
 }
 </style><script>
-/* Robuster Abmelden-Fallback: unabhängig von den Dashboard-Event-Listenern. */
-(function(){
-  document.addEventListener('click', async function(event){
-    const button=event.target && event.target.closest ? event.target.closest('#logout') : null;
-    if(!button) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if(button.dataset.logoutBusy==='1') return;
-    button.dataset.logoutBusy='1';
-    button.disabled=true;
-    const previous=button.textContent;
-    button.textContent='Melde ab…';
-    try {
-      const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});
-      if(!response.ok && response.status!==0 && response.status!==303) throw new Error('HTTP '+response.status);
-      window.location.replace('/login?loggedout=1&v='+Date.now());
-    } catch(error) {
-      button.disabled=false;
-      button.dataset.logoutBusy='0';
-      button.textContent=previous || 'Abmelden';
-      /* Normale Formularnavigation als Fallback, falls fetch blockiert wird. */
-      const form=button.closest('form');
-      if(form){ form.removeEventListener('submit', arguments.callee); form.submit(); }
-    }
-  }, true);
-})();
+/* Abmelden erfolgt über das native POST-Formular; kein Click-Interceptor. */
 </script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
 // ============================================================
 // HTTP API
