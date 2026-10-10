@@ -1152,7 +1152,7 @@ $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').c
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
 const logoutForm=$('logoutForm'),logoutButton=$('logout');
-if(logoutForm&&logoutButton){logoutForm.addEventListener('submit',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});if(!response.ok)throw new Error('HTTP '+response.status);location.assign('/login?loggedout=1&t='+Date.now())}catch(err){logoutButton.dataset.busy='0';logoutButton.disabled=false;logoutButton.textContent='Abmelden';toast('Abmelden fehlgeschlagen. Bitte erneut versuchen.')}});}
+if(logoutForm&&logoutButton){logoutForm.addEventListener('submit',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'follow',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});if(!response.ok)throw new Error('HTTP '+response.status);location.replace('/login?loggedout=1&t='+Date.now())}catch(err){/* Fallback: reguläres Formular statt den Nutzer auf dem Dashboard festzuhalten. */logoutButton.disabled=false;logoutButton.textContent='Abmelden';logoutButton.dataset.busy='0';logoutForm.removeEventListener('submit',arguments.callee);logoutForm.submit();}});}
 refresh();setInterval(refresh,2000);
 </script>
 <style>
@@ -1279,7 +1279,7 @@ refresh();setInterval(refresh,2000);
   top.appendChild(tabs);
   // Wichtig: Das Formular bleibt um den Button herum. Den Button allein aus dem Formular
   // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
-  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';}
+  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
   if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
 
   function activate(name){
