@@ -1276,6 +1276,30 @@ refresh();setInterval(refresh,2000);
   // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
   if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
   if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
+  // Robuster Logout für Safari/iPad und Desktop: Formular absenden, Session serverseitig löschen,
+  // danach immer zur Login-Seite wechseln. Bei Netzwerkfehler bleibt der native Formularweg möglich.
+  if(logoutForm && !logoutForm.dataset.logoutBound){
+    logoutForm.dataset.logoutBound='1';
+    logoutForm.addEventListener('submit',async function(event){
+      event.preventDefault();
+      if(logoutButtonEarly){logoutButtonEarly.disabled=true;logoutButtonEarly.textContent='Abmelden…';}
+      try{
+        const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'Accept':'application/json'}});
+        if(response.ok || response.status===303 || response.type==='opaqueredirect'){
+          window.location.replace('/login?loggedout=1');
+          return;
+        }
+        // Ein 303-Redirect kann von Safari als opaqueredirect erscheinen; bei jedem
+        // erfolgreichen Serverkontakt zur Login-Seite wechseln, damit der Zustand neu geprüft wird.
+        if(response.status>=200 && response.status<400){window.location.replace('/login?loggedout=1');return;}
+        throw new Error('Abmelden fehlgeschlagen');
+      }catch(error){
+        // Fallback auf das normale POST-Formular.
+        logoutForm.removeEventListener('submit',arguments.callee);
+        logoutForm.submit();
+      }
+    });
+  }
 
   function activate(name){
     const chat=name==='chat',control=name==='control',screen=name==='screen';
