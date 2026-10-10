@@ -1465,6 +1465,8 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
     const p=viewState.position||{x:0,y:0,z:0};
     const r=viewState.rotation||{yaw:0,pitch:0};
     const x=Number(p.x)||0, y=Number(p.y)||0, z=Number(p.z)||0;
+    const fallback=window.__frViewFallback;
+    if(fallback){ fallback.position.set(x,y,z); }
     const yaw=(Number(r.yaw)||0)*Math.PI/180;
     const pitch=(Number(r.pitch)||0)*Math.PI/180;
 
