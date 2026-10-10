@@ -1061,6 +1061,11 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
  .fr-control-card .actions>.btn{min-height:42px!important;font-size:14px!important}
 }
 
+/* Kurzer roter Klick-Impuls für Maus, Touch und Tastatur */
+@keyframes bb-button-flash{0%{background:#ff3535!important;box-shadow:0 0 0 0 rgba(255,35,35,.72)!important;border-color:#a40000!important}45%{background:#ff5555!important;box-shadow:0 0 0 5px rgba(255,35,35,.2)!important;border-color:#a40000!important}100%{box-shadow:none!important}}
+.bb-flash{animation:bb-button-flash .42s ease-out!important}
+button,a[role="button"],input[type="submit"]{-webkit-tap-highlight-color:rgba(255,35,35,.35);touch-action:manipulation}
+@media(prefers-reduced-motion:reduce){.bb-flash{animation-duration:.01ms!important}}
 /* Aktiver Ein/Aus-Zustand folgt dem Live-Status. */
 #control .actions button.state-selected{background:linear-gradient(135deg,#b8f5cf,#55d98b)!important;border:3px solid #087a3b!important;color:#073b20!important;box-shadow:0 0 0 3px rgba(8,122,59,.18),inset 0 1px 2px rgba(255,255,255,.8)!important;transform:translateY(-1px)}
 #control .actions button[data-action="stop"].state-selected{background:linear-gradient(135deg,#ffd0d0,#ff7777)!important;border-color:#b42323!important;color:#5e1010!important;box-shadow:0 0 0 3px rgba(180,35,35,.16),inset 0 1px 2px rgba(255,255,255,.7)!important}
@@ -1073,6 +1078,7 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
+<div class="card"><div class="label">Version</div><div id="versionValue" class="value">2.0.3</div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
@@ -1096,10 +1102,19 @@ placeholder="z. B. /spawn oder /money"><button class="btn" id="commandSend">Ausf
 </main><div id="toast" class="toast"></div>
 <script>
 const $=id=>document.getElementById(id);let lastChat=0,lastEvents=0;
+document.addEventListener('click',event=>{
+ const target=event.target.closest('button,a[role="button"],input[type="submit"]');
+ if(!target||target.disabled)return;
+ target.classList.remove('bb-flash');
+ void target.offsetWidth;
+ target.classList.add('bb-flash');
+ window.setTimeout(()=>target.classList.remove('bb-flash'),460);
+},{capture:true});
+
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function render(d){const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent='2.0.3';const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
 verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
@@ -1134,6 +1149,7 @@ for(const b of document.querySelectorAll('[data-action]')){
   const a=b.dataset.action;
   const labels={start:'Ein',stop:'Aus',reconnect:'Neu verbinden',home:'Home AFK',run:'Laufen',stoprun:'Laufen stoppen','mc-login':'MC Anmeldung'};
   const routes={start:'/api/minecraft/start',stop:'/api/minecraft/stop',reconnect:'/api/minecraft/reconnect',home:'/api/minecraft/home',run:'/api/minecraft/run',stoprun:'/api/minecraft/stoprun','mc-login':'/api/minecraft/start'};
+  if(a==='mc-login'){const auth=$('auth');if(auth){auth.classList.remove('hidden');auth.querySelector('b').textContent='Microsoft-Anmeldung wird vorbereitet…';$('authCode').textContent='Code wird angefordert…';$('authLink').href='https://www.microsoft.com/link';$('authLink').textContent='Microsoft-Anmeldeseite öffnen';}}
   const original=b.textContent.trim();
   b.dataset.busy='1';b.disabled=true;b.textContent='Bitte warten…';
   toast('Befehl wird gesendet: '+(labels[a]||a));
@@ -1157,7 +1173,27 @@ $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').c
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
 const logoutForm=$('logoutForm'),logoutButton=$('logout');
-if(logoutForm&&logoutButton){logoutForm.addEventListener('submit',async e=>{e.preventDefault();if(logoutButton.dataset.busy==='1')return;logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';try{const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'follow',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});if(!response.ok)throw new Error('HTTP '+response.status);location.replace('/login?loggedout=1&t='+Date.now())}catch(err){/* Fallback: reguläres Formular statt den Nutzer auf dem Dashboard festzuhalten. */logoutButton.disabled=false;logoutButton.textContent='Abmelden';logoutButton.dataset.busy='0';logoutForm.submit();}});}
+if(logoutForm&&logoutButton){
+ logoutForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(logoutButton.dataset.busy==='1')return;
+  logoutButton.dataset.busy='1';logoutButton.disabled=true;logoutButton.textContent='Melde ab…';
+  try{
+   const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'Accept':'application/json','X-Requested-With':'fetch'}});
+   // Der Server antwortet beim Abmelden mit 303 und löscht das HttpOnly-Session-Cookie.
+   if(response.type==='opaqueredirect'||response.status===303||response.ok){
+    location.replace('/login?loggedout=1&t='+Date.now());
+    return;
+   }
+   throw new Error('Abmelden fehlgeschlagen (HTTP '+response.status+')');
+  }catch(err){
+   // Fallback über echtes Formular: Browser verarbeitet die 303-Weiterleitung direkt.
+   logoutButton.disabled=false;logoutButton.textContent='Abmelden';logoutButton.dataset.busy='0';
+   logoutForm.submit();
+  }
+ });
+}
+
 refresh();setInterval(refresh,2000);
 </script>
 <style>
