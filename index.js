@@ -1161,28 +1161,7 @@ $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').va
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
 command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
-// Abmelden: expliziter POST-Handler mit Redirect-Fallback für iPad/Safari und Desktop.
-(function(){
- const form=document.getElementById('logoutForm');
- const button=document.getElementById('logout');
- if(!form||!button)return;
- form.method='POST'; form.action='/api/logout';
- button.type='button';
- button.addEventListener('click',async function(e){
-   e.preventDefault();
-   if(button.dataset.busy==='1')return;
-   button.dataset.busy='1'; button.disabled=true;
-   try{
-     const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual'});
-     if(response.ok||response.type==='opaqueredirect'||response.status===0){
-       window.location.replace('/login?loggedout=1');
-       return;
-     }
-     // Falls Safari den Redirect nicht zugänglich macht, übernimmt das native Formular.
-     form.submit();
-   }catch(_){form.submit();}
- });
-})();
+// Abmelden wird ausschließlich über das native POST-Formular abgewickelt.
 // Abmelden wird direkt am Button ausgelöst, auch wenn andere Dashboard-Skripte fehlschlagen.
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
