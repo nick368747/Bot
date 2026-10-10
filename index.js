@@ -1064,14 +1064,14 @@ body{position:fixed!important;inset:0!important;padding:0!important}
  .fr-main-panels{padding:5px!important}
 }
 </style></head><body><main class="wrap">
-<div class="top"><div><div class="title"><img class="brand-logo-image dashboard-brand-logo" src="/brand-logo.svg" alt="Block Bande"><span class="dashboard-title-suffix"> · Dashboard</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="POST" action="/api/logout" style="margin-left:auto"><button class="btn" id="logout" type="submit">Abmelden</button></form></div>
+<div class="top"><div><div class="title"><img class="brand-logo-image dashboard-brand-logo" src="/brand-logo.svg" alt="Block Bande"><span class="dashboard-title-suffix"> · Dashboard</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="POST" action="/api/logout" style="margin-left:auto"><button class="btn" id="logout" type="submit" aria-label="Sicher abmelden">Abmelden</button></form></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
 <div class="grid" id="statusGrid">
 <div class="card"><div class="label">Status</div><div id="statusValue" class="value offline">Offline</div></div>
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
-<div class="card"><div class="label">Version <span id="versionNumber">2.0.4</span></div><div id="versionValue" class="value">2.0.4</div></div>
+<div class="card"><div class="label">Version</div><div id="versionValue" class="value">2.0.4</div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
@@ -1296,12 +1296,33 @@ refresh();setInterval(refresh,2000);
   // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
   if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
   if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
-  // Logout bewusst als normales HTML-POST ausführen: Safari/iPad folgt der
-  // serverseitigen 303-Weiterleitung zuverlässig und löscht das HttpOnly-Cookie.
-  if(logoutForm && logoutButtonEarly){
-    logoutButtonEarly.type='submit';
+  // Logout: native Formularnavigation als Fallback, Fetch-Submit mit expliziter
+  // Navigation als iPad/Safari-kompatibler Hauptpfad. Der Server loescht die Session
+  // und das HttpOnly-Cookie; bei Netzwerkfehler bleibt das Formular erneut nutzbar.
+  if(logoutForm && logoutButtonEarly && !logoutForm.dataset.logoutBound){
+    logoutForm.dataset.logoutBound='1';
     logoutForm.method='POST';
     logoutForm.action='/api/logout';
+    logoutButtonEarly.type='submit';
+    logoutForm.addEventListener('submit', async function(event){
+      event.preventDefault();
+      if(logoutButtonEarly.dataset.busy==='1') return;
+      logoutButtonEarly.dataset.busy='1';
+      logoutButtonEarly.disabled=true;
+      const oldLabel=logoutButtonEarly.textContent;
+      logoutButtonEarly.textContent='Abmelden…';
+      try {
+        const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json, text/html'}});
+        if(!response.ok) throw new Error('Abmelden fehlgeschlagen (HTTP '+response.status+').');
+        window.location.replace('/login?loggedout=1');
+      } catch(err) {
+        logoutButtonEarly.dataset.busy='0';
+        logoutButtonEarly.disabled=false;
+        logoutButtonEarly.textContent=oldLabel;
+        // Bei einem Fetch-/Netzwerkfehler auf die native POST-Navigation zurueckfallen.
+        logoutForm.submit();
+      }
+    });
   }
 
   function activate(name){
