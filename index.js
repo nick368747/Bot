@@ -1295,7 +1295,6 @@ refresh();setInterval(refresh,2000);
         throw new Error('Abmelden fehlgeschlagen');
       }catch(error){
         // Fallback auf das normale POST-Formular.
-        logoutForm.removeEventListener('submit',arguments.callee);
         logoutForm.submit();
       }
     });
