@@ -1063,9 +1063,9 @@ body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.
 
 /* Kurzer roter Klick-Impuls für Maus, Touch und Tastatur */
 @keyframes bb-button-flash{0%{background:#ff3535!important;box-shadow:0 0 0 0 rgba(255,35,35,.72)!important;border-color:#a40000!important}45%{background:#ff5555!important;box-shadow:0 0 0 5px rgba(255,35,35,.2)!important;border-color:#a40000!important}100%{box-shadow:none!important}}
-.bb-flash{animation:bb-button-flash .42s ease-out!important}
+.bb-flash{background:#ff3535!important;border-color:#a40000!important;box-shadow:0 0 0 5px rgba(255,35,35,.28)!important;transition:none!important}
 button,a[role="button"],input[type="submit"]{-webkit-tap-highlight-color:rgba(255,35,35,.35);touch-action:manipulation}
-@media(prefers-reduced-motion:reduce){.bb-flash{animation-duration:.01ms!important}}
+
 /* Aktiver Ein/Aus-Zustand folgt dem Live-Status. */
 #control .actions button.state-selected{background:linear-gradient(135deg,#b8f5cf,#55d98b)!important;border:3px solid #087a3b!important;color:#073b20!important;box-shadow:0 0 0 3px rgba(8,122,59,.18),inset 0 1px 2px rgba(255,255,255,.8)!important;transform:translateY(-1px)}
 #control .actions button[data-action="stop"].state-selected{background:linear-gradient(135deg,#ffd0d0,#ff7777)!important;border-color:#b42323!important;color:#5e1010!important;box-shadow:0 0 0 3px rgba(180,35,35,.16),inset 0 1px 2px rgba(255,255,255,.7)!important}
