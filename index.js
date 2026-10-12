@@ -1641,11 +1641,15 @@ body{position:fixed!important;inset:0!important}
 // HTTP API
 // ============================================================
 async function handleRequest(req, res) {
-// Sicherheitsheader für alle Antworten; die Anmeldung bleibt auf HTTPS-Cookies beschränkt.
+// Sicherheitsheader für alle Antworten; Login und Dashboard sollen nicht in fremde Frames eingebettet werden.
 res.setHeader("X-Content-Type-Options", "nosniff");
 res.setHeader("X-Frame-Options", "DENY");
 res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+res.setHeader("Origin-Agent-Cluster", "?1");
+if (isSecureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
 if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-icon.svg" || url === "/sw.js")) {
