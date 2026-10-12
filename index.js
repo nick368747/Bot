@@ -755,7 +755,7 @@ return { amount, output: firstOutput };
 // ============================================================
 const LOGIN_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#4267d5"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Block Bande"><link rel="icon" href="/app-icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/app-icon.svg"><title>Block Bande – Botportal</title>
-<style>*{box-sizing:border-box}html,body{width:100%;min-height:100%;margin:0}html{height:100%;background:#d9d5ff}body{min-height:100vh;min-height:100dvh;background:linear-gradient(125deg,#bfd7ff 0%,#d9d5ff 48%,#ffc4d4 100%);color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:auto;padding:max(20px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(30px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.card{width:min(620px,100%);flex:0 0 auto;overflow:visible;background:transparent;border:0;border-radius:0;padding:clamp(12px,4vw,34px) clamp(8px,3vw,28px);box-shadow:none;position:relative;margin:auto}.logo{width:100%;font-size:clamp(40px,8vw,76px);font-weight:1000;line-height:1.05;text-align:center;margin:0 0 18px;letter-spacing:-2px;overflow-wrap:anywhere}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 clamp(20px,6vh,46px)}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:disabled{opacity:.7;cursor:wait}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px;overflow-wrap:anywhere}.small{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:13px;color:#333;margin:0;z-index:5;pointer-events:none}.login-brand-image{display:block;width:min(100%,660px);height:auto;margin:0 auto 18px;overflow:visible}.login-brand-wordmark{display:flex;justify-content:center;align-items:center;gap:.14em;width:100%;font-size:clamp(40px,8vw,76px);font-weight:1000;line-height:1.05;letter-spacing:-2px;white-space:nowrap}.login-brand-wordmark .brand-blue,.login-brand-wordmark .brand-red{display:inline-block}.dashboard-brand-logo{width:clamp(190px,24vw,330px);max-height:70px}.top .title{display:flex;align-items:center;gap:8px;min-width:0}.dashboard-title-suffix{font-size:.48em;white-space:nowrap}@media(max-width:700px){.login-brand-image{width:min(100%,520px)}.dashboard-brand-logo{width:clamp(130px,27vw,210px);max-height:54px}.dashboard-title-suffix{display:none}.top{gap:6px}.card{padding-left:8px;padding-right:8px}.login-brand-wordmark{font-size:clamp(34px,9vw,58px);letter-spacing:-1.5px}}@media(max-height:520px){body{justify-content:flex-start}.card{margin:0 auto}.portal{margin-bottom:18px}}</style></head><body><main class="card"><div class="logo"><svg class="login-brand-image" viewBox="0 0 800 120" role="img" aria-label="Block Bande" xmlns="http://www.w3.org/2000/svg"><text x="0" y="96" fill="#4779c7" font-family="Comic Sans MS, Segoe Print, system-ui, sans-serif" font-size="100" font-weight="1000" letter-spacing="-3">Block</text><text x="393" y="96" fill="#f04444" font-family="Comic Sans MS, Segoe Print, system-ui, sans-serif" font-size="100" font-weight="1000" letter-spacing="-3">Bande</text></svg></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button id="loginSubmit" type="submit" style="position:static;width:min(270px,100%);min-height:50px;margin:10px auto 0;padding:8px 14px;border:4px solid #202020;border-radius:6px;background:#d5d5d5;color:#171717;font-size:22px;font-weight:900;cursor:pointer">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0.5</div></
+<style>*{box-sizing:border-box}html,body{width:100%;min-height:100%;margin:0}html{height:100%;background:#d9d5ff}body{min-height:100vh;min-height:100dvh;background:linear-gradient(125deg,#bfd7ff 0%,#d9d5ff 48%,#ffc4d4 100%);color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:auto;padding:max(20px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(30px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.card{width:min(620px,100%);flex:0 0 auto;overflow:visible;background:transparent;border:0;border-radius:0;padding:clamp(12px,4vw,34px) clamp(8px,3vw,28px);box-shadow:none;position:relative;margin:auto}.logo{width:100%;font-size:clamp(40px,8vw,76px);font-weight:1000;line-height:1.05;text-align:center;margin:0 0 18px;letter-spacing:-2px;overflow-wrap:anywhere}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 clamp(20px,6vh,46px)}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:disabled{opacity:.7;cursor:wait}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px;overflow-wrap:anywhere}.small{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:13px;color:#333;margin:0;z-index:5;pointer-events:none}.login-brand-image{display:block;width:min(100%,660px);height:auto;margin:0 auto 18px;overflow:visible}.login-brand-wordmark{display:flex;justify-content:center;align-items:center;gap:.14em;width:100%;font-size:clamp(40px,8vw,76px);font-weight:1000;line-height:1.05;letter-spacing:-2px;white-space:nowrap}.login-brand-wordmark .brand-blue,.login-brand-wordmark .brand-red{display:inline-block}.dashboard-brand-logo{width:clamp(190px,24vw,330px);max-height:70px}.top .title{display:flex;align-items:center;gap:8px;min-width:0}.dashboard-title-suffix{font-size:.48em;white-space:nowrap}@media(max-width:700px){.login-brand-image{width:min(100%,520px)}.dashboard-brand-logo{width:clamp(130px,27vw,210px);max-height:54px}.dashboard-title-suffix{display:none}.top{gap:6px}.card{padding-left:8px;padding-right:8px}.login-brand-wordmark{font-size:clamp(34px,9vw,58px);letter-spacing:-1.5px}}@media(max-height:520px){body{justify-content:flex-start}.card{margin:0 auto}.portal{margin-bottom:18px}}</style></head><body><main class="card"><div class="logo"><svg class="login-brand-image" viewBox="0 0 800 120" role="img" aria-label="Block Bande" xmlns="http://www.w3.org/2000/svg"><text x="0" y="96" fill="#4779c7" font-family="Comic Sans MS, Segoe Print, system-ui, sans-serif" font-size="100" font-weight="1000" letter-spacing="-3">Block</text><text x="393" y="96" fill="#f04444" font-family="Comic Sans MS, Segoe Print, system-ui, sans-serif" font-size="100" font-weight="1000" letter-spacing="-3">Bande</text></svg></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button id="loginSubmit" type="submit" style="position:static;width:min(270px,100%);min-height:50px;margin:10px auto 0;padding:8px 14px;border:4px solid #202020;border-radius:6px;background:#d5d5d5;color:#171717;font-size:22px;font-weight:900;cursor:pointer">Anmelden</button></form><div id="msg"></div><div class="small">Version 2.0.6</div></
 main><script>
 (function(){
  var form=document.getElementById('form'),input=document.getElementById('password'),button=document.getElementById('loginSubmit'),msg=document.getElementById('msg'),busy=false;
@@ -1064,14 +1064,14 @@ body{position:fixed!important;inset:0!important;padding:0!important}
  .fr-main-panels{padding:5px!important}
 }
 </style></head><body><main class="wrap">
-<div class="top"><div><div class="title"><img class="brand-logo-image dashboard-brand-logo" src="/brand-logo.svg" alt="Block Bande"><span class="dashboard-title-suffix"> · Dashboard</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="POST" action="/api/logout" style="margin-left:auto"><button class="btn" id="logout" type="submit" aria-label="Sicher abmelden">Abmelden</button></form></div>
+<div class="top"><div><div class="title"><img class="brand-logo-image dashboard-brand-logo" src="/brand-logo.svg" alt="Block Bande"><span class="dashboard-title-suffix"> · Dashboard</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="GET" action="/logout" style="margin-left:auto"><button class="btn" id="logout" type="submit" aria-label="Sicher abmelden">Abmelden</button></form></div>
 <nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
 <div class="grid" id="statusGrid">
 <div class="card"><div class="label">Status</div><div id="statusValue" class="value offline">Offline</div></div>
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
-<div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">2.0.5</div></div></div>
+<div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">2.0.6</div></div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
@@ -1107,7 +1107,7 @@ document.addEventListener('click',event=>{
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent='2.0.5';const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent='2.0.6';const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
 verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
@@ -1166,7 +1166,7 @@ command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
-// Version 2.0.5: sichtbar machen, welcher Build tatsächlich ausgeliefert wird.
+// Version 2.0.6: sichtbar machen, welcher Build tatsächlich ausgeliefert wird.
 // Das Logout-Formular bleibt ein natives POST-Formular, damit auch Safari/iPad
 // die Cookie-Löschung samt Redirect zuverlässig verarbeitet.
 const logoutForm=document.getElementById('logoutForm');
@@ -1269,7 +1269,7 @@ refresh();setInterval(refresh,2000);
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.innerHTML='<span>Version</span> <strong>2.0.5</strong>';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.innerHTML='<span>Version</span> <strong>2.0.6</strong>';sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
@@ -1304,14 +1304,14 @@ refresh();setInterval(refresh,2000);
   top.appendChild(tabs);
   // Wichtig: Das Formular bleibt um den Button herum. Den Button allein aus dem Formular
   // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
-  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
+  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/logout';logoutForm.method='GET';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
   if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
   // Logout bewusst als normales POST-Formular ausführen. Kein fetch()-Interceptor:
   // Safari/iPad navigiert dadurch direkt auf die serverseitige 303-Antwort und
   // das HttpOnly-Session-Cookie wird zuverlässig gelöscht.
   if(logoutForm && logoutButtonEarly){
-    logoutForm.method='POST';
-    logoutForm.action='/api/logout';
+    logoutForm.method='GET';
+    logoutForm.action='/logout';
     logoutButtonEarly.type='submit';
     logoutForm.onsubmit=null;
   }
@@ -1659,21 +1659,19 @@ world: getWorldView(),
 timestamp: Date.now()
 });
 }
-if (req.method === "POST" && url === "/api/logout") {
-if (req.headers.origin) {
-  try { if (new URL(req.headers.origin).host !== String(req.headers.host || "")) return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
-  catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
-}
+if ((req.method === "GET" && url === "/logout") || (req.method === "POST" && url === "/api/logout")) {
 const token = getCookies(req).frozenrun_session;
 if (token) sessions.delete(token);
 res.writeHead(303, {
 "Location": "/login?loggedout=1",
-"Set-Cookie": `frozenrun_session=; HttpOnly${isSecureRequest(req) ? "; Secure" : ""}; SameSite=Strict; Path=/; Max-Age=0`,
+"Set-Cookie": `frozenrun_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`,
 "Cache-Control": "no-store",
 "Content-Length": "0"
 });
 return res.end();
 }
+/* Legacy logout route kept compatible with older dashboard clients. */
+if (false && req.method === "POST" && url === "/api/logout") {
 if (req.method !== "POST") return json(res, 405, { ok: false, error: "Methode nicht erlaubt." });
 // CSRF-Schutz: Browser-Steuerungsanfragen muessen dieselbe Origin verwenden.
 if (url.startsWith("/api/minecraft/") && req.headers.origin) {
