@@ -1634,6 +1634,22 @@ body{position:fixed!important;inset:0!important}
 .fr-main-panels{overflow:hidden!important}
 .fr-sidebar{overflow-y:auto!important;overscroll-behavior:contain!important}
 #fr-panel-chat .chat{min-height:0!important;overscroll-behavior:contain!important}
+
+/* Layout abschließen: kein Scrollen der Seite oder der gesamten Karten.
+   Nur der Nachrichtenverlauf darf bei vielen Nachrichten intern scrollen. */
+html,body{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+.wrap{position:absolute!important;inset:0!important;display:flex!important;flex-direction:column!important;width:100%!important;height:100%!important;height:100dvh!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;gap:0!important}
+.wrap>.top{flex:0 0 auto!important;min-height:0!important}
+.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.wrap>.fr-app-layout>.fr-sidebar{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+.wrap>.fr-app-layout>.fr-main-panels{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+.fr-main-panels .fr-panel,.fr-main-panels .fr-panel.active{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#fr-panel-control .fr-control-area,#fr-panel-control .fr-control-card,#fr-panel-control #control,#fr-panel-control #commandPanel{min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#fr-panel-chat #chatPanel{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#fr-panel-chat #chat{min-height:0!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}
+#fr-panel-screen .fr-viewer{min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#logoutForm,#logoutForm button{position:relative!important;z-index:9999!important;pointer-events:auto!important;touch-action:manipulation!important}
+@media(max-width:900px){.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important}.wrap>.fr-app-layout>.fr-sidebar{overflow:hidden!important}.fr-main-panels{padding:5px!important}}
 </style><script>
 /* Abmelden: Formular bleibt nativ; der Server invalidiert die Session und löscht das Cookie. */
 </script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
