@@ -1578,8 +1578,39 @@ body{overflow:hidden!important}
  html,body{padding:0!important}
  .wrap{padding:0!important}
 }
+/* iPad und Desktop: sichere Viewport-Höhe, Safe-Area und bedienbare Karten */
+html{height:100%;height:-webkit-fill-available}
+body{min-height:100%;min-height:-webkit-fill-available}
+.wrap{min-height:0;min-height:100dvh}
+#logoutForm{flex:0 0 auto;z-index:20}
+#logoutForm button{min-height:44px;touch-action:manipulation;cursor:pointer}
+@media (hover:none) and (pointer:coarse){
+  .wrap{padding:0!important}
+  .wrap>.top{padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px!important;gap:8px!important}
+  .dashboard-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+  .dashboard-tabs a,.fr-tab{min-height:44px!important;display:flex!important;align-items:center!important;justify-content:center!important;touch-action:manipulation}
+  .wrap>.fr-app-layout{grid-template-columns:minmax(104px,25%) minmax(0,1fr)!important}
+  .fr-sidebar{padding:8px 6px!important}
+  .fr-main-panels{padding:8px!important}
+  .fr-control-card .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-width:none!important}
+  .fr-control-card .actions>.btn,#fr-panel-control #control .actions button{min-width:0!important;max-width:none!important;min-height:44px!important;padding:8px 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:clamp(12px,1.8vw,16px)!important}
+  #fr-panel-control .forms,#fr-panel-chat .forms{grid-template-columns:minmax(0,1fr) auto!important}
+  #fr-panel-control .forms button,#fr-panel-chat .forms button{min-height:44px!important}
+}
+@media (orientation:portrait) and (max-width:900px){
+  .wrap>.top .title{font-size:clamp(18px,4vw,25px)!important}
+  .wrap>.fr-app-layout{grid-template-columns:minmax(94px,27%) minmax(0,1fr)!important}
+  .fr-sidebar .label{font-size:clamp(11px,1.8vw,14px)!important}
+  .fr-sidebar .value{font-size:clamp(12px,2vw,16px)!important;overflow-wrap:anywhere!important}
+  .fr-main-panels{padding:5px!important}
+  .fr-control-card .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media (max-height:600px){
+  .wrap>.top{padding-top:4px!important;padding-bottom:4px!important}
+  .fr-main-panels{padding:4px!important}
+}
 </style><script>
-/* Abmelden erfolgt über das native POST-Formular; kein Click-Interceptor. */
+/* Abmelden: Formular bleibt nativ; der Server invalidiert die Session und löscht das Cookie. */
 </script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
 // ============================================================
 // HTTP API
@@ -1659,13 +1690,15 @@ world: getWorldView(),
 timestamp: Date.now()
 });
 }
-if ((req.method === "GET" && url === "/logout") || (req.method === "POST" && url === "/api/logout")) {
+if ((req.method === "GET" && url.split("?")[0] === "/logout") || (req.method === "POST" && url.split("?")[0] === "/api/logout")) {
 const token = getCookies(req).frozenrun_session;
 if (token) sessions.delete(token);
+const secureCookie = isSecureRequest(req) ? "; Secure" : "";
 res.writeHead(303, {
 "Location": "/login?loggedout=1",
-"Set-Cookie": `frozenrun_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`,
-"Cache-Control": "no-store",
+"Set-Cookie": `frozenrun_session=; HttpOnly${secureCookie}; SameSite=Strict; Path=/; Max-Age=0`,
+"Cache-Control": "no-store, max-age=0",
+"Pragma": "no-cache",
 "Content-Length": "0"
 });
 return res.end();
