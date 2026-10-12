@@ -1616,6 +1616,16 @@ body{min-height:100%;min-height:-webkit-fill-available}
   .wrap>.top{padding-top:4px!important;padding-bottom:4px!important}
   .fr-main-panels{padding:4px!important}
 }
+
+/* Chrome: Seitenscroll der gesamten App verhindern; Panels behalten eigene Scrollbereiche. */
+html,body{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:fixed!important;inset:0!important}
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;height:100%!important;height:100dvh!important;min-height:0!important;max-height:100%!important;margin:0!important;overflow:hidden!important}
+.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.fr-sidebar,.fr-main-panels,.fr-panel,.fr-panel.active{min-height:0!important;max-height:100%!important}
+.fr-main-panels{overflow:hidden!important}
+.fr-sidebar{overflow-y:auto!important;overscroll-behavior:contain!important}
+#fr-panel-chat .chat{min-height:0!important;overscroll-behavior:contain!important}
 </style><script>
 /* Abmelden: Formular bleibt nativ; der Server invalidiert die Session und löscht das Cookie. */
 </script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
