@@ -1215,6 +1215,13 @@ refresh();setInterval(refresh,2000);
 @media(max-width:950px){.fr-control-layout{grid-template-columns:1fr 1fr}.fr-command{grid-column:1/-1}}
 @media(max-width:850px){.fr-app-layout{grid-template-columns:1fr}.fr-sidebar .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.fr-sidebar .grid>div{border-bottom:0;border-right:1px solid #aaa;padding:4px}.fr-sidebar .grid>div:last-child{border-right:0}.fr-sidebar .card{height:auto}}
 @media(max-width:700px){.wrap{padding:12px}.top{align-items:flex-start}.fr-control-layout{grid-template-columns:1fr}.fr-command{grid-column:auto}.fr-tabs{width:100%;min-width:0}.fr-tab{padding:9px 5px;font-size:14px}.fr-app-layout{grid-template-columns:1fr}.fr-sidebar .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.fr-sidebar .grid>div{border-bottom:0;border-right:1px solid #aaa;padding:4px}.fr-sidebar .grid>div:nth-child(even){border-right:0}.top .title{font-size:24px}}
+/* Seiten-Scroll sperren: Dashboard bleibt im Viewport, interne Bereiche bleiben bedienbar */
+html,body{width:100%!important;height:100%!important;min-height:100%!important;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:relative!important;touch-action:pan-x pan-y}
+.wrap{height:100vh!important;height:100dvh!important;max-height:100vh!important;max-height:100dvh!important;overflow:hidden!important;overscroll-behavior:none!important}
+.fr-app-layout,.fr-sidebar,.fr-main-panels,.fr-panel,#fr-panel-chat .chat{overscroll-behavior:contain!important}
+.fr-sidebar,.fr-main-panels,.fr-panel,#fr-panel-chat .chat{min-height:0!important}
+@supports (-webkit-touch-callout:none){html,body{overflow:hidden!important;overscroll-behavior:none!important}.wrap{height:100%!important;max-height:100%!important}}
 </style>
 <script>
 (function(){
