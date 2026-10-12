@@ -1670,8 +1670,6 @@ res.writeHead(303, {
 });
 return res.end();
 }
-/* Legacy logout route kept compatible with older dashboard clients. */
-if (false && req.method === "POST" && url === "/api/logout") {
 if (req.method !== "POST") return json(res, 405, { ok: false, error: "Methode nicht erlaubt." });
 // CSRF-Schutz: Browser-Steuerungsanfragen muessen dieselbe Origin verwenden.
 if (url.startsWith("/api/minecraft/") && req.headers.origin) {
