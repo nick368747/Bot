@@ -1347,8 +1347,22 @@ document.addEventListener('DOMContentLoaded',function(){
   }
   if(logoutButtonEarly){
     logoutButtonEarly.textContent='Abmelden';
-    logoutButtonEarly.type='submit';
+    logoutButtonEarly.type='button';
     logoutButtonEarly.disabled=false;
+    // Safari/iPad: Logout nicht von Formular-/Tab-Handlern abhängig machen.
+    if(!logoutButtonEarly.dataset.logoutBound){
+      logoutButtonEarly.dataset.logoutBound='1';
+      logoutButtonEarly.addEventListener('click',async function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        logoutButtonEarly.disabled=true;
+        logoutButtonEarly.textContent='Abmelden…';
+        try{
+          await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'follow',headers:{'Accept':'application/json,text/html,*/*'}});
+        }catch(_){}
+        window.location.replace('/login?loggedout=1');
+      },true);
+    }
   }
 
   function activate(name){
