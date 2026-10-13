@@ -1107,7 +1107,7 @@ body{position:fixed!important;inset:0!important;padding:0!important}
 <div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">${APP_VERSION}</div></div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
-gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
+gib den Code ein.</p><p><a id="authLink" href="https://microsoft.com/devicelogin" target="_blank" rel="noopener noreferrer">Microsoft-Anmeldeseite öffnen</a></p><div
 id="authCode" class="value"></div></div>
 <div class="card section" id="control"><h2>Steuerung</h2><div class="actions">
 <button class="btn primary" data-action="start"><span aria-hidden="true">▶</span> Ein</button><button class="btn danger" data-action="stop"><span aria-hidden="true">■</span> Aus</
@@ -1175,7 +1175,7 @@ for(const b of document.querySelectorAll('[data-action]')){
   const a=b.dataset.action;
   const labels={start:'Ein',stop:'Aus',reconnect:'Neu verbinden',home:'Home AFK',run:'Laufen',stoprun:'Laufen stoppen','mc-login':'MC Anmeldung'};
   const routes={start:'/api/minecraft/start',stop:'/api/minecraft/stop',reconnect:'/api/minecraft/reconnect',home:'/api/minecraft/home',run:'/api/minecraft/run',stoprun:'/api/minecraft/stoprun','mc-login':'/api/minecraft/start'};
-  if(a==='mc-login'){const auth=$('auth');if(auth){auth.classList.remove('hidden');auth.querySelector('b').textContent='Microsoft-Anmeldung wird vorbereitet…';$('authCode').textContent='Code wird angefordert…';$('authLink').href='https://www.microsoft.com/link';$('authLink').textContent='Microsoft-Anmeldeseite öffnen';}}
+  if(a==='mc-login'){const auth=$('auth');if(auth){auth.classList.remove('hidden');auth.querySelector('b').textContent='Microsoft-Anmeldung wird vorbereitet…';$('authCode').textContent='Code wird angefordert…';$('authLink').href='https://microsoft.com/devicelogin';$('authLink').textContent='Microsoft-Anmeldeseite öffnen';}}
   const original=b.textContent.trim();
   b.dataset.busy='1';b.disabled=true;b.textContent='Bitte warten…';
   toast('Befehl wird gesendet: '+(labels[a]||a));
