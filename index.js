@@ -824,30 +824,851 @@ scale=1"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-col
 @media(max-width:900px){.wrap{grid-template-columns:minmax(150px,.7fr) minmax(0,1.3fr);grid-template-areas:"head head" "tabs tabs" "stats control" "chat chat" "money command" "events events" "foot foot"}#chatPanel .chat{height:300px}}
 @media(max-width:560px){.wrap{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "tabs" "stats" "control" "chat" "money" "command" "events" "foot";padding:10px}.top{align-items:flex-start}.logout-button{margin-left:auto}.dashboard-tabs{gap:6px}.dashboard-tabs a{padding:8px 10px;font-size:14px}.wrap>.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap>.grid>.card{min-width:0}.value{font-size:18px}#control .actions{grid-template-columns:repeat(2,minmax(0,1fr))}#chatPanel .chat{height:260px}.forms{grid-template-columns:minmax(0,1fr) auto!important}.forms input,.forms button{min-width:0;font-size:15px;padding:9px 7px}}
 @media(max-width:800px){.actions{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.wrap{padding:10px}.top{gap:8px;flex-wrap:wrap}.title{font-size:25px}.forms{grid-template-columns:1fr}.chat{height:300px}}
+/* Layout exakt nach der Zeichnung */
+body{background:#fff;color:#171717}
+.wrap{width:min(100%,1240px);padding:6px;margin:0 auto}
+.top{display:grid;grid-template-columns:minmax(210px,1fr) auto;gap:0;align-items:stretch;margin:0;padding:0;border:3px solid #202020;border-radius:6px;background:#e8e8e8}
+.top .title{font-size:clamp(25px,3.2vw,38px);padding:8px 12px;align-self:center}
+.top #logout{grid-column:1/-1;justify-self:end;margin:4px;border:0;background:transparent;min-height:0;padding:4px 8px;font-size:13px}
+.fr-tabs{grid-column:2;grid-row:1;display:flex;align-items:stretch;gap:0;margin:0;padding:0;border:0;min-width:0}
+.fr-tab{font:inherit;font-size:clamp(16px,2.4vw,25px);padding:8px 12px;border:0;border-left:2px solid #202020;border-radius:0;background:#e8e8e8;color:#171717;white-space:nowrap;cursor:pointer}
+.fr-tab.active{background:#858585}
+.fr-app-layout{display:grid;grid-template-columns:minmax(185px,30%) minmax(0,1fr);gap:0;margin-top:0;border:3px solid #202020;border-top:0;border-radius:0 0 6px 6px;min-height:460px;background:#e8e8e8}
+.fr-sidebar{border-right:2px solid #202020;padding:12px 14px;display:flex;flex-direction:column;min-width:0}
+.fr-side-brand{font-size:clamp(23px,3vw,34px);font-weight:900;border-bottom:2px solid #202020;padding:0 0 12px;white-space:nowrap}
+.fr-sidebar .grid{display:flex;flex-direction:column;gap:0;margin-top:8px}
+.fr-sidebar .grid>div{background:transparent;border:0;border-radius:0;padding:7px 0;border-bottom:0}
+.fr-sidebar .label{font-size:clamp(17px,2vw,24px);color:#171717}
+.fr-sidebar .value{font-size:clamp(16px,2vw,22px);font-weight:500}
+.fr-version{margin-top:auto;padding-top:18px;font-size:18px;font-weight:700}
+.fr-main-panels{min-width:0;min-height:455px;padding:12px}
+.fr-panel{display:none;min-height:425px;margin:0!important}
+.fr-panel.active{display:block}
+.fr-control-area{height:calc(100% - 62px);min-height:340px;display:flex;align-items:flex-start;justify-content:center;padding:20px}
+.fr-control-card{width:100%;min-height:300px;border:0;background:transparent;display:flex;align-items:flex-start;justify-content:center}
+.fr-control-card h2{display:none}
+.fr-control-card .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(100%,520px);margin:8px auto}
+.fr-control-card .btn{min-height:54px;font-size:18px}
+.fr-command{margin:0!important;background:#d5d5d5;border:3px solid #202020;padding:0;border-radius:6px}
+.fr-command .forms{grid-template-columns:minmax(0,1fr) 48px;gap:0}
+.fr-command .forms input{min-height:44px;border:0;border-radius:0;background:transparent;font-size:21px;padding:5px 12px}
+.fr-command .forms input::placeholder{color:#171717;opacity:1}
+.fr-command .forms .btn{border:0;border-left:3px solid #202020;border-radius:0;background:transparent;min-height:44px;font-size:20px}
+.fr-command .sub,.fr-note{display:none}
+#fr-panel-chat .card.section{margin:0;border:0;padding:0;background:transparent}
+#fr-panel-chat h2{display:none}
+#fr-panel-chat .chat{height:420px;min-height:300px;background:#d5d5d5;border:3px solid #202020;border-radius:4px}
+#fr-panel-chat .forms{grid-template-columns:minmax(0,1fr) auto}
+#fr-panel-screen .fr-viewer{height:420px;min-height:300px;width:100%;border:3px solid #202020;border-radius:4px;background:#d5d5d5;overflow:hidden}
+#fr-viewCanvas{display:block;width:100%;height:100%}
+#moneyPanel,#eventsPanel{display:none!important}
+@media(max-width:720px){
+ .wrap{padding:4px}
+ .top{grid-template-columns:1fr}
+ .top .title{grid-column:1;grid-row:1;padding:7px 9px}
+ .fr-tabs{grid-column:1;grid-row:2;border-top:2px solid #202020}
+ .fr-tab{flex:1;padding:8px 4px;font-size:clamp(14px,3.6vw,20px)}
+ .top #logout{grid-column:1;grid-row:3}
+ .fr-app-layout{grid-template-columns:30% minmax(0,1fr);min-height:420px}
+ .fr-sidebar{padding:8px 7px}
+ .fr-side-brand{font-size:clamp(16px,4vw,25px);white-space:normal;line-height:1.1}
+ .fr-sidebar .label{font-size:clamp(14px,3.4vw,18px)}
+ .fr-sidebar .value{font-size:clamp(13px,3.2vw,17px)}
+ .fr-version{font-size:14px}
+ .fr-main-panels{padding:8px;min-height:415px}
+ .fr-panel{min-height:390px}
+ .fr-control-area{min-height:310px;padding:5px}
+ .fr-control-card .actions{grid-template-columns:1fr;gap:8px}
+ .fr-control-card .btn{min-height:42px;font-size:15px;padding:5px}
+ #fr-panel-chat .chat,#fr-panel-screen .fr-viewer{height:380px;min-height:250px}
+}
 
-/* Stabile, responsive Kartenansicht: keine JavaScript-Umordnung erforderlich. */
-html,body{min-height:100%;height:auto;overflow-x:hidden;overflow-y:auto}
-body{position:static;background:linear-gradient(125deg,rgba(48,120,255,.18),rgba(255,55,105,.18));}
-.wrap{display:grid;position:static;width:min(1440px,100%);max-width:1440px;height:auto;min-height:100vh;max-height:none;margin:0 auto;padding:12px;overflow:visible;grid-template-columns:minmax(160px,220px) minmax(0,1fr) minmax(0,1.25fr);grid-template-areas:"head head head" "tabs tabs tabs" "stats control chat" "stats money chat" "stats command events" "foot foot foot";align-items:start;gap:12px}
-.wrap>.top{grid-area:head;display:flex;flex-wrap:wrap;align-items:center;gap:12px;min-width:0}
-.wrap>.dashboard-tabs{grid-area:tabs;display:flex;flex-wrap:wrap;gap:8px}
-.wrap>.grid{grid-area:stats;display:grid;grid-template-columns:1fr;min-width:0}
-.wrap>#control{grid-area:control;display:block!important}
-.wrap>#chatPanel{grid-area:chat;display:block!important}
-.wrap>#moneyPanel{grid-area:money;display:block!important}
-.wrap>#commandPanel{grid-area:command;display:block!important}
-.wrap>#eventsPanel{grid-area:events;display:block!important}
-.wrap>.logout{grid-area:foot}
-#control .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-#control .actions .btn{min-width:0;min-height:44px;white-space:normal;overflow-wrap:anywhere}
-#chatPanel .chat{height:clamp(240px,48vh,420px);max-height:none}
-.forms{grid-template-columns:minmax(0,1fr) auto}
-#logoutForm{display:flex;align-items:center;margin-left:auto;position:relative;z-index:5}
-#logoutForm button{min-height:44px;touch-action:manipulation;cursor:pointer}
-.fr-app-layout,.fr-tabs,.fr-panel,.fr-main-panels,.fr-sidebar{display:none!important}
-@media(max-width:1000px){.wrap{grid-template-columns:minmax(130px,.7fr) minmax(0,1.3fr);grid-template-areas:"head head" "tabs tabs" "stats control" "chat chat" "money command" "events events" "foot foot"}}
-@media(max-width:620px){.wrap{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "tabs" "stats" "control" "chat" "money" "command" "events" "foot";padding:8px;gap:8px}.wrap>.top{align-items:center}.wrap>.grid{grid-template-columns:repeat(2,minmax(0,1fr))}#control .actions{grid-template-columns:repeat(2,minmax(0,1fr))}.forms{grid-template-columns:minmax(0,1fr) auto!important}.forms input,.forms button{min-width:0;font-size:15px;padding:9px 7px}}
+/* Feinschliff nach dem Foto: eine Marke, kompakt, eckig, ohne leeren Scrollbereich */
+body{background:#d3d3d3!important;overflow:hidden!important}
+.wrap{width:100%!important;max-width:none!important;height:100vh;height:100dvh;min-height:0!important;margin:0!important;padding:6px!important;box-sizing:border-box;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr)!important;grid-template-areas:none!important;gap:0!important;overflow:hidden!important}
+.wrap>.top{grid-area:auto!important;min-width:0;border-radius:0!important;background:#d3d3d3!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important}
+.top .title{padding:7px 10px!important;white-space:nowrap}
+.top #logout{grid-column:auto!important;margin-left:8px!important}
+.fr-tabs{flex:1;min-width:0;justify-content:flex-end}
+.fr-tab{border-radius:0!important;padding:7px 10px!important}
+.fr-app-layout{height:100%;min-height:0!important;grid-template-columns:minmax(145px,25%) minmax(0,1fr)!important;border-radius:0!important;background:#d3d3d3!important;overflow:hidden!important}
+.fr-sidebar,.fr-main-panels,.fr-panel{min-height:0!important;min-width:0!important}
+.fr-sidebar{background:#d3d3d3!important}
+.fr-sidebar .grid>div,.fr-sidebar .card,.card,.btn,.forms input,.forms textarea,.chat,.fr-command,.fr-viewer{border-radius:0!important}
+.fr-main-panels{height:100%;padding:8px!important;overflow:hidden!important}
+.fr-panel.active{height:100%;overflow:hidden!important}
+.fr-control-panel,.fr-control-area{min-height:0!important}
+.fr-control-area{height:calc(100% - 52px)!important;min-height:0!important;padding:10px!important;align-items:center!important}
+.fr-control-card{min-height:0!important;height:100%;align-items:center!important}
+.fr-control-card .actions{width:100%!important;max-width:380px!important;grid-template-columns:repeat(2,minmax(0,150px))!important;justify-content:center!important;gap:10px!important}
+.fr-control-card .btn{width:100%!important;max-width:150px!important;min-height:42px!important;padding:6px 8px!important;font-size:16px!important;white-space:normal}
+.fr-command{flex-shrink:0}
+#fr-panel-chat .chat{height:calc(100% - 52px)!important;min-height:0!important}
+#fr-panel-screen .fr-viewer{height:100%!important;min-height:0!important}
+#fr-viewCanvas{height:100%!important}
+.fr-version{padding-top:8px!important}
+@media(max-width:720px){
+ .wrap{padding:4px!important;grid-template-rows:auto minmax(0,1fr)!important}
+ .top{flex-wrap:wrap!important}
+ .top .title{font-size:23px!important}
+ .fr-tabs{flex-basis:100%;width:100%;order:2;border-top:2px solid #202020}
+ .top #logout{margin-left:auto!important}
+ .fr-app-layout{grid-template-columns:minmax(105px,29%) minmax(0,1fr)!important}
+ .fr-sidebar{padding:7px 6px!important}
+ .fr-sidebar .label{font-size:14px!important}
+ .fr-sidebar .value{font-size:13px!important}
+ .fr-version{font-size:12px!important}
+ .fr-main-panels{padding:6px!important}
+ .fr-control-area{padding:3px!important}
+ .fr-control-card .actions{grid-template-columns:minmax(0,135px)!important;gap:8px!important}
+ .fr-control-card .btn{max-width:135px!important;min-height:38px!important;font-size:14px!important}
+ #fr-panel-chat .chat{height:calc(100% - 52px)!important}
+}
+/* Stabiler Header und iPad-Layout: feste Bereiche statt konkurrierender alter Regeln */
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:auto!important;min-height:100dvh!important;margin:0!important;padding:0!important;gap:0!important;overflow:visible!important;box-sizing:border-box!important}
+.wrap>.top{display:grid!important;grid-template-columns:max-content minmax(0,1fr) max-content!important;grid-template-rows:auto!important;align-items:stretch!important;gap:0!important;flex:0 0 auto!important;width:100%!important;min-width:0!important;overflow:visible!important;border:3px solid #202020!important;border-radius:0!important;box-sizing:border-box!important}
+.wrap>.top>div:first-child{display:flex!important;align-items:center!important;min-width:0!important}
+.wrap>.top .title{font-size:clamp(22px,3vw,36px)!important;white-space:nowrap!important;padding:8px 12px!important}
+.wrap>.top .fr-tabs{grid-column:2!important;grid-row:1!important;display:flex!important;flex:initial!important;flex-basis:auto!important;width:auto!important;min-width:0!important;min-height:0!important;align-self:stretch!important;justify-content:stretch!important;border:0!important;border-left:2px solid #202020!important;overflow:visible!important}
+.wrap>.top .fr-tab{flex:1 1 0!important;min-width:0!important;padding:10px 6px!important;font-size:clamp(14px,1.8vw,22px)!important;white-space:normal!important;border-left:1px solid #202020!important;border-right:0!important}
+.wrap>.top #logout{grid-column:3!important;grid-row:1!important;align-self:center!important;justify-self:end!important;margin:4px!important;padding:8px 10px!important;white-space:nowrap!important}
+.fr-app-layout{order:1!important;display:grid!important;grid-template-columns:minmax(170px,25%) minmax(0,1fr)!important;flex:1 0 auto!important;width:100%!important;height:auto!important;min-height:calc(100dvh - 64px)!important;margin:0!important;gap:0!important;border:3px solid #202020!important;border-top:0!important;overflow:visible!important;box-sizing:border-box!important}
+.fr-sidebar{min-width:0!important;overflow-wrap:anywhere!important}
+.fr-sidebar .grid{display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
+.fr-sidebar .grid>div{min-width:0!important;border:0!important;padding:9px 0!important}
+.fr-main-panels{min-width:0!important;min-height:0!important;height:auto!important;overflow:visible!important;padding:12px!important}
+.fr-panel{min-height:0!important}
+.fr-panel.active{height:auto!important;min-height:0!important;overflow:visible!important}
+.fr-control-area{height:auto!important;min-height:300px!important;padding:12px!important;align-items:center!important}
+.fr-control-card{width:100%!important;height:auto!important;min-height:280px!important;align-items:center!important}
+.fr-control-card .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,180px))!important;justify-content:center!important;align-content:center!important;gap:12px!important;width:100%!important;max-width:400px!important;margin:auto!important}
+.fr-control-card .btn{width:100%!important;max-width:none!important;min-width:0!important;min-height:48px!important;padding:8px!important;font-size:clamp(14px,1.6vw,18px)!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.25!important}
+.fr-command{width:100%!important;box-sizing:border-box!important}
+#fr-panel-chat .chat{height: min(58dvh,520px)!important;min-height:280px!important}
+#fr-panel-screen .fr-viewer{height:min(65dvh,620px)!important;min-height:320px!important}
+@media(max-width:900px){
+ .wrap>.top{grid-template-columns:minmax(0,1fr) max-content!important;grid-template-rows:auto auto!important}
+ .wrap>.top>div:first-child{grid-column:1!important;grid-row:1!important}
+ .wrap>.top #logout{grid-column:2!important;grid-row:1!important}
+ .wrap>.top .fr-tabs{grid-column:1/-1!important;grid-row:2!important;min-height:46px!important;border-top:2px solid #202020!important;border-left:0!important}
+ .wrap>.top .fr-tab{font-size:clamp(14px,2.5vw,19px)!important}
+ .fr-app-layout{grid-template-columns:minmax(145px,30%) minmax(0,1fr)!important;min-height:calc(100dvh - 112px)!important}
+ .fr-sidebar{padding:10px!important}
+ .fr-sidebar .label{font-size:clamp(13px,2.2vw,17px)!important}
+ .fr-sidebar .value{font-size:clamp(13px,2.1vw,17px)!important}
+ .fr-main-panels{padding:8px!important}
+}
+@media(max-width:560px){
+ .fr-app-layout{grid-template-columns:minmax(108px,30%) minmax(0,1fr)!important}
+ .fr-sidebar{padding:7px 5px!important}
+ .fr-sidebar .label{font-size:12px!important}
+ .fr-sidebar .value{font-size:12px!important}
+ .fr-version{font-size:12px!important}
+ .fr-control-area{padding:4px!important}
+ .fr-control-card .actions{grid-template-columns:minmax(0,1fr)!important;max-width:180px!important;gap:8px!important}
+ .fr-control-card .btn{font-size:13px!important;min-height:40px!important}
+ .fr-main-panels{padding:5px!important}
+ #fr-panel-chat .chat{height:55dvh!important;min-height:230px!important}
+}
+/* Bildschirm-Tab: feste Viewer-Höhe verhindert Wachstum bei wiederholtem Öffnen */
+.fr-app-layout{flex:1 0 auto!important;min-height:0!important}
+.fr-main-panels{min-height:0!important;align-self:stretch!important}
+.fr-panel.active{height:auto!important;min-height:0!important;overflow:visible!important}
+#fr-panel-screen.fr-panel.active{display:block!important;height:auto!important;min-height:0!important}
+#fr-panel-screen .fr-viewer{display:block!important;position:relative!important;width:100%!important;height:clamp(280px,62dvh,560px)!important;min-height:0!important;max-height:560px!important;box-sizing:border-box!important;overflow:hidden!important;flex:none!important}
+#fr-panel-screen #fr-viewCanvas{display:block!important;width:100%!important;height:100%!important;max-height:100%!important}
+.wrap>.top .fr-tabs{overflow:hidden!important}
+.wrap>.top .fr-tab{flex:1 1 0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+@media(max-width:900px){
+ .wrap>.top{grid-template-columns:minmax(0,1fr) max-content!important}
+ .wrap>.top .fr-tabs{grid-column:1/-1!important;grid-row:2!important;width:100%!important;min-width:0!important}
+ .wrap>.top .fr-tab{font-size:clamp(13px,2.2vw,18px)!important;padding:9px 5px!important}
+ .fr-app-layout{min-height:0!important}
+ #fr-panel-screen .fr-viewer{height:clamp(240px,58dvh,480px)!important;max-height:480px!important}
+}
+
+
+/* FINAL FIX: Vollbild-Layout ohne kumulierendes Wachstum */
+html,body{width:100%!important;height:100%!important;min-height:100%!important;margin:0!important}
+body{background:linear-gradient(125deg,rgba(48,120,255,.30) 0%,rgba(100,95,245,.22) 48%,rgba(255,55,105,.30) 100%)!important;background-color:transparent!important;background-attachment:fixed!important;overflow:hidden!important}
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;margin:0!important;padding:0!important;gap:0!important;overflow:hidden!important;background:transparent!important}
+.wrap>.top{flex:0 0 auto!important;min-height:0!important;background:rgba(70,110,235,.14)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.fr-app-layout{display:grid!important;grid-template-columns:minmax(145px,25%) minmax(0,1fr)!important;flex:1 1 0px!important;width:100%!important;height:0!important;min-height:0!important;margin:0!important;overflow:hidden!important;background:rgba(100,130,245,.13)!important;border-color:rgba(35,45,90,.72)!important}
+.fr-sidebar{min-height:0!important;height:100%!important;overflow:auto!important;background:rgba(65,120,255,.13)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.fr-main-panels{height:100%!important;min-height:0!important;min-width:0!important;padding:10px!important;overflow:hidden!important;background:rgba(255,70,115,.10)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.fr-panel{display:none!important;height:100%!important;min-height:0!important;margin:0!important;overflow:hidden!important}
+.fr-panel.active{display:flex!important;flex-direction:column!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-control.fr-panel.active{display:flex!important}
+#fr-panel-chat.fr-panel.active{display:flex!important}
+#fr-panel-screen.fr-panel.active{display:flex!important}
+#fr-panel-screen .fr-viewer{display:block!important;flex:1 1 0px!important;width:100%!important;height:0!important;min-height:0!important;max-height:none!important;box-sizing:border-box!important;overflow:hidden!important;background:rgba(55,115,255,.24)!important;border-color:rgba(40,55,110,.8)!important}
+#fr-panel-screen #fr-viewCanvas{display:block!important;width:100%!important;height:100%!important;max-height:100%!important}
+#fr-panel-chat .chat{flex:1 1 0px!important;height:0!important;min-height:0!important;max-height:none!important;background:rgba(70,125,255,.17)!important}
+#fr-panel-chat .card.section{display:flex!important;flex:1 1 0px!important;flex-direction:column!important;min-height:0!important}
+#fr-panel-chat .forms{flex:0 0 auto!important}
+.fr-control-area{flex:1 1 0px!important;height:auto!important;min-height:0!important}
+.fr-control-card{min-height:0!important}
+.fr-command{flex:0 0 auto!important}
+.card{background:rgba(100,125,245,.13)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.wrap>.top .fr-tab{min-width:0!important;flex:1 1 0px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+@media(max-width:900px){
+ .wrap>.top{flex:0 0 auto!important}
+ .fr-app-layout{grid-template-columns:minmax(108px,29%) minmax(0,1fr)!important}
+ .fr-main-panels{padding:6px!important}
+ .wrap>.top .fr-tab{font-size:clamp(12px,2.2vw,18px)!important;padding:8px 4px!important}
+}
+@media(max-width:560px){
+ .fr-app-layout{grid-template-columns:minmax(96px,29%) minmax(0,1fr)!important}
+ .fr-sidebar{padding:6px 4px!important}
+ .fr-main-panels{padding:4px!important}
+}
+
+
+/* Fix: Hauptbereich darf unter dem Header nicht auf 0px kollabieren */
+.wrap>.fr-app-layout{display:grid!important;grid-template-columns:minmax(150px,25%) minmax(0,1fr)!important;flex:1 1 auto!important;width:100%!important;height:calc(100dvh - 82px)!important;min-height:420px!important;max-height:none!important;visibility:visible!important;opacity:1!important;overflow:hidden!important;position:relative!important;}
+.wrap>.fr-app-layout>.fr-sidebar,.wrap>.fr-app-layout>.fr-main-panels{display:block!important;height:100%!important;min-height:0!important;max-height:none!important;visibility:visible!important;opacity:1!important;overflow:auto!important;}
+.wrap>.fr-app-layout>.fr-main-panels{display:flex!important;flex-direction:column!important;min-width:0!important;}
+.wrap>.fr-app-layout .fr-panel.active{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;width:100%!important;height:100%!important;min-height:0!important;visibility:visible!important;opacity:1!important;overflow:auto!important;}
+.wrap>.fr-app-layout .fr-control-area,.wrap>.fr-app-layout .fr-control-card,.wrap>.fr-app-layout .fr-command,#fr-panel-chat .card.section{visibility:visible!important;opacity:1!important;}
+.wrap>.fr-app-layout .fr-control-card .actions,.wrap>.fr-app-layout .fr-control-card .actions>.btn{visibility:visible!important;opacity:1!important;}
+@media(max-width:720px){.wrap>.fr-app-layout{grid-template-columns:minmax(105px,28%) minmax(0,1fr)!important;height:calc(100dvh - 82px)!important;min-height:360px!important;}}
+/* Reparatur: Steuerungsbuttons, Dashboard-Kopf und stabiler Bildschirm */
+/* Touch-/Pointer-Sicherheit für Safari auf iPad und Desktop */
+.fr-app-layout,.fr-main-panels,.fr-panel,.fr-control-area,.fr-control-card,.fr-control-card .actions,.fr-control-card .actions button,.fr-command,.fr-tabs,.fr-tab,#logoutForm,#logout{pointer-events:auto!important;touch-action:manipulation}
+.fr-control-card .actions button{position:relative;z-index:3;cursor:pointer;-webkit-appearance:none;appearance:none}
+#logoutForm,#logout{position:relative;z-index:100}
+.toast{z-index:2147483000!important;pointer-events:none}
+.wrap>.top .title:after{content:" · Dashboard";font-size:.48em;font-weight:700;opacity:.8;vertical-align:middle}
+.fr-control-card,.fr-control-card .actions{visibility:visible!important;opacity:1!important}
+.fr-control-card .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-content:start!important;justify-content:center!important;width:100%!important;max-width:440px!important;margin:12px auto!important;gap:10px!important}
+.fr-control-card .actions>.btn{display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:46px!important;color:#171717!important;background:rgba(235,240,255,.78)!important;border:2px solid #202020!important;z-index:1!important}
+.fr-control-area{display:flex!important;flex:1 1 auto!important;height:auto!important;min-height:0!important;align-items:flex-start!important;justify-content:center!important;overflow:auto!important}
+.fr-control-card{display:flex!important;flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:0!important;align-items:flex-start!important;justify-content:center!important;overflow:visible!important}
+.fr-command{display:block!important;flex:0 0 auto!important;width:100%!important;min-height:44px!important}
+.fr-main-panels{display:flex!important;flex-direction:column!important}
+.fr-panel{display:none!important;flex:1 1 auto!important;width:100%!important;min-height:0!important}
+.fr-panel.active{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-control .fr-control-area{flex:1 1 auto!important}
+#fr-panel-screen .fr-viewer{position:relative!important;display:block!important;flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+#fr-panel-screen #fr-viewCanvas{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important}
+#fr-panel-chat .card.section{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-chat .chat{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important}
+@media(max-width:900px){
+ .fr-control-card .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:100%!important}
+ .fr-control-card .actions>.btn{min-height:42px!important;font-size:14px!important}
+}
+
+/* Kurzer roter Klick-Impuls für Maus, Touch und Tastatur */
+@keyframes bb-button-flash{0%{background:#ff3535!important;box-shadow:0 0 0 0 rgba(255,35,35,.72)!important;border-color:#a40000!important}45%{background:#ff5555!important;box-shadow:0 0 0 5px rgba(255,35,35,.2)!important;border-color:#a40000!important}100%{box-shadow:none!important}}
+.bb-flash{background:#ff3535!important;border-color:#a40000!important;box-shadow:0 0 0 5px rgba(255,35,35,.28)!important;transition:none!important}
+button,a[role="button"],input[type="submit"]{-webkit-tap-highlight-color:rgba(255,35,35,.35);touch-action:manipulation}
+
+/* Aktiver Ein/Aus-Zustand folgt dem Live-Status. */
+#control .actions button.state-selected{background:linear-gradient(135deg,#b8f5cf,#55d98b)!important;border:3px solid #087a3b!important;color:#073b20!important;box-shadow:0 0 0 3px rgba(8,122,59,.18),inset 0 1px 2px rgba(255,255,255,.8)!important;transform:translateY(-1px)}
+#control .actions button[data-action="stop"].state-selected{background:linear-gradient(135deg,#ffd0d0,#ff7777)!important;border-color:#b42323!important;color:#5e1010!important;box-shadow:0 0 0 3px rgba(180,35,35,.16),inset 0 1px 2px rgba(255,255,255,.7)!important}
+#control .actions button:focus-visible{outline:3px solid #2459d3!important;outline-offset:3px}
+
+/* iPad und Desktop: keine Seiten-Scrollbars; Oberfläche auf Viewport begrenzen */
+html,body{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:fixed!important;inset:0!important;padding:0!important}
+.wrap{height:100%!important;height:100dvh!important;max-height:100dvh!important;min-height:0!important;overflow:hidden!important}
+.wrap>.top{min-height:0!important;margin-bottom:0!important;flex-shrink:0!important}
+.fr-app-layout{height:calc(100% - 64px)!important;min-height:0!important;max-height:calc(100% - 64px)!important;overflow:hidden!important}
+.fr-sidebar,.fr-main-panels,.fr-panel,.fr-control-area,.fr-control-card,.fr-viewer,#fr-viewCanvas,#fr-panel-chat .chat{min-height:0!important;max-height:100%!important;overflow:hidden!important}
+.fr-sidebar{overscroll-behavior:none!important}
+.fr-main-panels{height:100%!important}
+.fr-panel.active{height:100%!important}
+.fr-control-card .actions{overflow:hidden!important}
+#logoutForm{flex-shrink:0!important}
+@media(max-width:900px){
+ .wrap{padding:4px!important}
+ .fr-app-layout{height:calc(100% - 56px)!important;max-height:calc(100% - 56px)!important}
+ .fr-sidebar{padding:6px 4px!important}
+ .fr-main-panels{padding:5px!important}
+}
+</style></head><body><main class="wrap">
+<div class="top"><div><div class="title"><img class="brand-logo-image dashboard-brand-logo" src="/brand-logo.svg" alt="Block Bande"><span class="dashboard-title-suffix"> · Dashboard</span></div><div class="sub">Botportal · Minecraft-Steuerung</div></div><form id="logoutForm" method="POST" action="/api/logout"><button class="btn" id="logout" type="submit" aria-label="Sicher abmelden">Abmelden</button></form></div>
+<nav class="dashboard-tabs" aria-label="Dashboard-Bereiche"><a href="#statusGrid">Übersicht</a><a href="#control">Steuerung</a><a href="#chatPanel">Minecraft-Chat</a><a href="#moneyPanel">Geld senden</a><a href="#commandPanel">Befehl</a><a href="#eventsPanel">Ereignisse</a></nav>
+<div class="grid" id="statusGrid">
+<div class="card"><div class="label">Status</div><div id="statusValue" class="value offline">Offline</div></div>
+<div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
+<div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
+<div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
+<div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">${APP_VERSION}</div></div></div>
+</div>
+<div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
+gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
+id="authCode" class="value"></div></div>
+<div class="card section" id="control"><h2>Steuerung</h2><div class="actions">
+<button class="btn primary" data-action="start"><span aria-hidden="true">▶</span> Ein</button><button class="btn danger" data-action="stop"><span aria-hidden="true">■</span> Aus</
+button><button class="btn" data-action="reconnect"><span aria-hidden="true">↻</span> Neu verbinden</button><button class="btn" data-action="home"><span aria-hidden="true">⌂</span> Home
+AFK</button><button class="btn" data-action="run"><span aria-hidden="true">➜</span> Laufen</button><button class="btn danger" data-action="stoprun"><span aria-hidden="true">■</span> Laufen
+stoppen</button><button class="btn" data-action="mc-login" type="button">MC Anmeldung</button>
+</div></div>
+<div class="card section" id="chatPanel"><h2>Minecraft-Chat</h2><div id="chat" class="chat"></div><div class="forms" style="margin-top:
+10px"><input id="chatInput" maxlength="256" placeholder="Nachricht an den Minecraft-Chat"><button class="btn primary"
+id="chatSend">Senden</button></div></div>
+<div class="card section" id="moneyPanel"><h2>Geld senden</h2><div class="forms"><input id="moneyInput" inputmode="decimal"
+placeholder="Betrag, z. B. 500"><button class="btn primary" id="moneySend">Senden</button></div><div class="sub"
+style="margin-top:8px">Ziel: !FrozenBoar16433 · Über 4.999 $ wird automatisch bestätigt.</div></div>
+<div class="card section" id="commandPanel"><h2>Minecraft-Befehl</h2><div class="forms"><input id="commandInput" maxlength="256"
+placeholder="z. B. /spawn oder /money"><button class="btn" id="commandSend">Ausführen</button></div></div>
+<div class="card section" id="eventsPanel"><h2>Ereignisse</h2><div id="events" class="events"></div></div>
+<div class="sub logout">Automatische Aktualisierung alle 2 Sekunden.</div>
+</main><div id="toast" class="toast"></div>
+<script>
+const $=id=>document.getElementById(id);let lastChat=0,lastEvents=0;
+document.addEventListener('click',event=>{
+ const target=event.target.closest('button,a[role="button"],input[type="submit"]');
+ if(!target||target.disabled)return;
+ target.classList.remove('bb-flash');
+ void target.offsetWidth;
+ target.classList.add('bb-flash');
+ window.setTimeout(()=>target.classList.remove('bb-flash'),460);
+},{capture:true});
+
+function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
+__toast=setTimeout(()=>t.style.display='none',2800)}
+function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent=APP_VERSION;const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+'coords').textContent=d.coordinatesFormatted;
+if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
+verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
+if(d.chat.length!==lastChat){$('chat').innerHTML=d.chat.map(x=>'<div class="line"><span class="time">'+fmtTime(x.time)+'</
+span> <span class="name">'+escapeHtml(x.source)+'</span>: '+escapeHtml(x.message)+'</div>').join('');$('chat').scrollTop=$(
+'chat').scrollHeight;lastChat=d.chat.length;}
+if(d.events.length!==lastEvents){$('events').innerHTML=d.events.slice().reverse().map(x=>'<div class="event '+escapeHtml(x.
+type)+'"><span class="time">'+fmtTime(x.time)+'</span> '+escapeHtml(x.message)+'</div>').join('');lastEvents=d.events.length;
+}
+}
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[
+c]))}
+async function api(path,body){
+ const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body||{})});
+ const d=await r.json().catch(()=>({error:'Serverantwort konnte nicht gelesen werden (HTTP '+r.status+')'}));
+ if(r.status===401){location.href='/login';return null}
+ if(!r.ok)throw new Error(d.error||('Aktion fehlgeschlagen (HTTP '+r.status+')'));
+ return d;
+}
+async function refresh(){
+ try{
+  const r=await fetch('/api/status',{credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});
+  if(r.status===401){location.href='/login';return}
+  if(!r.ok)throw new Error('Status konnte nicht geladen werden (HTTP '+r.status+')');
+  render(await r.json());
+ }catch(e){toast('Verbindungsfehler: '+(e.message||'Unbekannter Fehler'));}
+}
+for(const b of document.querySelectorAll('[data-action]')){
+ b.type='button';
+ b.addEventListener('click',async()=>{
+  if(b.dataset.busy==='1')return;
+  const a=b.dataset.action;
+  const labels={start:'Ein',stop:'Aus',reconnect:'Neu verbinden',home:'Home AFK',run:'Laufen',stoprun:'Laufen stoppen','mc-login':'MC Anmeldung'};
+  const routes={start:'/api/minecraft/start',stop:'/api/minecraft/stop',reconnect:'/api/minecraft/reconnect',home:'/api/minecraft/home',run:'/api/minecraft/run',stoprun:'/api/minecraft/stoprun','mc-login':'/api/minecraft/start'};
+  if(a==='mc-login'){const auth=$('auth');if(auth){auth.classList.remove('hidden');auth.querySelector('b').textContent='Microsoft-Anmeldung wird vorbereitet…';$('authCode').textContent='Code wird angefordert…';$('authLink').href='https://www.microsoft.com/link';$('authLink').textContent='Microsoft-Anmeldeseite öffnen';}}
+  const original=b.textContent.trim();
+  b.dataset.busy='1';b.disabled=true;b.textContent='Bitte warten…';
+  toast('Befehl wird gesendet: '+(labels[a]||a));
+  try{
+   if(!routes[a])throw new Error('Unbekannter Button-Befehl: '+a);
+   await api(routes[a]);
+   toast(a==='mc-login'?'Minecraft gestartet. Falls nötig, erscheint der Microsoft-Anmeldecode.':(labels[a]+' erfolgreich ausgeführt.'));
+   await refresh();
+  }catch(e){toast('Fehler bei '+(labels[a]||a)+': '+(e.message||'Unbekannter Fehler'));}
+  finally{b.dataset.busy='0';b.disabled=false;b.textContent=original;}
+ });
+}
+$('chatSend').addEventListener('click',async()=>{try{const v=$('chatInput').value;await api('/api/minecraft/chat',{message:
+v});$('chatInput').value='';toast('Nachricht gesendet');await refresh()}catch(e){toast(e.message)}});
+$('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').value;await api('/api/minecraft/pay',{amount:
+v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
+$('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
+command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
+// Abmelden wird ausschließlich über das native POST-Formular abgewickelt.
+// Abmelden wird direkt am Button ausgelöst, auch wenn andere Dashboard-Skripte fehlschlagen.
+$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
+'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
+key==='Enter')$('commandSend').click()});
+// Abmelden: natives Formular verwenden, damit Safari und Desktop den Server erreichen.
+const logoutForm=document.getElementById('logoutForm');
+if(logoutForm){
+  const logoutButton=logoutForm.querySelector('#logout');
+  logoutForm.method='POST';
+  logoutForm.action='/api/logout';
+  if(logoutButton){
+    logoutButton.type='submit';
+    logoutButton.addEventListener('click',function(){
+      logoutButton.textContent='Abmelden…';
+    });
+  }
+}
+refresh();setInterval(refresh,2000);
+</script>
+<style>
+/* FrozenRun: Live-Bildschirm */
+.fr-screen{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px}
+.fr-viewer{position:relative;overflow:hidden;border:1px solid #263451;border-radius:18px;background:#070b14;min-height:430px}
+.fr-viewer canvas{display:block;width:100%;height:100%;min-height:430px;touch-action:none}
+.fr-view-overlay{position:absolute;inset:0;pointer-events:none}
+.fr-view-top{position:absolute;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;gap:10px;font-size:12px}
+.fr-view-badge{background:rgba(7,11,20,.78);border:1px solid #33415f;border-radius:10px;padding:8px 10px;backdrop-filter:blur(6px)}
+.fr-crosshair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%)}
+.fr-crosshair:before,.fr-crosshair:after{content:"";position:absolute;background:rgba(255,255,255,.75)}
+.fr-crosshair:before{width:18px;height:1px;left:0;top:9px}.fr-crosshair:after{height:18px;width:1px;left:9px;top:0}
+.fr-view-side .value{font-size:18px}
+.fr-view-note{font-size:13px;color:#8290ad;line-height:1.5}
+.fr-compass{height:120px;display:grid;place-items:center;border:1px solid #263451;border-radius:14px;background:#0d1424;margin-top:10px;position:relative;overflow:hidden}
+.fr-compass-ring{width:82px;height:82px;border:1px solid #455575;border-radius:50%;position:relative}
+.fr-compass-ring span{position:absolute;font-size:11px;color:#aab5cc;font-weight:800}
+.fr-compass-n{left:50%;top:5px;transform:translateX(-50%)}.fr-compass-s{left:50%;bottom:5px;transform:translateX(-50%)}
+.fr-compass-w{left:7px;top:50%;transform:translateY(-50%)}.fr-compass-e{right:7px;top:50%;transform:translateY(-50%)}
+.fr-compass-arrow{position:absolute;left:50%;top:50%;width:3px;height:34px;background:#ff707d;transform-origin:50% 100%;border-radius:3px 3px 0 0}
+@media(max-width:850px){.fr-screen{grid-template-columns:1fr}.fr-view-side{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.fr-view-side .card{min-width:0}.fr-compass{margin-top:0}}
+@media(max-width:560px){.fr-viewer,.fr-viewer canvas{min-height:320px}.fr-view-side{grid-template-columns:1fr}}
+
+/* Block Bande: Tabs + responsives Steuerungs-Layout */
+.fr-tabs{display:flex;gap:0;flex:1;min-width:220px;align-self:stretch;border:3px solid #202020;border-radius:6px;background:#d5d5d5;overflow:hidden}
+.fr-tab{flex:1;background:#e8e8e8;border:0;border-right:2px solid #202020;color:#171717;border-radius:0;padding:10px 12px;font-weight:800;cursor:pointer;font-family:inherit;font-size:16px}.fr-tab:last-child{border-right:0}.fr-tab.active{background:#aaa;color:#171717;box-shadow:inset 0 0 0 2px #777}
+.fr-panel{display:none}
+.fr-panel.active{display:block}
+.wrap{padding-bottom:16px}
+.fr-control-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.fr-command textarea{width:100%;min-height:120px;resize:vertical;background:#0d1424;color:#fff;border:1px solid #2c3957;border-radius:12px;padding:12px;font:inherit}
+.fr-command .forms{grid-template-columns:1fr}
+.fr-note{font-size:13px;color:#333;line-height:1.45;margin-top:8px}.fr-app-layout{display:grid;grid-template-columns:minmax(180px,220px) minmax(0,1fr);gap:18px;align-items:start}.fr-sidebar{min-width:0}.fr-sidebar .card{height:100%}.fr-app-layout .card.section{margin-top:0}.fr-control-layout>.card{min-width:0}.fr-main-panels .card{margin-bottom:14px}.fr-main-panels .chat{height:min(48vh,440px);min-height:260px}.fr-tabs{order:0}.top{flex-wrap:wrap;align-items:center}.fr-tabs{flex-basis:100%;width:100%;min-height:48px}.fr-sidebar .card{padding:12px}.fr-sidebar .grid>div{padding:0;border:0;border-bottom:1px solid #aaa;border-radius:0;background:transparent}.fr-sidebar .grid>div:last-child{border-bottom:0}.fr-main-panels{min-width:0}.fr-main-panels>.fr-panel{margin-top:0}.fr-sidebar .label{font-size:15px}.fr-sidebar .value{font-size:18px}.top .title{flex-shrink:0}.top .sub{display:none}
+@media(max-width:950px){.fr-control-layout{grid-template-columns:1fr 1fr}.fr-command{grid-column:1/-1}}
+@media(max-width:850px){.fr-app-layout{grid-template-columns:1fr}.fr-sidebar .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.fr-sidebar .grid>div{border-bottom:0;border-right:1px solid #aaa;padding:4px}.fr-sidebar .grid>div:last-child{border-right:0}.fr-sidebar .card{height:auto}}
+@media(max-width:700px){.wrap{padding:12px}.top{align-items:flex-start}.fr-control-layout{grid-template-columns:1fr}.fr-command{grid-column:auto}.fr-tabs{width:100%;min-width:0}.fr-tab{padding:9px 5px;font-size:14px}.fr-app-layout{grid-template-columns:1fr}.fr-sidebar .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.fr-sidebar .grid>div{border-bottom:0;border-right:1px solid #aaa;padding:4px}.fr-sidebar .grid>div:nth-child(even){border-right:0}.top .title{font-size:24px}}
+/* Seiten-Scroll sperren: Dashboard bleibt im Viewport, interne Bereiche bleiben bedienbar */
+html,body{width:100%!important;height:100%!important;min-height:100%!important;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:relative!important;touch-action:pan-x pan-y}
+.wrap{height:100vh!important;height:100dvh!important;max-height:100vh!important;max-height:100dvh!important;overflow:hidden!important;overscroll-behavior:none!important}
+.fr-app-layout,.fr-sidebar,.fr-main-panels,.fr-panel,#fr-panel-chat .chat{overscroll-behavior:contain!important}
+.fr-sidebar,.fr-main-panels,.fr-panel,#fr-panel-chat .chat{min-height:0!important}
+@supports (-webkit-touch-callout:none){html,body{overflow:hidden!important;overscroll-behavior:none!important}.wrap{height:100%!important;max-height:100%!important}}
 </style>
+<script>
+(function(){
+  const wrap=document.querySelector('.wrap');
+  if(!wrap || wrap.dataset.frLayoutReady==='1') return;
+  const top=wrap.querySelector('.top');
+  const stats=wrap.querySelector('#status.grid, .grid');
+  // Robuste Zuordnung über feste IDs statt über sichtbare Überschriften.
+  const chatCard=wrap.querySelector('#chatPanel');
+  const controlCard=wrap.querySelector('#control');
+  const moneyCard=wrap.querySelector('#moneyPanel');
+  const commandCard=wrap.querySelector('#commandPanel');
+  const eventsCard=wrap.querySelector('#eventsPanel');
+  if(!top||!stats||!chatCard||!controlCard||!moneyCard||!commandCard||!eventsCard)return;
+  wrap.dataset.frLayoutReady='1';
+
+  const oldNav=wrap.querySelector('.dashboard-tabs');
+  if(oldNav)oldNav.remove();
+  const screenTab=document.createElement('button');
+  screenTab.type='button';screenTab.className='fr-tab';screenTab.textContent='Bildschirm';screenTab.dataset.frTab='screen';
+  const chatTab=document.createElement('button');
+  chatTab.type='button';chatTab.className='fr-tab';chatTab.textContent='Chat';chatTab.dataset.frTab='chat';
+  const controlTab=document.createElement('button');
+  controlTab.type='button';controlTab.className='fr-tab active';controlTab.textContent='Steuerung';controlTab.dataset.frTab='control';
+  const tabs=document.createElement('nav');
+  tabs.className='fr-tabs';tabs.setAttribute('aria-label','Bereiche');
+  tabs.append(controlTab,chatTab,screenTab);
+
+  const screenPanel=document.createElement('section');
+  screenPanel.className='fr-panel';screenPanel.id='fr-panel-screen';
+  screenPanel.innerHTML='<div class="fr-viewer"><canvas id="fr-viewCanvas" aria-label="Minecraft-Bildschirmansicht"></canvas></div>';
+
+  const chatPanel=document.createElement('section');
+  chatPanel.className='fr-panel';chatPanel.id='fr-panel-chat';chatPanel.appendChild(chatCard);
+  const controlPanel=document.createElement('section');
+  controlPanel.className='fr-panel active';controlPanel.id='fr-panel-control';
+  const controls=document.createElement('div');controls.className='fr-control-area';
+  controlCard.classList.add('fr-control-card');
+  const commandTitle=commandCard.querySelector('h2');if(commandTitle)commandTitle.remove();
+  commandCard.classList.add('fr-command');
+  const commandInput=commandCard.querySelector('#commandInput');if(commandInput)commandInput.placeholder='/Befehl';
+  const commandButton=commandCard.querySelector('#commandSend');if(commandButton)commandButton.textContent='↵';
+  controls.appendChild(controlCard);
+  controlPanel.append(controls,commandCard);
+
+  const sidebar=document.createElement('aside');sidebar.className='fr-sidebar';
+  const values=Array.from(stats.children);
+  const money=values.find(el=>el.querySelector('#money'));
+  const uptime=values.find(el=>el.querySelector('#uptime'));
+  const coords=values.find(el=>el.querySelector('#coords'));
+  const status=values.find(el=>el.querySelector('#statusValue'));
+  stats.id='fr-status-list';
+  stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
+  sidebar.appendChild(stats);
+  const version=document.createElement('div');version.className='fr-version';const versionLabel=document.createElement('span');versionLabel.textContent='Version';const versionNumber=document.createElement('strong');versionNumber.textContent=APP_VERSION;version.append(versionLabel,document.createTextNode(' '),versionNumber);sidebar.appendChild(version);
+
+  const auth=wrap.querySelector('#auth');
+  const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
+  const mainPanels=document.createElement('div');mainPanels.className='fr-main-panels';
+  mainPanels.append(controlPanel,chatPanel,screenPanel);
+  // Layout direkt unter dem Header platzieren; explizite Basiswerte vermeiden kollabierte Bereiche in Safari/iPad.
+  top.insertAdjacentElement('afterend',appLayout);
+  appLayout.append(sidebar,mainPanels);
+  appLayout.style.cssText='display:grid;grid-template-columns:minmax(145px,25%) minmax(0,1fr);gap:12px;width:100%;height:calc(100% - 64px);min-height:0;max-height:calc(100% - 64px);box-sizing:border-box;position:relative;visibility:visible;opacity:1;overflow:hidden;';
+  sidebar.style.cssText='display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;visibility:visible;opacity:1;';
+  mainPanels.style.cssText='display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;overflow:hidden;visibility:visible;opacity:1;';
+  controlPanel.style.cssText='display:flex;flex-direction:column;flex:1 1 auto;min-width:0;min-height:0;visibility:visible;opacity:1;';
+  chatPanel.style.cssText='display:none;flex-direction:column;flex:1 1 auto;min-width:0;min-height:0;visibility:visible;opacity:1;';
+  screenPanel.style.cssText='display:none;flex-direction:column;flex:1 1 auto;min-width:0;min-height:0;visibility:visible;opacity:1;';
+  controls.style.cssText='display:flex;flex:1 1 auto;min-height:0;align-items:flex-start;justify-content:center;overflow:hidden;';
+  controlCard.style.cssText='display:flex;flex-direction:column;flex:1 1 auto;min-width:0;min-height:240px;visibility:visible;opacity:1;';
+  const actionsNode=controlCard.querySelector('.actions');
+  if(actionsNode)actionsNode.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(100%,560px);margin:12px auto;';
+  controlCard.querySelectorAll('.actions button').forEach(button=>button.style.cssText='display:block;min-height:46px;width:100%;color:#171717;background:rgba(235,240,255,.9);border:2px solid #202020;border-radius:6px;font-weight:800;cursor:pointer;');
+  commandCard.style.cssText='display:block;flex:0 0 auto;width:100%;min-height:44px;visibility:visible;opacity:1;';
+  chatCard.style.cssText='display:flex;flex-direction:column;flex:1 1 auto;min-height:280px;visibility:visible;opacity:1;';
+  const chatNode=chatCard.querySelector('#chat');
+  if(chatNode)chatNode.style.cssText='display:block;flex:1 1 auto;min-height:220px;height:auto;max-height:none;overflow:auto;';
+  // Microsoft-Anmeldekarte nicht per Inline-CSS verstecken: render() steuert sie anhand des Device-Codes.
+  if(auth)auth.style.removeProperty('display');
+  const logoutForm=top.querySelector('#logoutForm');
+  const logoutButtonEarly=logoutForm&&logoutForm.querySelector('#logout');
+  if(logoutForm)logoutForm.style.cssText='display:flex;align-items:center;margin-left:auto;flex:0 0 auto;';
+  if(logoutButtonEarly)logoutButtonEarly.style.cssText='display:block;visibility:visible;opacity:1;min-height:44px;cursor:pointer;';
+  const titleNode=top.querySelector('.title');if(titleNode)titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
+  const subtitle=top.querySelector('.sub');if(subtitle)subtitle.remove();
+  top.appendChild(tabs);
+  // Wichtig: Das Formular bleibt um den Button herum. Den Button allein aus dem Formular
+  // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
+  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
+  if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
+  // Logout bewusst als normales POST-Formular ausführen. Kein fetch()-Interceptor:
+  // Safari/iPad navigiert dadurch direkt auf die serverseitige 303-Antwort und
+  // das HttpOnly-Session-Cookie wird zuverlässig gelöscht.
+  if(logoutForm && logoutButtonEarly){
+    logoutForm.method='POST';
+    logoutForm.action='/api/logout';
+    logoutButtonEarly.type='submit';
+    logoutForm.onsubmit=null;
+  }
+
+  function activate(name){
+    const chat=name==='chat',control=name==='control',screen=name==='screen';
+    const alreadyActive=(chat&&chatPanel.classList.contains('active'))||(control&&controlPanel.classList.contains('active'))||(screen&&screenPanel.classList.contains('active'));
+    if(alreadyActive){ if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); }); return; }
+    chatTab.classList.toggle('active',chat);controlTab.classList.toggle('active',control);screenTab.classList.toggle('active',screen);
+    chatPanel.classList.toggle('active',chat);controlPanel.classList.toggle('active',control);screenPanel.classList.toggle('active',screen);
+    controlPanel.style.display=control?'flex':'none';
+    chatPanel.style.display=chat?'flex':'none';
+    screenPanel.style.display=screen?'flex':'none';
+    if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); });
+  }
+  chatTab.addEventListener('click',()=>activate('chat'));
+  controlTab.addEventListener('click',()=>activate('control'));
+  screenTab.addEventListener('click',()=>activate('screen'));
+const viewCanvas=document.getElementById('fr-viewCanvas');
+  const viewStatus=document.getElementById('fr-viewStatus');
+  const viewPos=document.getElementById('fr-viewPos');
+  const viewRot=document.getElementById('fr-viewRot');
+  const viewBot=document.getElementById('fr-viewBot');
+  const compassArrow=document.getElementById('fr-compassArrow');
+  let viewState={position:{x:0,y:0,z:0},rotation:{yaw:0,pitch:0,headYaw:0},online:false};
+  let three=null,scene=null,camera=null,renderer=null,worldGroup=null,surfaceGroup=null,surfaceMesh=null,botMarker=null,raf=0;
+
+  function dispose3D(){
+    if(raf) cancelAnimationFrame(raf);
+    raf=0;
+    if(renderer){renderer.dispose();renderer=null;}
+    three=null;scene=null;camera=null;renderer=null;worldGroup=null;surfaceGroup=null;surfaceMesh=null;botMarker=null;
+  }
+
+  async function init3D(){
+    if(!viewCanvas || renderer) return;
+    try{
+      three=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
+      scene=new three.Scene();
+      scene.background=new three.Color(0x182b4a);
+      scene.fog=new three.Fog(0x182b4a,28,110);
+
+      camera=new three.PerspectiveCamera(70,1,0.05,160);
+      camera.position.set(0,1.65,0);
+
+      renderer=new three.WebGLRenderer({canvas:viewCanvas,antialias:true,preserveDrawingBuffer:false});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+      renderer.outputColorSpace=three.SRGBColorSpace;
+
+      const hemi=new three.HemisphereLight(0xbfdcff,0x38452f,2.2);
+      scene.add(hemi);
+      const sun=new three.DirectionalLight(0xffffff,2.4);
+      sun.position.set(20,40,15);
+      scene.add(sun);
+
+      worldGroup=new three.Group();
+      scene.add(worldGroup);
+      surfaceGroup=new three.Group();
+      worldGroup.add(surfaceGroup);
+
+      // Sichtbarer Fallback, bis echte Chunk-Daten vom Server eintreffen.
+      // Er verhindert eine leere/dunkle Ansicht, behauptet aber nicht, ein Screenshot zu sein.
+      const fallbackGroup=new three.Group();
+      worldGroup.add(fallbackGroup);
+      const fallbackGround=new three.Mesh(
+        new three.PlaneGeometry(160,160),
+        new three.MeshLambertMaterial({color:0x527a45})
+      );
+      fallbackGround.rotation.x=-Math.PI/2;
+      fallbackGround.position.y=-1;
+      fallbackGroup.add(fallbackGround);
+      const fallbackGrid=new three.GridHelper(160,80,0xb9d4a4,0x79976b);
+      fallbackGrid.position.y=-0.98;
+      fallbackGroup.add(fallbackGrid);
+      window.__frViewFallback=fallbackGroup;
+
+      const cubeGeo=new three.BoxGeometry(1,1,1);
+      const botMaterial=new three.MeshLambertMaterial({color:0x6d5dfc});
+      const headMaterial=new three.MeshLambertMaterial({color:0xd7b38a});
+
+      botMarker=new three.Group();
+      const body=new three.Mesh(new three.BoxGeometry(.65,1.25,.38),botMaterial);
+      body.position.y=.7;
+      botMarker.add(body);
+      const head=new three.Mesh(new three.BoxGeometry(.55,.55,.55),headMaterial);
+      head.position.y=1.6;
+      botMarker.add(head);
+      worldGroup.add(botMarker);
+
+      resize3D();
+
+      render3D();
+      viewStatus.textContent='3D-Ansicht · Live';
+    }catch(e){
+      console.error('3D-Ansicht konnte nicht geladen werden:',e);
+      viewStatus.textContent='3D-Ansicht konnte nicht geladen werden';
+    }
+  }
+
+  function resize3D(){
+    if(!renderer||!camera||!viewCanvas) return;
+    const rect=viewCanvas.getBoundingClientRect();
+    const w=Math.max(1,rect.width),h=Math.max(1,rect.height);
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+
+  function updateSurface(blocks){
+    if(!surfaceGroup || !three) return;
+    if(surfaceMesh){
+      surfaceGroup.remove(surfaceMesh);
+      surfaceMesh.geometry.dispose();
+      surfaceMesh.material.dispose();
+      surfaceMesh=null;
+    }
+    const list=Array.isArray(blocks)?blocks:[];
+    const fallback=window.__frViewFallback;
+    if(fallback) fallback.visible=list.length===0;
+    if(!list.length) return;
+    const geometry=new three.BoxGeometry(1,1,1);
+    const material=new three.MeshLambertMaterial({color:0xffffff,vertexColors:true});
+    surfaceMesh=new three.InstancedMesh(geometry,material,list.length);
+    const dummy=new three.Object3D();
+    const color=new three.Color();
+    list.forEach((b,i)=>{
+      dummy.position.set(Number(b.x)||0,(Number(b.y)||0)+0.5,Number(b.z)||0);
+      dummy.rotation.set(0,0,0);
+      dummy.scale.set(1,1,1);
+      dummy.updateMatrix();
+      surfaceMesh.setMatrixAt(i,dummy.matrix);
+      color.set(b.color||'#8a8f98');
+      surfaceMesh.setColorAt(i,color);
+    });
+    surfaceMesh.instanceMatrix.needsUpdate=true;
+    if(surfaceMesh.instanceColor) surfaceMesh.instanceColor.needsUpdate=true;
+    surfaceGroup.add(surfaceMesh);
+  }
+
+  function render3D(){
+    if(!renderer||!scene||!camera) return;
+    const p=viewState.position||{x:0,y:0,z:0};
+    const r=viewState.rotation||{yaw:0,pitch:0};
+    const x=Number(p.x)||0, y=Number(p.y)||0, z=Number(p.z)||0;
+    const fallback=window.__frViewFallback;
+    if(fallback){ fallback.position.set(x,y,z); }
+    const yaw=(Number(r.yaw)||0)*Math.PI/180;
+    const pitch=(Number(r.pitch)||0)*Math.PI/180;
+
+    // The browser camera follows the bot's live position and rotation.
+    camera.position.set(x,y+1.62,z);
+    camera.rotation.order='YXZ';
+    camera.rotation.y=-yaw;
+    camera.rotation.x=pitch;
+
+    if(botMarker){
+      botMarker.position.set(x, y, z);
+      botMarker.rotation.y=-yaw;
+    }
+    renderer.render(scene,camera);
+    raf=requestAnimationFrame(render3D);
+  }
+
+  async function refreshView(){
+    try{
+      const r=await fetch('/api/view',{cache:'no-store'});
+      if(r.status===401){location.href='/login';return;}
+      const d=await r.json();
+      viewState=d;
+      updateSurface(d.world&&d.world.blocks);
+      const p=d.position||{x:0,y:0,z:0};
+      const ro=d.rotation||{yaw:0,pitch:0};
+      viewPos.textContent=[p.x,p.y,p.z].map(v=>Math.round(Number(v)||0)).join(', ');
+      viewRot.textContent=Math.round(Number(ro.yaw)||0)+'° / '+Math.round(Number(ro.pitch)||0)+'°';
+      viewBot.textContent=d.online?'Online':'Offline';
+      viewStatus.textContent=d.online
+        ? ((d.world&&d.world.blocks&&d.world.blocks.length)?'3D-Welt · Live':'3D-Welt · Warte auf Chunks')
+        : '3D-Welt · Bot offline';
+      const yaw=Number(ro.yaw)||0;
+      compassArrow.style.transform='translate(-50%,-100%) rotate('+yaw+'deg)';
+    }catch(e){
+      viewStatus.textContent='Ansicht nicht erreichbar';
+    }
+  }
+
+  window.addEventListener('resize',resize3D);
+  if(typeof ResizeObserver!=='undefined' && viewCanvas){ const viewerObserver=new ResizeObserver(()=>resize3D()); viewerObserver.observe(viewCanvas.parentElement); }
+  init3D();
+  refreshView();
+  setInterval(refreshView,500);
+})();
+</script>
+
+<style>
+/* Stabiler Fallback für iPad Safari und Desktop: der Hauptbereich darf nicht auf 0 px kollabieren. */
+html,body{width:100%;min-height:100%;margin:0}
+body{overflow:auto!important}
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:auto!important;min-height:100dvh!important;margin:0!important;padding:0!important;gap:0!important;overflow:visible!important}
+.wrap>.top{display:flex!important;flex-wrap:nowrap!important;align-items:stretch!important;flex:0 0 auto!important;min-height:68px!important;width:100%!important}
+.wrap>.top>div:first-child{display:flex!important;align-items:center!important;flex:1 1 auto!important;min-width:0!important}
+.wrap>.top .title{white-space:normal!important;line-height:1.1!important}
+.wrap>.top #logout{display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto!important;align-self:center!important;order:5!important;grid-column:auto!important;min-height:44px!important;padding:8px 12px!important;cursor:pointer!important}
+.wrap>.top .fr-tabs{display:flex!important;flex:0 1 auto!important;min-width:0!important;max-width:100%!important}
+.wrap>.top .fr-tab{display:block!important;visibility:visible!important;opacity:1!important;flex:1 1 0!important;min-width:0!important;padding:10px clamp(5px,1vw,16px)!important;white-space:normal!important;text-align:center!important}
+.wrap>.fr-app-layout{display:grid!important;grid-template-columns:minmax(150px,25%) minmax(0,1fr)!important;flex:1 0 auto!important;width:100%!important;height:calc(100dvh - 80px)!important;min-height:480px!important;margin:0!important;overflow:visible!important}
+.wrap>.fr-app-layout>.fr-sidebar{display:flex!important;visibility:visible!important;opacity:1!important;min-width:0!important}
+.wrap>.fr-app-layout>.fr-sidebar #fr-status-list{display:flex!important;visibility:visible!important;opacity:1!important}
+.wrap>.fr-app-layout>.fr-main-panels{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;height:100%!important;overflow:visible!important}
+.wrap>.fr-app-layout .fr-panel{display:none!important;width:100%!important;min-width:0!important;min-height:0!important;margin:0!important}
+.wrap>.fr-app-layout .fr-panel.active{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;height:100%!important;min-height:0!important;overflow:visible!important}
+#fr-panel-control .fr-control-area{display:flex!important;flex:1 1 auto!important;min-height:250px!important;height:auto!important;overflow:visible!important}
+#fr-panel-control #control{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:250px!important;visibility:visible!important;opacity:1!important}
+#fr-panel-control #control .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;width:min(100%,560px)!important;margin:12px auto!important}
+#fr-panel-control #control .actions button{display:block!important;visibility:visible!important;opacity:1!important;min-height:48px!important;width:100%!important;color:#171717!important;background:rgba(235,240,255,.9)!important;border:2px solid #202020!important;border-radius:6px!important;font-weight:800!important;cursor:pointer!important}
+#fr-panel-control #commandPanel{display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto!important;width:100%!important;margin-top:10px!important}
+#fr-panel-chat #chatPanel{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:0!important;visibility:visible!important;opacity:1!important}
+#fr-panel-chat #chat{display:block!important;flex:1 1 auto!important;height:auto!important;min-height:220px!important;max-height:none!important}
+#fr-panel-chat .forms,#fr-panel-control .forms{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important}
+#fr-panel-screen .fr-viewer{display:block!important;flex:1 1 auto!important;height:auto!important;min-height:300px!important}
+#fr-panel-screen #fr-viewCanvas{display:block!important;width:100%!important;height:100%!important}
+@media(max-width:900px){
+ .wrap>.top{flex-wrap:wrap!important}
+ .wrap>.top>div:first-child{flex:1 1 100%!important}
+ .wrap>.top .fr-tabs{order:3!important;flex:1 1 100%!important}
+ .wrap>.top #logout{position:absolute!important;right:8px!important;top:8px!important}
+ .wrap>.fr-app-layout{grid-template-columns:minmax(100px,28%) minmax(0,1fr)!important;height:calc(100dvh - 125px)!important;min-height:420px!important}
+ .wrap>.top .title{padding-right:95px!important}
+ .fr-control-area{padding:8px!important}
+}
+@media(max-width:560px){
+ .wrap>.fr-app-layout{grid-template-columns:minmax(88px,27%) minmax(0,1fr)!important;height:calc(100dvh - 135px)!important;min-height:400px!important}
+ #fr-panel-control #control .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+ #fr-panel-control #control .actions button{font-size:14px!important;min-height:44px!important;padding:6px 3px!important}
+ .wrap>.top .fr-tab{font-size:14px!important}
+}
+
+/* Scroll-Fix: nur die Ansichtsflächen bleiben intern bedienbar; die Seite selbst bleibt auf einen Viewport begrenzt. */
+html,body{width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:fixed!important;inset:0!important}
+.wrap{width:100%!important;height:100vh!important;height:100dvh!important;min-height:0!important;max-height:100vh!important;max-height:100dvh!important;overflow:hidden!important}
+.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.wrap>.fr-app-layout>.fr-sidebar{min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+.wrap>.fr-app-layout>.fr-main-panels{height:100%!important;min-height:0!important;overflow:hidden!important}
+.wrap>.fr-app-layout .fr-panel.active{height:100%!important;min-height:0!important;overflow:hidden!important}
+#fr-panel-control .fr-control-area{min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+#fr-panel-control #control{min-height:0!important}
+#fr-panel-chat #chatPanel{min-height:0!important}
+#fr-panel-chat #chat{min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+#fr-panel-screen .fr-viewer{min-height:0!important;overflow:hidden!important}
+@media(max-width:900px){
+ .wrap>.top{flex:0 0 auto!important}
+ .wrap>.fr-app-layout{height:0!important;min-height:0!important;flex:1 1 0!important}
+}
+
+/* Außenrahmen entfernen und Header sowie Inhaltsfläche bündig an den Viewport setzen. */
+html,body{margin:0!important;padding:0!important;width:100%!important;max-width:100%!important}
+body{overflow:hidden!important}
+.wrap{margin:0!important;padding:0!important;width:100%!important;max-width:none!important;border:0!important;border-radius:0!important;gap:0!important}
+.wrap>.top{margin:0!important;border:0!important;border-bottom:1px solid rgba(32,32,32,.45)!important;border-radius:0!important;box-shadow:none!important}
+.wrap>.fr-app-layout{margin:0!important;border:0!important;border-radius:0!important;width:100%!important;max-width:none!important;box-shadow:none!important}
+.wrap>.fr-app-layout>.fr-sidebar{border-right:1px solid rgba(32,32,32,.45)!important}
+.wrap>.fr-app-layout>.fr-main-panels{margin:0!important}
+@supports(padding:env(safe-area-inset-left)){
+ html,body{padding:0!important}
+ .wrap{padding:0!important}
+}
+/* iPad und Desktop: sichere Viewport-Höhe, Safe-Area und bedienbare Karten */
+html{height:100%;height:-webkit-fill-available}
+body{min-height:100%;min-height:-webkit-fill-available}
+.wrap{min-height:0;min-height:100dvh}
+#logoutForm{flex:0 0 auto;z-index:20}
+#logoutForm button{min-height:44px;touch-action:manipulation;cursor:pointer}
+@media (hover:none) and (pointer:coarse){
+  .wrap{padding:0!important}
+  .wrap>.top{padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px!important;gap:8px!important}
+  .dashboard-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+  .dashboard-tabs a,.fr-tab{min-height:44px!important;display:flex!important;align-items:center!important;justify-content:center!important;touch-action:manipulation}
+  .wrap>.fr-app-layout{grid-template-columns:minmax(104px,25%) minmax(0,1fr)!important}
+  .fr-sidebar{padding:8px 6px!important}
+  .fr-main-panels{padding:8px!important}
+  .fr-control-card .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-width:none!important}
+  .fr-control-card .actions>.btn,#fr-panel-control #control .actions button{min-width:0!important;max-width:none!important;min-height:44px!important;padding:8px 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:clamp(12px,1.8vw,16px)!important}
+  #fr-panel-control .forms,#fr-panel-chat .forms{grid-template-columns:minmax(0,1fr) auto!important}
+  #fr-panel-control .forms button,#fr-panel-chat .forms button{min-height:44px!important}
+}
+@media (orientation:portrait) and (max-width:900px){
+  .wrap>.top .title{font-size:clamp(18px,4vw,25px)!important}
+  .wrap>.fr-app-layout{grid-template-columns:minmax(94px,27%) minmax(0,1fr)!important}
+  .fr-sidebar .label{font-size:clamp(11px,1.8vw,14px)!important}
+  .fr-sidebar .value{font-size:clamp(12px,2vw,16px)!important;overflow-wrap:anywhere!important}
+  .fr-main-panels{padding:5px!important}
+  .fr-control-card .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media (max-height:600px){
+  .wrap>.top{padding-top:4px!important;padding-bottom:4px!important}
+  .fr-main-panels{padding:4px!important}
+}
+
+/* Chrome: Seitenscroll der gesamten App verhindern; Panels behalten eigene Scrollbereiche. */
+html,body{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;overscroll-behavior:none!important}
+body{position:fixed!important;inset:0!important}
+.wrap{display:flex!important;flex-direction:column!important;width:100%!important;height:100%!important;height:100dvh!important;min-height:0!important;max-height:100%!important;margin:0!important;overflow:hidden!important}
+.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.fr-sidebar,.fr-main-panels,.fr-panel,.fr-panel.active{min-height:0!important;max-height:100%!important}
+.fr-main-panels{overflow:hidden!important}
+.fr-sidebar{overflow-y:auto!important;overscroll-behavior:contain!important}
+#fr-panel-chat .chat{min-height:0!important;overscroll-behavior:contain!important}
+
+/* Layout abschließen: kein Scrollen der Seite oder der gesamten Karten.
+   Nur der Nachrichtenverlauf darf bei vielen Nachrichten intern scrollen. */
+html,body{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+.wrap{position:absolute!important;inset:0!important;display:flex!important;flex-direction:column!important;width:100%!important;height:100%!important;height:100dvh!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;gap:0!important}
+.wrap>.top{flex:0 0 auto!important;min-height:0!important}
+.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.wrap>.fr-app-layout>.fr-sidebar{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+.wrap>.fr-app-layout>.fr-main-panels{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+.fr-main-panels .fr-panel,.fr-main-panels .fr-panel.active{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#fr-panel-control .fr-control-area,#fr-panel-control .fr-control-card,#fr-panel-control #control,#fr-panel-control #commandPanel{min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#fr-panel-chat #chatPanel{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#fr-panel-chat #chat{min-height:0!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}
+#fr-panel-screen .fr-viewer{min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#logoutForm,#logoutForm button{position:relative!important;z-index:9999!important;pointer-events:auto!important;touch-action:manipulation!important}
+@media(max-width:900px){.wrap>.fr-app-layout{flex:1 1 0!important;height:0!important;min-height:0!important}.wrap>.fr-app-layout>.fr-sidebar{overflow:hidden!important}.fr-main-panels{padding:5px!important}}
+</style><script>
+/* Abmelden: Formular bleibt nativ; der Server invalidiert die Session und löscht das Cookie. */
+</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller){worker.postMessage("SKIP_WAITING");}});});}).catch(()=>{});});}</script></body></html>`;
 // ============================================================
 // HTTP API
 // ============================================================
