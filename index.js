@@ -342,7 +342,10 @@ return null;
 return session;
 }
 function clientIp(req) {
-return String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  // Bei Render steht die vom Proxy ergänzte Client-IP am Ende der Forwarded-For-Kette.
+  // Den ersten Eintrag nicht verwenden: Er kann vom anfragenden Client vorgegeben sein.
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",").map(v => v.trim()).filter(Boolean);
+  return forwarded.length ? forwarded[forwarded.length - 1] : String(req.socket.remoteAddress || "unknown");
 }
 function loginRateLimited(req) {
 const ip = clientIp(req);
@@ -353,6 +356,12 @@ current.since = Date.now();
 }
 current.count += 1;
 loginAttempts.set(ip, current);
+if (loginAttempts.size > 10000) {
+  for (const [key, item] of loginAttempts) {
+    if (Date.now() - item.since > 10 * 60_000) loginAttempts.delete(key);
+    if (loginAttempts.size <= 9000) break;
+  }
+}
 return current.count > 8;
 }
 async function readJson(req) {
