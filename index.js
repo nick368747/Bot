@@ -1971,7 +1971,7 @@ res.setHeader("Origin-Agent-Cluster", "?1");
 if (isSecureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
-if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-icon.svg" || url === "/sw.js")) {
+if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-icon.svg" || url === "/brand-logo.svg" || url === "/sw.js")) {
   const assets = {
     "/manifest.webmanifest": { file: "manifest.webmanifest", type: "application/manifest+json; charset=utf-8", cache: "no-cache" },
     "/app-icon.svg": { file: "app-icon.svg", type: "image/svg+xml; charset=utf-8", cache: "public, max-age=3600" },
