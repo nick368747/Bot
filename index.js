@@ -1195,27 +1195,14 @@ v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toa
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
 command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('chatSend').click()}});$('moneyInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('moneySend').click()}});$('commandInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('commandSend').click()}});
-// Abmelden: Formular-Submit zentral behandeln, Session serverseitig beenden und danach Login erzwingen.
+// Abmelden: genau ein nativer POST. Der Server beendet die Session und antwortet mit 303 zum Login.
 const logoutForm=document.getElementById('logoutForm');
 if(logoutForm){
-  const logoutButton=logoutForm.querySelector('#logout');
-  let loggingOut=false;
-  const logout=async event=>{
-    if(event)event.preventDefault();
-    if(loggingOut)return;
-    loggingOut=true;
-    if(logoutButton){logoutButton.disabled=true;logoutButton.textContent='Abmelden…';}
-    try{
-      await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'text/html'},redirect:'manual'});
-      window.location.replace('/login?loggedout=1');
-    }catch(_){
-      window.location.assign('/logout');
-    }
-  };
   logoutForm.method='POST';
   logoutForm.action='/api/logout';
-  logoutForm.addEventListener('submit',logout);
-  if(logoutButton)logoutButton.addEventListener('click',event=>{event.preventDefault();void logout(event);});
+  logoutForm.removeAttribute('onsubmit');
+  const logoutButton=logoutForm.querySelector('#logout');
+  if(logoutButton)logoutButton.type='submit';
 }
 refresh();setInterval(refresh,2000);
 </script>
@@ -1348,32 +1335,20 @@ document.addEventListener('DOMContentLoaded',function(){
   const titleNode=top.querySelector('.title');if(titleNode)titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
   const subtitle=top.querySelector('.sub');if(subtitle)subtitle.remove();
   top.appendChild(tabs);
-  // Wichtig: Das Formular bleibt um den Button herum. Den Button allein aus dem Formular
-  // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
-  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
-  if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
-  // Logout bewusst als normales POST-Formular ausführen. Kein fetch()-Interceptor:
-  // Safari/iPad navigiert dadurch direkt auf die serverseitige 303-Antwort und
-  // das HttpOnly-Session-Cookie wird zuverlässig gelöscht.
-  if(logoutForm && logoutButtonEarly){
-    // Expliziter POST statt Formular-Default: zuverlässige Navigation auf iPad/Safari.
-    logoutButtonEarly.type='button';
-    logoutButtonEarly.addEventListener('click',async()=>{
-      if(logoutButtonEarly.disabled)return;
-      logoutButtonEarly.disabled=true;
-      logoutButtonEarly.textContent='Melde ab …';
-      try{
-        const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',headers:{'X-Requested-With':'fetch'}});
-        if(!response.ok)throw new Error('Abmeldung fehlgeschlagen');
-        window.location.replace('/login?loggedout=1');
-      }catch(error){
-        logoutButtonEarly.disabled=false;
-        logoutButtonEarly.textContent='Abmelden';
-        // Fallback: normales Formular, falls fetch im Browser blockiert wird.
-        logoutForm.method='POST';logoutForm.action='/api/logout';logoutForm.submit();
-      }
-    });
-    logoutForm.onsubmit=(event)=>{event.preventDefault();logoutButtonEarly.click();};
+  // Ein einziger nativer Formular-POST verhindert konkurrierende Logout-Requests auf Safari/iPad.
+  if(logoutForm){
+    top.appendChild(logoutForm);
+    logoutForm.action='/api/logout';
+    logoutForm.method='POST';
+    logoutForm.style.pointerEvents='auto';
+    logoutForm.style.position='relative';
+    logoutForm.style.zIndex='100';
+    logoutForm.removeAttribute('onsubmit');
+  }
+  if(logoutButtonEarly){
+    logoutButtonEarly.textContent='Abmelden';
+    logoutButtonEarly.type='submit';
+    logoutButtonEarly.disabled=false;
   }
 
   function activate(name){
