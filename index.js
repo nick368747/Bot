@@ -12,6 +12,7 @@ const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCom
 // FrozenRun – Web-Version mit optionaler Discord-Anbindung
 // ============================================================
 const APP_VERSION = String(process.env.APP_VERSION || "2.0.10").trim().slice(0, 32);
+const PUBLIC_URL = String(process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "https://bot-drgg.onrender.com").trim().replace(/\/+$/, "");
 const PORT = Number(process.env.PORT || 10000);
 const HOST = "0.0.0.0";
 const WEB_PASSWORD = process.env.WEB_PASSWORD || "";
@@ -1836,6 +1837,7 @@ else res.end();
 webServer.listen(PORT, HOST, () => {
 addEvent(`Webserver läuft auf http://${HOST}:${PORT}`, "success");
 addEvent("FrozenRun-Webserver gestartet.", "info");
+addEvent(`Anmeldelink: ${PUBLIC_URL}/login`, "info");
 });
 // ============================================================
 // Discord-Integration (alle Geheimnisse ausschließlich über Render-Env)
@@ -2032,6 +2034,7 @@ async function startDiscordIntegration() {
     discordClient.once(Events.ClientReady, async client => {
       discordReady = true;
       addEvent(`Discord verbunden als ${client.user.tag}.`, "success");
+      void sendDiscordLog(`🔐 Webportal-Anmeldung: ${PUBLIC_URL}/login`, "info");
       try {
         const rest = new REST({ version: "10" }).setToken(DISCORD_TOKEN);
         const commands = buildDiscordCommands();
