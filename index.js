@@ -1253,14 +1253,14 @@ document.addEventListener('DOMContentLoaded',function(){
   const wrap=document.querySelector('.wrap');
   if(!wrap || wrap.dataset.frLayoutReady==='1') return;
   const top=wrap.querySelector('.top');
-  const stats=wrap.querySelector('#status.grid, .grid');
+  const stats=wrap.querySelector('#statusGrid') || wrap.querySelector('.wrap > .grid');
   // Robuste Zuordnung über feste IDs statt über sichtbare Überschriften.
   const chatCard=wrap.querySelector('#chatPanel');
   const controlCard=wrap.querySelector('#control');
   const moneyCard=wrap.querySelector('#moneyPanel');
   const commandCard=wrap.querySelector('#commandPanel');
   const eventsCard=wrap.querySelector('#eventsPanel');
-  if(!top||!stats||!chatCard||!controlCard||!moneyCard||!commandCard||!eventsCard)return;
+  if(!top||!stats||!chatCard||!controlCard||!commandCard)return;
   wrap.dataset.frLayoutReady='1';
 
   const oldNav=wrap.querySelector('.dashboard-tabs');
@@ -1539,14 +1539,14 @@ document.addEventListener('DOMContentLoaded',function(){
   const wrap=document.querySelector('.wrap');
   if(!wrap || wrap.dataset.frLayoutReady==='1') return;
   const top=wrap.querySelector('.top');
-  const stats=wrap.querySelector('#status.grid, .grid');
+  const stats=wrap.querySelector('#statusGrid') || wrap.querySelector('.wrap > .grid');
   // Robuste Zuordnung über feste IDs statt über sichtbare Überschriften.
   const chatCard=wrap.querySelector('#chatPanel');
   const controlCard=wrap.querySelector('#control');
   const moneyCard=wrap.querySelector('#moneyPanel');
   const commandCard=wrap.querySelector('#commandPanel');
   const eventsCard=wrap.querySelector('#eventsPanel');
-  if(!top||!stats||!chatCard||!controlCard||!moneyCard||!commandCard||!eventsCard)return;
+  if(!top||!stats||!chatCard||!controlCard||!commandCard)return;
   wrap.dataset.frLayoutReady='1';
 
   const oldNav=wrap.querySelector('.dashboard-tabs');
