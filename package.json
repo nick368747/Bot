@@ -1,6 +1,6 @@
 {
   "name": "frozenrun-web",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "description": "FrozenRun Minecraft Bedrock Bot mit lokalem PC-Start und Web-Dashboard",
   "main": "index.js",
