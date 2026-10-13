@@ -1,0 +1,11 @@
+# Local secrets and runtime state
+.env
+.env.*
+!.env.example
+.minecraft/
+logs/
+*.log
+cloudflared*.yml
+cert.pem
+*.pem
+*.key
