@@ -1130,7 +1130,7 @@ document.addEventListener('click',event=>{
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent=APP_VERSION;const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent='${APP_VERSION}';const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
 verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
@@ -1276,7 +1276,7 @@ body{position:relative!important;touch-action:pan-x pan-y}
 
   const screenPanel=document.createElement('section');
   screenPanel.className='fr-panel';screenPanel.id='fr-panel-screen';
-  screenPanel.innerHTML='<div class="fr-viewer"><canvas id="fr-viewCanvas" aria-label="Minecraft-Bildschirmansicht"></canvas></div>';
+  screenPanel.innerHTML='<div class="fr-viewer"><canvas id="fr-viewCanvas" aria-label="Minecraft-Bildschirmansicht"></canvas><div class="fr-view-overlay"><div class="fr-view-top"><span class="fr-view-badge" id="fr-viewStatus">3D-Ansicht wird geladen…</span><span class="fr-view-badge">Bot: <strong id="fr-viewBot">Offline</strong></span></div><div class="fr-view-badge" style="position:absolute;left:14px;bottom:14px">Position: <strong id="fr-viewPos">0, 0, 0</strong> · Blick: <strong id="fr-viewRot">0° / 0°</strong></div><div class="fr-crosshair"></div></div></div>';
 
   const chatPanel=document.createElement('section');
   chatPanel.className='fr-panel';chatPanel.id='fr-panel-chat';chatPanel.appendChild(chatCard);
@@ -1300,7 +1300,7 @@ body{position:relative!important;touch-action:pan-x pan-y}
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';const versionLabel=document.createElement('span');versionLabel.textContent='Version';const versionNumber=document.createElement('strong');versionNumber.textContent=APP_VERSION;version.append(versionLabel,document.createTextNode(' '),versionNumber);sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';const versionLabel=document.createElement('span');versionLabel.textContent='Version';const versionNumber=document.createElement('strong');versionNumber.textContent='${APP_VERSION}';version.append(versionLabel,document.createTextNode(' '),versionNumber);sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
