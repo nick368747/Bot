@@ -1356,10 +1356,15 @@ document.addEventListener('DOMContentLoaded',function(){
   // Safari/iPad navigiert dadurch direkt auf die serverseitige 303-Antwort und
   // das HttpOnly-Session-Cookie wird zuverlässig gelöscht.
   if(logoutForm && logoutButtonEarly){
-    logoutForm.method='POST';
-    logoutForm.action='/api/logout';
-    logoutButtonEarly.type='submit';
-    logoutForm.onsubmit=null;
+    // Klick auf Abmelden als echte Seitennavigation: funktioniert auch auf iPad/Safari,
+    // selbst wenn ein anderes Skript das Formular-Submit-Verhalten beeinflusst.
+    logoutButtonEarly.type='button';
+    logoutButtonEarly.addEventListener('click',()=>{
+      logoutButtonEarly.disabled=true;
+      logoutButtonEarly.textContent='Melde ab …';
+      window.location.assign('/logout');
+    });
+    logoutForm.onsubmit=(event)=>{event.preventDefault();window.location.assign('/logout');};
   }
 
   function activate(name){
@@ -1788,7 +1793,7 @@ return res.end();
 }
 if (req.method !== "POST") return json(res, 405, { ok: false, error: "Methode nicht erlaubt." });
 // CSRF-Schutz: Browser-Steuerungsanfragen muessen dieselbe Origin verwenden.
-if (url.startsWith("/api/minecraft/") && req.headers.origin) {
+if (url.startsWith("/api/") && req.headers.origin) {
   try { if (new URL(req.headers.origin).host !== String(req.headers.host || "")) return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
   catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
 }
