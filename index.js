@@ -1356,15 +1356,24 @@ document.addEventListener('DOMContentLoaded',function(){
   // Safari/iPad navigiert dadurch direkt auf die serverseitige 303-Antwort und
   // das HttpOnly-Session-Cookie wird zuverlässig gelöscht.
   if(logoutForm && logoutButtonEarly){
-    // Klick auf Abmelden als echte Seitennavigation: funktioniert auch auf iPad/Safari,
-    // selbst wenn ein anderes Skript das Formular-Submit-Verhalten beeinflusst.
+    // Expliziter POST statt Formular-Default: zuverlässige Navigation auf iPad/Safari.
     logoutButtonEarly.type='button';
-    logoutButtonEarly.addEventListener('click',()=>{
+    logoutButtonEarly.addEventListener('click',async()=>{
+      if(logoutButtonEarly.disabled)return;
       logoutButtonEarly.disabled=true;
       logoutButtonEarly.textContent='Melde ab …';
-      window.location.assign('/logout');
+      try{
+        const response=await fetch('/api/logout',{method:'POST',credentials:'same-origin',headers:{'X-Requested-With':'fetch'}});
+        if(!response.ok)throw new Error('Abmeldung fehlgeschlagen');
+        window.location.replace('/login?loggedout=1');
+      }catch(error){
+        logoutButtonEarly.disabled=false;
+        logoutButtonEarly.textContent='Abmelden';
+        // Fallback: normales Formular, falls fetch im Browser blockiert wird.
+        logoutForm.method='POST';logoutForm.action='/api/logout';logoutForm.submit();
+      }
     });
-    logoutForm.onsubmit=(event)=>{event.preventDefault();window.location.assign('/logout');};
+    logoutForm.onsubmit=(event)=>{event.preventDefault();logoutButtonEarly.click();};
   }
 
   function activate(name){
@@ -1779,6 +1788,10 @@ timestamp: Date.now()
 });
 }
 if ((req.method === "GET" && url.split("?")[0] === "/logout") || (req.method === "POST" && ["/api/logout", "/logout"].includes(url.split("?")[0]))) {
+if (req.method === "POST" && req.headers.origin) {
+  try { if (new URL(req.headers.origin).host !== String(req.headers.host || "")) return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
+  catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
+}
 const token = getCookies(req).frozenrun_session;
 if (token) sessions.delete(token);
 const secureCookie = isSecureRequest(req) ? "; Secure" : "";
