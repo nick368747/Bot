@@ -1300,7 +1300,7 @@ body{position:relative!important;touch-action:pan-x pan-y}
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.innerHTML=`<span>Version</span> <strong>${APP_VERSION}</strong>`;sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';const versionLabel=document.createElement('span');versionLabel.textContent='Version';const versionNumber=document.createElement('strong');versionNumber.textContent=APP_VERSION;version.append(versionLabel,document.createTextNode(' '),versionNumber);sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
