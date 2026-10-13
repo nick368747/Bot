@@ -1710,6 +1710,13 @@ return res.end();
 }
 return html(res, 200, LOGIN_HTML);
 }
+if (req.method === "GET" && (url === "/dashboard" || url === "/dashboard/")) {
+if (!getSession(req)) {
+res.writeHead(302, { Location: "/login?next=%2Fdashboard" });
+return res.end();
+}
+return html(res, 200, DASHBOARD_HTML);
+}
 if (req.method === "GET" && url === "/") {
 if (!getSession(req)) {
 res.writeHead(302, { Location: "/login" });
