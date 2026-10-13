@@ -1248,7 +1248,7 @@ body{position:relative!important;touch-action:pan-x pan-y}
 @supports (-webkit-touch-callout:none){html,body{overflow:hidden!important;overscroll-behavior:none!important}.wrap{height:100%!important;max-height:100%!important}}
 </style>
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded',function(){
   const wrap=document.querySelector('.wrap');
   if(!wrap || wrap.dataset.frLayoutReady==='1') return;
   const top=wrap.querySelector('.top');
@@ -1534,6 +1534,292 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
   refreshView();
   setInterval(refreshView,500);
 })();
+document.addEventListener('DOMContentLoaded',function(){
+  const wrap=document.querySelector('.wrap');
+  if(!wrap || wrap.dataset.frLayoutReady==='1') return;
+  const top=wrap.querySelector('.top');
+  const stats=wrap.querySelector('#status.grid, .grid');
+  // Robuste Zuordnung über feste IDs statt über sichtbare Überschriften.
+  const chatCard=wrap.querySelector('#chatPanel');
+  const controlCard=wrap.querySelector('#control');
+  const moneyCard=wrap.querySelector('#moneyPanel');
+  const commandCard=wrap.querySelector('#commandPanel');
+  const eventsCard=wrap.querySelector('#eventsPanel');
+  if(!top||!stats||!chatCard||!controlCard||!moneyCard||!commandCard||!eventsCard)return;
+  wrap.dataset.frLayoutReady='1';
+
+  const oldNav=wrap.querySelector('.dashboard-tabs');
+  if(oldNav)oldNav.remove();
+  const screenTab=document.createElement('button');
+  screenTab.type='button';screenTab.className='fr-tab';screenTab.textContent='Bildschirm';screenTab.dataset.frTab='screen';
+  const chatTab=document.createElement('button');
+  chatTab.type='button';chatTab.className='fr-tab';chatTab.textContent='Chat';chatTab.dataset.frTab='chat';
+  const controlTab=document.createElement('button');
+  controlTab.type='button';controlTab.className='fr-tab active';controlTab.textContent='Steuerung';controlTab.dataset.frTab='control';
+  const tabs=document.createElement('nav');
+  tabs.className='fr-tabs';tabs.setAttribute('aria-label','Bereiche');
+  tabs.append(controlTab,chatTab,screenTab);
+
+  const screenPanel=document.createElement('section');
+  screenPanel.className='fr-panel';screenPanel.id='fr-panel-screen';
+  screenPanel.innerHTML='<div class="fr-viewer"><canvas id="fr-viewCanvas" aria-label="Minecraft-Bildschirmansicht"></canvas></div>';
+
+  const chatPanel=document.createElement('section');
+  chatPanel.className='fr-panel';chatPanel.id='fr-panel-chat';chatPanel.appendChild(chatCard);
+  const controlPanel=document.createElement('section');
+  controlPanel.className='fr-panel active';controlPanel.id='fr-panel-control';
+  const controls=document.createElement('div');controls.className='fr-control-area';
+  controlCard.classList.add('fr-control-card');
+  const commandTitle=commandCard.querySelector('h2');if(commandTitle)commandTitle.remove();
+  commandCard.classList.add('fr-command');
+  const commandInput=commandCard.querySelector('#commandInput');if(commandInput)commandInput.placeholder='/Befehl';
+  const commandButton=commandCard.querySelector('#commandSend');if(commandButton)commandButton.textContent='↵';
+  controls.appendChild(controlCard);
+  controlPanel.append(controls,commandCard);
+
+  const sidebar=document.createElement('aside');sidebar.className='fr-sidebar';
+  const values=Array.from(stats.children);
+  const money=values.find(el=>el.querySelector('#money'));
+  const uptime=values.find(el=>el.querySelector('#uptime'));
+  const coords=values.find(el=>el.querySelector('#coords'));
+  const status=values.find(el=>el.querySelector('#statusValue'));
+  stats.id='fr-status-list';
+  stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
+  sidebar.appendChild(stats);
+  const version=document.createElement('div');version.className='fr-version';const versionLabel=document.createElement('span');versionLabel.textContent='Version';const versionNumber=document.createElement('strong');versionNumber.textContent=APP_VERSION;version.append(versionLabel,document.createTextNode(' '),versionNumber);sidebar.appendChild(version);
+
+  const auth=wrap.querySelector('#auth');
+  const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
+  const mainPanels=document.createElement('div');mainPanels.className='fr-main-panels';
+  mainPanels.append(controlPanel,chatPanel,screenPanel);
+  // Layout direkt unter dem Header platzieren; explizite Basiswerte vermeiden kollabierte Bereiche in Safari/iPad.
+  top.insertAdjacentElement('afterend',appLayout);
+  appLayout.append(sidebar,mainPanels);
+  appLayout.style.cssText='display:grid;grid-template-columns:minmax(145px,25%) minmax(0,1fr);gap:12px;width:100%;height:calc(100% - 64px);min-height:0;max-height:calc(100% - 64px);box-sizing:border-box;position:relative;visibility:visible;opacity:1;overflow:hidden;';
+  sidebar.style.cssText='display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;visibility:visible;opacity:1;';
+  mainPanels.style.cssText='display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;overflow:hidden;visibility:visible;opacity:1;';
+  controlPanel.style.cssText='display:flex;flex-direction:column;flex:1 1 auto;min-width:0;min-height:0;visibility:visible;opacity:1;';
+  chatPanel.style.cssText='display:none;flex-direction:column;flex:1 1 auto;min-width:0;min-height:0;visibility:visible;opacity:1;';
+  screenPanel.style.cssText='display:none;flex-direction:column;flex:1 1 auto;min-width:0;min-height:0;visibility:visible;opacity:1;';
+  controls.style.cssText='display:flex;flex:1 1 auto;min-height:0;align-items:flex-start;justify-content:center;overflow:hidden;';
+  controlCard.style.cssText='display:flex;flex-direction:column;flex:1 1 auto;min-width:0;min-height:240px;visibility:visible;opacity:1;';
+  const actionsNode=controlCard.querySelector('.actions');
+  if(actionsNode)actionsNode.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(100%,560px);margin:12px auto;';
+  controlCard.querySelectorAll('.actions button').forEach(button=>button.style.cssText='display:block;min-height:46px;width:100%;color:#171717;background:rgba(235,240,255,.9);border:2px solid #202020;border-radius:6px;font-weight:800;cursor:pointer;');
+  commandCard.style.cssText='display:block;flex:0 0 auto;width:100%;min-height:44px;visibility:visible;opacity:1;';
+  chatCard.style.cssText='display:flex;flex-direction:column;flex:1 1 auto;min-height:280px;visibility:visible;opacity:1;';
+  const chatNode=chatCard.querySelector('#chat');
+  if(chatNode)chatNode.style.cssText='display:block;flex:1 1 auto;min-height:220px;height:auto;max-height:none;overflow:auto;';
+  // Microsoft-Anmeldekarte nicht per Inline-CSS verstecken: render() steuert sie anhand des Device-Codes.
+  if(auth)auth.style.removeProperty('display');
+  const logoutForm=top.querySelector('#logoutForm');
+  const logoutButtonEarly=logoutForm&&logoutForm.querySelector('#logout');
+  if(logoutForm)logoutForm.style.cssText='display:flex;align-items:center;margin-left:auto;flex:0 0 auto;';
+  if(logoutButtonEarly)logoutButtonEarly.style.cssText='display:block;visibility:visible;opacity:1;min-height:44px;cursor:pointer;';
+  const titleNode=top.querySelector('.title');if(titleNode)titleNode.innerHTML='<span style="color:#4779c7">Block</span> <span style="color:#f04444">Bande</span>';
+  const subtitle=top.querySelector('.sub');if(subtitle)subtitle.remove();
+  top.appendChild(tabs);
+  // Wichtig: Das Formular bleibt um den Button herum. Den Button allein aus dem Formular
+  // herauszuziehen verhindert das Absenden auf iPad/Safari und Desktop.
+  if(logoutForm){top.appendChild(logoutForm);logoutForm.action='/api/logout';logoutForm.method='POST';logoutForm.style.pointerEvents='auto';logoutForm.style.position='relative';logoutForm.style.zIndex='100';}
+  if(logoutButtonEarly){logoutButtonEarly.textContent='Abmelden';logoutButtonEarly.type='submit';}
+  // Logout bewusst als normales POST-Formular ausführen. Kein fetch()-Interceptor:
+  // Safari/iPad navigiert dadurch direkt auf die serverseitige 303-Antwort und
+  // das HttpOnly-Session-Cookie wird zuverlässig gelöscht.
+  if(logoutForm && logoutButtonEarly){
+    logoutForm.method='POST';
+    logoutForm.action='/api/logout';
+    logoutButtonEarly.type='submit';
+    logoutForm.onsubmit=null;
+  }
+
+  function activate(name){
+    const chat=name==='chat',control=name==='control',screen=name==='screen';
+    const alreadyActive=(chat&&chatPanel.classList.contains('active'))||(control&&controlPanel.classList.contains('active'))||(screen&&screenPanel.classList.contains('active'));
+    if(alreadyActive){ if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); }); return; }
+    chatTab.classList.toggle('active',chat);controlTab.classList.toggle('active',control);screenTab.classList.toggle('active',screen);
+    chatPanel.classList.toggle('active',chat);controlPanel.classList.toggle('active',control);screenPanel.classList.toggle('active',screen);
+    controlPanel.style.display=control?'flex':'none';
+    chatPanel.style.display=chat?'flex':'none';
+    screenPanel.style.display=screen?'flex':'none';
+    if(screen) requestAnimationFrame(()=>{ if(viewCanvas && renderer) resize3D(); });
+  }
+  chatTab.addEventListener('click',()=>activate('chat'));
+  controlTab.addEventListener('click',()=>activate('control'));
+  screenTab.addEventListener('click',()=>activate('screen'));
+const viewCanvas=document.getElementById('fr-viewCanvas');
+  const viewStatus=document.getElementById('fr-viewStatus');
+  const viewPos=document.getElementById('fr-viewPos');
+  const viewRot=document.getElementById('fr-viewRot');
+  const viewBot=document.getElementById('fr-viewBot');
+  const compassArrow=document.getElementById('fr-compassArrow');
+  let viewState={position:{x:0,y:0,z:0},rotation:{yaw:0,pitch:0,headYaw:0},online:false};
+  let three=null,scene=null,camera=null,renderer=null,worldGroup=null,surfaceGroup=null,surfaceMesh=null,botMarker=null,raf=0;
+
+  function dispose3D(){
+    if(raf) cancelAnimationFrame(raf);
+    raf=0;
+    if(renderer){renderer.dispose();renderer=null;}
+    three=null;scene=null;camera=null;renderer=null;worldGroup=null;surfaceGroup=null;surfaceMesh=null;botMarker=null;
+  }
+
+  async function init3D(){
+    if(!viewCanvas || renderer) return;
+    try{
+      three=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
+      scene=new three.Scene();
+      scene.background=new three.Color(0x182b4a);
+      scene.fog=new three.Fog(0x182b4a,28,110);
+
+      camera=new three.PerspectiveCamera(70,1,0.05,160);
+      camera.position.set(0,1.65,0);
+
+      renderer=new three.WebGLRenderer({canvas:viewCanvas,antialias:true,preserveDrawingBuffer:false});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+      renderer.outputColorSpace=three.SRGBColorSpace;
+
+      const hemi=new three.HemisphereLight(0xbfdcff,0x38452f,2.2);
+      scene.add(hemi);
+      const sun=new three.DirectionalLight(0xffffff,2.4);
+      sun.position.set(20,40,15);
+      scene.add(sun);
+
+      worldGroup=new three.Group();
+      scene.add(worldGroup);
+      surfaceGroup=new three.Group();
+      worldGroup.add(surfaceGroup);
+
+      // Sichtbarer Fallback, bis echte Chunk-Daten vom Server eintreffen.
+      // Er verhindert eine leere/dunkle Ansicht, behauptet aber nicht, ein Screenshot zu sein.
+      const fallbackGroup=new three.Group();
+      worldGroup.add(fallbackGroup);
+      const fallbackGround=new three.Mesh(
+        new three.PlaneGeometry(160,160),
+        new three.MeshLambertMaterial({color:0x527a45})
+      );
+      fallbackGround.rotation.x=-Math.PI/2;
+      fallbackGround.position.y=-1;
+      fallbackGroup.add(fallbackGround);
+      const fallbackGrid=new three.GridHelper(160,80,0xb9d4a4,0x79976b);
+      fallbackGrid.position.y=-0.98;
+      fallbackGroup.add(fallbackGrid);
+      window.__frViewFallback=fallbackGroup;
+
+      const cubeGeo=new three.BoxGeometry(1,1,1);
+      const botMaterial=new three.MeshLambertMaterial({color:0x6d5dfc});
+      const headMaterial=new three.MeshLambertMaterial({color:0xd7b38a});
+
+      botMarker=new three.Group();
+      const body=new three.Mesh(new three.BoxGeometry(.65,1.25,.38),botMaterial);
+      body.position.y=.7;
+      botMarker.add(body);
+      const head=new three.Mesh(new three.BoxGeometry(.55,.55,.55),headMaterial);
+      head.position.y=1.6;
+      botMarker.add(head);
+      worldGroup.add(botMarker);
+
+      resize3D();
+
+      render3D();
+      viewStatus.textContent='3D-Ansicht · Live';
+    }catch(e){
+      console.error('3D-Ansicht konnte nicht geladen werden:',e);
+      viewStatus.textContent='3D-Ansicht konnte nicht geladen werden';
+    }
+  }
+
+  function resize3D(){
+    if(!renderer||!camera||!viewCanvas) return;
+    const rect=viewCanvas.getBoundingClientRect();
+    const w=Math.max(1,rect.width),h=Math.max(1,rect.height);
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+
+  function updateSurface(blocks){
+    if(!surfaceGroup || !three) return;
+    if(surfaceMesh){
+      surfaceGroup.remove(surfaceMesh);
+      surfaceMesh.geometry.dispose();
+      surfaceMesh.material.dispose();
+      surfaceMesh=null;
+    }
+    const list=Array.isArray(blocks)?blocks:[];
+    const fallback=window.__frViewFallback;
+    if(fallback) fallback.visible=list.length===0;
+    if(!list.length) return;
+    const geometry=new three.BoxGeometry(1,1,1);
+    const material=new three.MeshLambertMaterial({color:0xffffff,vertexColors:true});
+    surfaceMesh=new three.InstancedMesh(geometry,material,list.length);
+    const dummy=new three.Object3D();
+    const color=new three.Color();
+    list.forEach((b,i)=>{
+      dummy.position.set(Number(b.x)||0,(Number(b.y)||0)+0.5,Number(b.z)||0);
+      dummy.rotation.set(0,0,0);
+      dummy.scale.set(1,1,1);
+      dummy.updateMatrix();
+      surfaceMesh.setMatrixAt(i,dummy.matrix);
+      color.set(b.color||'#8a8f98');
+      surfaceMesh.setColorAt(i,color);
+    });
+    surfaceMesh.instanceMatrix.needsUpdate=true;
+    if(surfaceMesh.instanceColor) surfaceMesh.instanceColor.needsUpdate=true;
+    surfaceGroup.add(surfaceMesh);
+  }
+
+  function render3D(){
+    if(!renderer||!scene||!camera) return;
+    const p=viewState.position||{x:0,y:0,z:0};
+    const r=viewState.rotation||{yaw:0,pitch:0};
+    const x=Number(p.x)||0, y=Number(p.y)||0, z=Number(p.z)||0;
+    const fallback=window.__frViewFallback;
+    if(fallback){ fallback.position.set(x,y,z); }
+    const yaw=(Number(r.yaw)||0)*Math.PI/180;
+    const pitch=(Number(r.pitch)||0)*Math.PI/180;
+
+    // The browser camera follows the bot's live position and rotation.
+    camera.position.set(x,y+1.62,z);
+    camera.rotation.order='YXZ';
+    camera.rotation.y=-yaw;
+    camera.rotation.x=pitch;
+
+    if(botMarker){
+      botMarker.position.set(x, y, z);
+      botMarker.rotation.y=-yaw;
+    }
+    renderer.render(scene,camera);
+    raf=requestAnimationFrame(render3D);
+  }
+
+  async function refreshView(){
+    try{
+      const r=await fetch('/api/view',{cache:'no-store'});
+      if(r.status===401){location.href='/login';return;}
+      const d=await r.json();
+      viewState=d;
+      updateSurface(d.world&&d.world.blocks);
+      const p=d.position||{x:0,y:0,z:0};
+      const ro=d.rotation||{yaw:0,pitch:0};
+      viewPos.textContent=[p.x,p.y,p.z].map(v=>Math.round(Number(v)||0)).join(', ');
+      viewRot.textContent=Math.round(Number(ro.yaw)||0)+'° / '+Math.round(Number(ro.pitch)||0)+'°';
+      viewBot.textContent=d.online?'Online':'Offline';
+      viewStatus.textContent=d.online
+        ? ((d.world&&d.world.blocks&&d.world.blocks.length)?'3D-Welt · Live':'3D-Welt · Warte auf Chunks')
+        : '3D-Welt · Bot offline';
+      const yaw=Number(ro.yaw)||0;
+      compassArrow.style.transform='translate(-50%,-100%) rotate('+yaw+'deg)';
+    }catch(e){
+      viewStatus.textContent='Ansicht nicht erreichbar';
+    }
+  }
+
+  window.addEventListener('resize',resize3D);
+  if(typeof ResizeObserver!=='undefined' && viewCanvas){ const viewerObserver=new ResizeObserver(()=>resize3D()); viewerObserver.observe(viewCanvas.parentElement); }
+  init3D();
+  refreshView();
+  setInterval(refreshView,500);
+});
 </script>
 
 <style>
