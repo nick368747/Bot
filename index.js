@@ -11,7 +11,7 @@ const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCom
 // ============================================================
 // FrozenRun – Web-Version mit optionaler Discord-Anbindung
 // ============================================================
-const APP_VERSION = String(process.env.APP_VERSION || "2.0.10").trim().slice(0, 32);
+const APP_VERSION = String(process.env.APP_VERSION || "2.1.1").trim().slice(0, 32);
 const PUBLIC_URL = String(process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "https://bot-drgg.onrender.com").trim().replace(/\/+$/, "");
 const PORT = Number(process.env.PORT || 10000);
 const HOST = "0.0.0.0";
@@ -1185,23 +1185,28 @@ $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').va
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
 command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh()}catch(e){toast(e.message)}});
-// Abmelden wird ausschließlich über das native POST-Formular abgewickelt.
-// Abmelden wird direkt am Button ausgelöst, auch wenn andere Dashboard-Skripte fehlschlagen.
-$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
-'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
-key==='Enter')$('commandSend').click()});
-// Abmelden: natives Formular verwenden, damit Safari und Desktop den Server erreichen.
+$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('chatSend').click()}});$('moneyInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('moneySend').click()}});$('commandInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('commandSend').click()}});
+// Abmelden: Formular-Submit zentral behandeln, Session serverseitig beenden und danach Login erzwingen.
 const logoutForm=document.getElementById('logoutForm');
 if(logoutForm){
   const logoutButton=logoutForm.querySelector('#logout');
+  let loggingOut=false;
+  const logout=async event=>{
+    if(event)event.preventDefault();
+    if(loggingOut)return;
+    loggingOut=true;
+    if(logoutButton){logoutButton.disabled=true;logoutButton.textContent='Abmelden…';}
+    try{
+      await fetch('/api/logout',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Accept':'text/html'},redirect:'manual'});
+      window.location.replace('/login?loggedout=1');
+    }catch(_){
+      window.location.assign('/logout');
+    }
+  };
   logoutForm.method='POST';
   logoutForm.action='/api/logout';
-  if(logoutButton){
-    logoutButton.type='submit';
-    logoutButton.addEventListener('click',function(){
-      logoutButton.textContent='Abmelden…';
-    });
-  }
+  logoutForm.addEventListener('submit',logout);
+  if(logoutButton)logoutButton.addEventListener('click',event=>{event.preventDefault();void logout(event);});
 }
 refresh();setInterval(refresh,2000);
 </script>
