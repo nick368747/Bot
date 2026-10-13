@@ -1,4 +1,4 @@
-const VERSION = "block-bande-pwa-v1";
+const VERSION = "block-bande-pwa-v2";
 const SHELL = ["/manifest.webmanifest", "/app-icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
