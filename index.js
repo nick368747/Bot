@@ -1888,6 +1888,7 @@ async function sendDiscordChat(message) {
 }
 function buildDiscordCommands() {
   return [
+    new SlashCommandBuilder().setName("dashboard").setDescription("Zeigt alle Bot- und Minecraft-Statuswerte in Discord"),
     new SlashCommandBuilder().setName("bot-status").setDescription("Zeigt Minecraft-Status und Koordinaten"),
     new SlashCommandBuilder().setName("bot-start").setDescription("Startet den Minecraft-Bot"),
     new SlashCommandBuilder().setName("bot-stop").setDescription("Stoppt den Minecraft-Bot"),
@@ -1909,7 +1910,24 @@ async function handleDiscordInteraction(interaction) {
   }
   const command = interaction.commandName;
   try {
-    if (command === "bot-status") {
+    if (command === "dashboard") {
+      const dashboardLines = [
+        "📊 **FrozenRun – Status-Dashboard**",
+        "",
+        `🤖 **Minecraft:** ${mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline"}`,
+        `👤 **Spielername:** ${MC_USERNAME}`,
+        `🌐 **Server:** ${MC_HOST}:${MC_PORT}`,
+        `📍 **Koordinaten:** ${formatKoordinaten()}`,
+        `⏱️ **Uptime:** ${formatLiveUptime()}`,
+        `🏃 **Laufen:** ${laufenAktiv ? "🟢 Aktiv" : "⚪ Aus"}`,
+        `🌍 **Webportal:** Version ${APP_VERSION}`,
+        `💬 **Discord-Anbindung:** ${discordReady ? "🟢 Verbunden" : "🔴 Nicht verbunden"}`,
+        letzterFehler ? `⚠️ **Letzter Fehler:** ${String(letzterFehler).slice(0, 500)}` : "✅ **Letzter Fehler:** keiner bekannt",
+        "",
+        `Aktualisiert: <t:${Math.floor(Date.now() / 1000)}:R>`
+      ];
+      await interaction.reply({ content: dashboardLines.join("\\n"), ephemeral: true, allowedMentions: { parse: [] } });
+    } else if (command === "bot-status") {
       await interaction.reply({ content: discordStatusText(), ephemeral: true });
     } else if (command === "bot-start") {
       minecraftStarten();
