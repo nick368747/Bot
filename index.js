@@ -1094,6 +1094,7 @@ body{position:fixed!important;inset:0!important;padding:0!important}
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
+<div class="card"><div class="label">Server</div><div id="serverValue" class="value">${MC_HOST}:${MC_PORT}</div></div>
 <div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">${APP_VERSION}</div></div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
@@ -1130,7 +1131,7 @@ document.addEventListener('click',event=>{
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent=APP_VERSION;const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent=APP_VERSION;const serverValue=$('serverValue');if(serverValue)serverValue.textContent=(d.host||'Server')+(d.port?':'+d.port:'');const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
 verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
@@ -2044,7 +2045,7 @@ world: getWorldView(),
 timestamp: Date.now()
 });
 }
-if ((req.method === "GET" && url.split("?")[0] === "/logout") || (req.method === "POST" && url.split("?")[0] === "/api/logout")) {
+if ((req.method === "GET" && url.split("?")[0] === "/logout") || (req.method === "POST" && ["/api/logout", "/logout"].includes(url.split("?")[0]))) {
 const token = getCookies(req).frozenrun_session;
 if (token) sessions.delete(token);
 const secureCookie = isSecureRequest(req) ? "; Secure" : "";
