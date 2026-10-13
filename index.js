@@ -7,8 +7,9 @@ const { Authflow, Titles } = require("prismarine-auth");
 const prismarineChunk = require("prismarine-chunk");
 const prismarineRegistry = require("prismarine-registry");
 const { Vec3 } = require("vec3");
+const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType } = require("discord.js");
 // ============================================================
-// FrozenRun – Web-Version ohne Discord
+// FrozenRun – Web-Version mit optionaler Discord-Anbindung
 // ============================================================
 const APP_VERSION = String(process.env.APP_VERSION || "2.0.10").trim().slice(0, 32);
 const PORT = Number(process.env.PORT || 10000);
@@ -71,6 +72,19 @@ let authInfo = null;
 let letzterFehler = null;
 const chatLog = [];
 const eventLog = [];
+// Discord bleibt optional: Ohne DISCORD_TOKEN läuft die Webseite unverändert weiter.
+const DISCORD_TOKEN = String(process.env.DISCORD_TOKEN || "").trim();
+const DISCORD_CLIENT_ID = String(process.env.DISCORD_CLIENT_ID || "").trim();
+const DISCORD_GUILD_ID = String(process.env.DISCORD_GUILD_ID || "").trim();
+const DISCORD_CHAT_CHANNEL_ID = String(process.env.DISCORD_CHAT_CHANNEL_ID || "").trim();
+const DISCORD_LOG_CHANNEL_ID = String(process.env.DISCORD_LOG_CHANNEL_ID || "").trim();
+const DISCORD_ALLOWED_USER_IDS = new Set(String(process.env.DISCORD_ALLOWED_USER_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
+const DISCORD_ALLOWED_ROLE_IDS = new Set(String(process.env.DISCORD_ALLOWED_ROLE_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
+let discordClient = null;
+let discordReady = false;
+let discordLastStatus = "";
+let discordStatusTimer = null;
+let discordChatRelayLastAt = 0;
 // Tatsächliche Bedrock-Welt für die Bildschirm-Ansicht.
 // Die Browser-Ansicht verwendet daraus die echten Blockpositionen statt einer Demo-Welt.
 const worldChunks = new Map();
@@ -234,6 +248,7 @@ const entry = { time: nowIso(), message: String(message), type };
 eventLog.push(entry);
 while (eventLog.length > 150) eventLog.shift();
 console.log(`[${type.toUpperCase()}] ${message}`);
+if (type === "error" || type === "warning" || type === "success") void sendDiscordLog(message, type);
 }
 function addChat(source, message, type = "chat") {
 const entry = {
@@ -244,6 +259,7 @@ type
 };
 chatLog.push(entry);
 while (chatLog.length > 200) chatLog.shift();
+if (type === "chat" && source !== "Discord") void sendDiscordChat(`${source}: ${message}`);
 }
 function formatLiveUptime() {
 if (!minecraftStartzeit) return "00:00:00";
@@ -1812,8 +1828,192 @@ else res.end();
 });
 webServer.listen(PORT, HOST, () => {
 addEvent(`Webserver läuft auf http://${HOST}:${PORT}`, "success");
-addEvent("FrozenRun startet ohne Discord-Steuerung.", "info");
+addEvent("FrozenRun-Webserver gestartet.", "info");
 });
+// ============================================================
+// Discord-Integration (alle Geheimnisse ausschließlich über Render-Env)
+// ============================================================
+function discordCanControl(interaction) {
+  if (!interaction.inGuild()) return false;
+  const member = interaction.member;
+  const roles = member?.roles?.cache;
+  const allowedRole = roles && [...DISCORD_ALLOWED_ROLE_IDS].some(id => roles.has(id));
+  if (DISCORD_ALLOWED_USER_IDS.size || DISCORD_ALLOWED_ROLE_IDS.size) {
+    return DISCORD_ALLOWED_USER_IDS.has(interaction.user.id) || Boolean(allowedRole);
+  }
+  return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
+}
+function discordStatusText() {
+  return [
+    `Minecraft: **${mcOnline ? "Online" : connecting ? "Verbindet…" : "Offline"}**`,
+    `Spieler: ${MC_USERNAME}`,
+    `Server: ${MC_HOST}:${MC_PORT}`,
+    `Koordinaten: ${formatKoordinaten()}`,
+    `Uptime: ${formatLiveUptime()}`,
+    `Laufen: ${laufenAktiv ? "aktiv" : "aus"}`,
+    letzterFehler ? `Letzter Fehler: ${String(letzterFehler).slice(0, 300)}` : ""
+  ].filter(Boolean).join("\n");
+}
+async function discordGetChannel(channelId) {
+  if (!discordClient || !discordReady || !channelId) return null;
+  try {
+    const channel = await discordClient.channels.fetch(channelId);
+    return channel && channel.isTextBased() && typeof channel.send === "function" ? channel : null;
+  } catch (err) {
+    console.error("Discord-Kanal nicht erreichbar:", err?.message || err);
+    return null;
+  }
+}
+async function sendDiscordLog(message, type = "info") {
+  if (!DISCORD_LOG_CHANNEL_ID || !discordReady) return;
+  const channel = await discordGetChannel(DISCORD_LOG_CHANNEL_ID);
+  if (!channel) return;
+  const prefix = type === "error" ? "❌" : type === "warning" ? "⚠️" : type === "success" ? "✅" : "ℹ️";
+  try { await channel.send({ content: `${prefix} ${String(message).slice(0, 1800)}`, allowedMentions: { parse: [] } }); }
+  catch (err) { console.error("Discord-Log konnte nicht gesendet werden:", err?.message || err); }
+}
+async function sendDiscordChat(message) {
+  if (!DISCORD_CHAT_CHANNEL_ID || !discordReady) return;
+  const channel = await discordGetChannel(DISCORD_CHAT_CHANNEL_ID);
+  if (!channel) return;
+  try { await channel.send({ content: String(message).slice(0, 1900), allowedMentions: { parse: [] } }); }
+  catch (err) { console.error("Minecraft-Chat konnte nicht an Discord gesendet werden:", err?.message || err); }
+}
+function buildDiscordCommands() {
+  return [
+    new SlashCommandBuilder().setName("bot-status").setDescription("Zeigt Minecraft-Status und Koordinaten"),
+    new SlashCommandBuilder().setName("bot-start").setDescription("Startet den Minecraft-Bot"),
+    new SlashCommandBuilder().setName("bot-stop").setDescription("Stoppt den Minecraft-Bot"),
+    new SlashCommandBuilder().setName("bot-reconnect").setDescription("Verbindet den Minecraft-Bot neu"),
+    new SlashCommandBuilder().setName("bot-home").setDescription("Führt /home afk aus"),
+    new SlashCommandBuilder().setName("bot-run").setDescription("Startet die Lauf-Funktion"),
+    new SlashCommandBuilder().setName("bot-stoprun").setDescription("Stoppt die Lauf-Funktion"),
+    new SlashCommandBuilder().setName("mc-chat").setDescription("Sendet eine Nachricht in den Minecraft-Chat")
+      .addStringOption(o => o.setName("nachricht").setDescription("Nachricht für Minecraft").setRequired(true).setMaxLength(256)),
+    new SlashCommandBuilder().setName("mc-command").setDescription("Führt einen Minecraft-Befehl aus")
+      .addStringOption(o => o.setName("befehl").setDescription("Befehl, mit oder ohne führenden Schrägstrich").setRequired(true).setMaxLength(256))
+  ].map(command => command.toJSON());
+}
+async function handleDiscordInteraction(interaction) {
+  if (!interaction.isChatInputCommand()) return;
+  if (!discordCanControl(interaction)) {
+    await interaction.reply({ content: "Du darfst den Minecraft-Bot nicht über Discord steuern. Bitte konfiguriere DISCORD_ALLOWED_USER_IDS / DISCORD_ALLOWED_ROLE_IDS oder gib Manage Server.", ephemeral: true });
+    return;
+  }
+  const command = interaction.commandName;
+  try {
+    if (command === "bot-status") {
+      await interaction.reply({ content: discordStatusText(), ephemeral: true });
+    } else if (command === "bot-start") {
+      minecraftStarten();
+      await interaction.reply({ content: "Minecraft-Bot wird gestartet.\n" + discordStatusText(), ephemeral: true });
+    } else if (command === "bot-stop") {
+      minecraftStoppen();
+      await interaction.reply({ content: "Minecraft-Bot wurde gestoppt.", ephemeral: true });
+    } else if (command === "bot-reconnect") {
+      minecraftNeuVerbinden();
+      await interaction.reply({ content: "Neuverbindung wurde gestartet.", ephemeral: true });
+    } else if (command === "bot-home") {
+      await homeAfk();
+      await interaction.reply({ content: "/home afk wurde ausgeführt.", ephemeral: true });
+    } else if (command === "bot-run") {
+      laufenStarten();
+      await interaction.reply({ content: "Laufen wurde gestartet.", ephemeral: true });
+    } else if (command === "bot-stoprun") {
+      laufenStoppen();
+      await interaction.reply({ content: "Laufen wurde gestoppt.", ephemeral: true });
+    } else if (command === "mc-chat") {
+      const text = interaction.options.getString("nachricht", true);
+      await sendChatMessage(text);
+      await interaction.reply({ content: "Nachricht an Minecraft gesendet.", ephemeral: true });
+    } else if (command === "mc-command") {
+      const text = interaction.options.getString("befehl", true);
+      const output = await sendCommand(text);
+      await interaction.reply({ content: `Befehl ausgeführt.${output ? "\\n" + String(output).slice(0, 1200) : ""}`, ephemeral: true });
+    }
+  } catch (err) {
+    const message = err?.message || String(err);
+    await sendDiscordLog(`Discord-Befehl /${command}: ${message}`, "error");
+    const response = { content: `Fehler: ${message.slice(0, 1500)}`, ephemeral: true };
+    if (interaction.replied || interaction.deferred) await interaction.followUp(response).catch(() => {});
+    else await interaction.reply(response).catch(() => {});
+  }
+}
+async function startDiscordIntegration() {
+  if (!DISCORD_TOKEN) {
+    addEvent("Discord ist nicht aktiviert (DISCORD_TOKEN fehlt); die Webseite läuft normal weiter.", "info");
+    return;
+  }
+  if (!DISCORD_CLIENT_ID) {
+    addEvent("Discord nicht gestartet: DISCORD_CLIENT_ID fehlt.", "error");
+    return;
+  }
+  try {
+    discordClient = new DiscordClient({
+      intents: [
+        GatewayIntentBits.Guilds,
+        ...(DISCORD_CHAT_CHANNEL_ID ? [GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] : [])
+      ]
+    });
+    discordClient.once(Events.ClientReady, async client => {
+      discordReady = true;
+      addEvent(`Discord verbunden als ${client.user.tag}.`, "success");
+      try {
+        const rest = new REST({ version: "10" }).setToken(DISCORD_TOKEN);
+        const commands = buildDiscordCommands();
+        const route = DISCORD_GUILD_ID
+          ? Routes.applicationGuildCommands(DISCORD_CLIENT_ID, DISCORD_GUILD_ID)
+          : Routes.applicationCommands(DISCORD_CLIENT_ID);
+        await rest.put(route, { body: commands });
+        addEvent(`Discord-Slash-Befehle registriert (${commands.length}).`, "success");
+      } catch (err) {
+        addEvent(`Discord-Slash-Befehle konnten nicht registriert werden: ${err?.message || err}`, "error");
+      }
+      if (DISCORD_CHAT_CHANNEL_ID) {
+        discordClient.on(Events.MessageCreate, async message => {
+          if (message.author.bot || message.channelId !== DISCORD_CHAT_CHANNEL_ID) return;
+          const text = sanitizeChatMessage(message.content);
+          if (!text || text.startsWith("/") || text.length > 256) return;
+          const now = Date.now();
+          if (now - discordChatRelayLastAt < 700) return;
+          discordChatRelayLastAt = now;
+          try {
+            await sendChatMessage(`[Discord] ${message.member?.displayName || message.author.username}: ${text}`.slice(0, 256));
+          } catch (err) {
+            await message.reply({ content: `Minecraft-Chat nicht gesendet: ${String(err?.message || err).slice(0, 500)}`, allowedMentions: { parse: [] } }).catch(() => {});
+          }
+        });
+      }
+      if (discordClient.user) {
+        discordClient.user.setActivity("Minecraft-Status", { type: ActivityType.Watching });
+      }
+      discordStatusTimer = setInterval(() => {
+        const status = `${mcOnline}|${connecting}|${formatKoordinaten()}|${laufenAktiv}`;
+        if (status === discordLastStatus) return;
+        discordLastStatus = status;
+        if (discordClient?.user) {
+          discordClient.user.setPresence({
+            activities: [{ name: `MC: ${mcOnline ? "Online" : connecting ? "Startet" : "Offline"} · ${formatKoordinaten()}`, type: ActivityType.Watching }],
+            status: mcOnline ? "online" : "idle"
+          });
+        }
+      }, 15000);
+      discordStatusTimer.unref?.();
+    });
+    discordClient.on(Events.InteractionCreate, interaction => {
+      void handleDiscordInteraction(interaction).catch(err => console.error("Discord-Interaction-Fehler:", err));
+    });
+    discordClient.on(Events.Error, err => {
+      console.error("Discord-Client-Fehler:", err?.message || err);
+    });
+    await discordClient.login(DISCORD_TOKEN);
+  } catch (err) {
+    discordReady = false;
+    addEvent(`Discord-Start fehlgeschlagen: ${err?.message || err}`, "error");
+  }
+}
+void startDiscordIntegration();
+
 // ============================================================
 // Graceful shutdown
 // ============================================================
