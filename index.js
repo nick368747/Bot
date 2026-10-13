@@ -7,7 +7,7 @@ const { Authflow, Titles } = require("prismarine-auth");
 const prismarineChunk = require("prismarine-chunk");
 const prismarineRegistry = require("prismarine-registry");
 const { Vec3 } = require("vec3");
-const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType } = require("discord.js");
+const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 // ============================================================
 // FrozenRun – Web-Version mit optionaler Discord-Anbindung
 // ============================================================
@@ -2188,7 +2188,66 @@ function buildDiscordCommands() {
       .addStringOption(o => o.setName("befehl").setDescription("Befehl, mit oder ohne führenden Schrägstrich").setRequired(true).setMaxLength(256))
   ].map(command => command.toJSON());
 }
+function buildDiscordDashboardComponents() {
+  const button = (customId, label, style, emoji) =>
+    new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style).setEmoji(emoji);
+  return [
+    new ActionRowBuilder().addComponents(
+      button("fr_dashboard_start", "Ein", ButtonStyle.Success, "▶️"),
+      button("fr_dashboard_stop", "Aus", ButtonStyle.Danger, "⏹️"),
+      button("fr_dashboard_reconnect", "Neu verbinden", ButtonStyle.Secondary, "🔄"),
+      button("fr_dashboard_home", "Home AFK", ButtonStyle.Primary, "🏠"),
+      button("fr_dashboard_run", "Laufen", ButtonStyle.Success, "🏃")
+    ),
+    new ActionRowBuilder().addComponents(
+      button("fr_dashboard_stoprun", "Laufen stoppen", ButtonStyle.Danger, "🛑")
+    )
+  ];
+}
+function buildDiscordDashboardText() {
+  return [
+    "📊 **FrozenRun – Status-Dashboard**",
+    "",
+    `🤖 **Minecraft:** ${mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline"}`,
+    `👤 **Spielername:** ${MC_USERNAME}`,
+    `🌐 **Server:** ${MC_HOST}:${MC_PORT}`,
+    `📍 **Koordinaten:** ${formatKoordinaten()}`,
+    `⏱️ **Uptime:** ${formatLiveUptime()}`,
+    `🏃 **Laufen:** ${laufenAktiv ? "🟢 Aktiv" : "⚪ Aus"}`,
+    `🌍 **Webportal:** Version ${APP_VERSION}`,
+    `💬 **Discord-Anbindung:** ${discordReady ? "🟢 Verbunden" : "🔴 Nicht verbunden"}`,
+    letzterFehler ? `⚠️ **Letzter Fehler:** ${String(letzterFehler).slice(0, 400)}` : "✅ **Letzter Fehler:** keiner bekannt",
+    "",
+    `Aktualisiert: <t:${Math.floor(Date.now() / 1000)}:R>`,
+    "",
+    "**Steuerung** · Nutze die Knöpfe unter dieser Nachricht."
+  ].join("\n");
+}
 async function handleDiscordInteraction(interaction) {
+  if (interaction.isButton()) {
+    if (!discordCanControl(interaction)) {
+      await interaction.reply({ content: "Du darfst den Minecraft-Bot nicht über Discord steuern.", ephemeral: true });
+      return;
+    }
+    try {
+      switch (interaction.customId) {
+        case "fr_dashboard_start": minecraftStarten(); break;
+        case "fr_dashboard_stop": minecraftStoppen(); break;
+        case "fr_dashboard_reconnect": minecraftNeuVerbinden(); break;
+        case "fr_dashboard_home": await homeAfk(); break;
+        case "fr_dashboard_run": laufenStarten(); break;
+        case "fr_dashboard_stoprun": laufenStoppen(); break;
+        default: return;
+      }
+      await interaction.update({ content: buildDiscordDashboardText(), components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } });
+    } catch (err) {
+      const message = String(err?.message || err).slice(0, 1000);
+      if (interaction.deferred || interaction.replied) await interaction.followUp({ content: "Aktion fehlgeschlagen: " + message, ephemeral: true }).catch(() => {});
+      else await interaction.reply({ content: "Aktion fehlgeschlagen: " + message, ephemeral: true }).catch(() => {});
+      await sendDiscordLog("Dashboard-Schaltfläche: " + message, "error");
+    }
+    return;
+  }
   if (!interaction.isChatInputCommand()) return;
   if (!discordCanControl(interaction)) {
     await interaction.reply({ content: "Du darfst den Minecraft-Bot nicht über Discord steuern. Bitte konfiguriere DISCORD_ALLOWED_USER_IDS / DISCORD_ALLOWED_ROLE_IDS oder gib Manage Server.", ephemeral: true });
@@ -2197,22 +2256,12 @@ async function handleDiscordInteraction(interaction) {
   const command = interaction.commandName;
   try {
     if (command === "dashboard") {
-      const dashboardLines = [
-        "📊 **FrozenRun – Status-Dashboard**",
-        "",
-        `🤖 **Minecraft:** ${mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline"}`,
-        `👤 **Spielername:** ${MC_USERNAME}`,
-        `🌐 **Server:** ${MC_HOST}:${MC_PORT}`,
-        `📍 **Koordinaten:** ${formatKoordinaten()}`,
-        `⏱️ **Uptime:** ${formatLiveUptime()}`,
-        `🏃 **Laufen:** ${laufenAktiv ? "🟢 Aktiv" : "⚪ Aus"}`,
-        `🌍 **Webportal:** Version ${APP_VERSION}`,
-        `💬 **Discord-Anbindung:** ${discordReady ? "🟢 Verbunden" : "🔴 Nicht verbunden"}`,
-        letzterFehler ? `⚠️ **Letzter Fehler:** ${String(letzterFehler).slice(0, 500)}` : "✅ **Letzter Fehler:** keiner bekannt",
-        "",
-        `Aktualisiert: <t:${Math.floor(Date.now() / 1000)}:R>`
-      ];
-      await interaction.reply({ content: dashboardLines.join("\\n"), ephemeral: true, allowedMentions: { parse: [] } });
+      await interaction.reply({
+        content: buildDiscordDashboardText(),
+        components: buildDiscordDashboardComponents(),
+        ephemeral: true,
+        allowedMentions: { parse: [] }
+      });
     } else if (command === "bot-status") {
       await interaction.reply({ content: discordStatusText(), ephemeral: true });
     } else if (command === "bot-start") {
