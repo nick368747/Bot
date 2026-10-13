@@ -1248,7 +1248,7 @@ body{position:relative!important;touch-action:pan-x pan-y}
 @supports (-webkit-touch-callout:none){html,body{overflow:hidden!important;overscroll-behavior:none!important}.wrap{height:100%!important;max-height:100%!important}}
 </style>
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded',function(){
   const wrap=document.querySelector('.wrap');
   if(!wrap || wrap.dataset.frLayoutReady==='1') return;
   const top=wrap.querySelector('.top');
@@ -1533,7 +1533,7 @@ const viewCanvas=document.getElementById('fr-viewCanvas');
   init3D();
   refreshView();
   setInterval(refreshView,500);
-})();
+});
 </script>
 
 <style>
