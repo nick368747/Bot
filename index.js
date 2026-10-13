@@ -14,7 +14,7 @@ const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCom
 const APP_VERSION = String(process.env.APP_VERSION || "2.1.1").trim().slice(0, 32);
 const PUBLIC_URL = String(process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "https://bot-drgg.onrender.com").trim().replace(/\/+$/, "");
 const PORT = Number(process.env.PORT || 10000);
-const HOST = "0.0.0.0";
+const HOST = String(process.env.HOST || "0.0.0.0").trim() || "0.0.0.0";
 const WEB_PASSWORD = process.env.WEB_PASSWORD || "";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 const MC_PROFILES_FOLDER =
