@@ -1929,7 +1929,7 @@ async function handleDiscordInteraction(interaction) {
     } else if (command === "mc-command") {
       const text = interaction.options.getString("befehl", true);
       const output = await sendCommand(text);
-      await interaction.reply({ content: `Befehl ausgeführt.${output ? "\\n" + String(output).slice(0, 1200) : ""}`, ephemeral: true });
+      await interaction.reply({ content: `Befehl ausgeführt.${output ? "\n" + String(output).slice(0, 1200) : ""}`, ephemeral: true });
     }
   } catch (err) {
     const message = err?.message || String(err);
