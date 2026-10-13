@@ -10,6 +10,7 @@ const { Vec3 } = require("vec3");
 // ============================================================
 // FrozenRun – Web-Version ohne Discord
 // ============================================================
+const APP_VERSION = String(process.env.APP_VERSION || "2.0.10").trim().slice(0, 32);
 const PORT = Number(process.env.PORT || 10000);
 const HOST = "0.0.0.0";
 const WEB_PASSWORD = process.env.WEB_PASSWORD || "";
@@ -269,7 +270,10 @@ const body = JSON.stringify(data);
 res.writeHead(status, {
 "Content-Type": "application/json; charset=utf-8",
 "Cache-Control": "no-store",
-"X-Content-Type-Options": "nosniff"
+"X-Content-Type-Options": "nosniff",
+"Referrer-Policy": "same-origin",
+"X-Frame-Options": "DENY",
+"Permissions-Policy": "camera=(), microphone=(), geolocation=()"
 });
 res.end(body);
 }
@@ -277,7 +281,10 @@ function html(res, status, body) {
 res.writeHead(status, {
 "Content-Type": "text/html; charset=utf-8",
 "Cache-Control": "no-store",
-"X-Content-Type-Options": "nosniff"
+"X-Content-Type-Options": "nosniff",
+"Referrer-Policy": "same-origin",
+"X-Frame-Options": "DENY",
+"Permissions-Policy": "camera=(), microphone=(), geolocation=()"
 });
 res.end(body);
 }
@@ -294,7 +301,7 @@ const index = part.indexOf("=");
 if (index === -1) continue;
 const key = part.slice(0, index).trim();
 const value = part.slice(index + 1).trim();
-result[key] = decodeURIComponent(value);
+try { result[key] = decodeURIComponent(value); } catch { result[key] = value; }
 }
 return result;
 }
@@ -1071,7 +1078,7 @@ body{position:fixed!important;inset:0!important;padding:0!important}
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
-<div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">2.0.9</div></div></div>
+<div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">${APP_VERSION}</div></div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
 gib den Code ein.</p><p><a id="authLink" href="#" target="_blank" rel="noopener">Microsoft-Anmeldeseite öffnen</a></p><div
@@ -1107,7 +1114,7 @@ document.addEventListener('click',event=>{
 function toast(text){const t=$('toast');t.textContent=text;t.style.display='block';clearTimeout(window.__toast);window.
 __toast=setTimeout(()=>t.style.display='none',2800)}
 function fmtTime(s){return new Date(s).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent='2.0.9';const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
+function render(d){const versionValue=$('versionValue');if(versionValue)versionValue.textContent=APP_VERSION;const statusValue=$('statusValue');if(statusValue){statusValue.textContent=d.starting?'Verbinde...':(d.online?'Online':'Offline');statusValue.className='value '+(d.online?'online':'offline');}document.querySelectorAll('[data-action="start"]').forEach(b=>{b.classList.toggle('state-selected',!!d.online);b.setAttribute('aria-pressed',String(!!d.online));});document.querySelectorAll('[data-action="stop"]').forEach(b=>{b.classList.toggle('state-selected',!d.online&&!d.starting);b.setAttribute('aria-pressed',String(!d.online&&!d.starting));});$('uptime').textContent=d.uptime;$('money').textContent=d.moneyFormatted;$(
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.
 verificationUri)$('authLink').href=d.auth.verificationUri;}else{$('auth').classList.add('hidden');}
@@ -1277,7 +1284,7 @@ body{position:relative!important;touch-action:pan-x pan-y}
   stats.id='fr-status-list';
   stats.replaceChildren(...[money,uptime,coords,status].filter(Boolean));
   sidebar.appendChild(stats);
-  const version=document.createElement('div');version.className='fr-version';version.innerHTML='<span>Version</span> <strong>2.0.9</strong>';sidebar.appendChild(version);
+  const version=document.createElement('div');version.className='fr-version';version.innerHTML=`<span>Version</span> <strong>${APP_VERSION}</strong>`;sidebar.appendChild(version);
 
   const auth=wrap.querySelector('#auth');
   const appLayout=document.createElement('div');appLayout.className='fr-app-layout';
