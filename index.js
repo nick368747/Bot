@@ -1166,25 +1166,18 @@ command:v});$('commandInput').value='';toast('Befehl ausgeführt');await refresh
 $('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});$('moneyInput').addEventListener(
 'keydown',e=>{if(e.key==='Enter')$('moneySend').click()});$('commandInput').addEventListener('keydown',e=>{if(e.
 key==='Enter')$('commandSend').click()});
-// Version 2.0.9
-// Abmelden auf Desktop und iPad zuverlässig über eine direkte Navigation auslösen.
-// Die Serverseite entfernt dabei die Session und setzt das HttpOnly-Cookie zurück.
+// Abmelden: natives Formular verwenden, damit Safari und Desktop den Server erreichen.
 const logoutForm=document.getElementById('logoutForm');
 if(logoutForm){
   const logoutButton=logoutForm.querySelector('#logout');
+  logoutForm.method='POST';
+  logoutForm.action='/api/logout';
   if(logoutButton){
-    logoutButton.addEventListener('click',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      logoutButton.disabled=true;
+    logoutButton.type='submit';
+    logoutButton.addEventListener('click',function(){
       logoutButton.textContent='Abmelden…';
-      logoutForm.requestSubmit ? logoutForm.requestSubmit() : (window.location.href='/logout');
     });
   }
-  logoutForm.addEventListener('submit',function(event){
-    event.preventDefault();
-    return;
-  });
 }
 refresh();setInterval(refresh,2000);
 </script>
@@ -1325,8 +1318,8 @@ body{position:relative!important;touch-action:pan-x pan-y}
   // Safari/iPad navigiert dadurch direkt auf die serverseitige 303-Antwort und
   // das HttpOnly-Session-Cookie wird zuverlässig gelöscht.
   if(logoutForm && logoutButtonEarly){
-    logoutForm.method='GET';
-    logoutForm.action='/logout';
+    logoutForm.method='POST';
+    logoutForm.action='/api/logout';
     logoutButtonEarly.type='submit';
     logoutForm.onsubmit=null;
   }
