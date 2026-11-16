@@ -1702,6 +1702,25 @@ res.setHeader("Origin-Agent-Cluster", "?1");
 if (isSecureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
+if (req.method === "GET" && (url === "/v3" || url === "/v3/")) {
+  if (!getSession(req)) {
+    res.writeHead(302, { Location: "/login?next=%2Fv3" });
+    return res.end();
+  }
+  try {
+    const dashboard = fs.readFileSync(path.join(__dirname, "public", "v3", "index.html"));
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "same-origin",
+      "X-Frame-Options": "DENY"
+    });
+    return res.end(dashboard);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun 3.0 Dashboard-Datei fehlt." });
+  }
+}
 if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-icon.svg" || url === "/brand-logo.svg" || url === "/sw.js")) {
   const assets = {
     "/manifest.webmanifest": { file: "manifest.webmanifest", type: "application/manifest+json; charset=utf-8", cache: "no-cache" },
