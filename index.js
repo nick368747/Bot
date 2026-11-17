@@ -7,7 +7,7 @@ const { Authflow, Titles } = require("prismarine-auth");
 const prismarineChunk = require("prismarine-chunk");
 const prismarineRegistry = require("prismarine-registry");
 const { Vec3 } = require("vec3");
-const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
 // ============================================================
 // FrozenRun – Web-Version mit optionaler Discord-Anbindung
 // ============================================================
@@ -1960,24 +1960,26 @@ function buildDiscordDashboardComponents() {
     )
   ];
 }
-function buildDiscordDashboardText() {
-  return [
-    "📊 **FrozenRun – Status-Dashboard**",
-    "",
-    `🤖 **Minecraft:** ${mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline"}`,
-    `👤 **Spielername:** ${MC_USERNAME}`,
-    `🌐 **Server:** ${MC_HOST}:${MC_PORT}`,
-    `📍 **Koordinaten:** ${formatKoordinaten()}`,
-    `⏱️ **Uptime:** ${formatLiveUptime()}`,
-    `🏃 **Laufen:** ${laufenAktiv ? "🟢 Aktiv" : "⚪ Aus"}`,
-    `🌍 **Webportal:** Version ${APP_VERSION}`,
-    `💬 **Discord-Anbindung:** ${discordReady ? "🟢 Verbunden" : "🔴 Nicht verbunden"}`,
-    letzterFehler ? `⚠️ **Letzter Fehler:** ${String(letzterFehler).slice(0, 400)}` : "✅ **Letzter Fehler:** keiner bekannt",
-    "",
-    `Aktualisiert: <t:${Math.floor(Date.now() / 1000)}:R>`,
-    "",
-    "**Steuerung** · Nutze die Knöpfe unter dieser Nachricht."
-  ].join("\n");
+function buildDiscordDashboardEmbed() {
+  const status = mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline";
+  const embed = new EmbedBuilder()
+    .setColor(mcOnline ? 0x35d399 : connecting ? 0xf5b942 : 0x667085)
+    .setTitle("FrozenRun · Control Center")
+    .setDescription("Minecraft-Bot live überwachen und mit den Schaltflächen direkt steuern.")
+    .addFields(
+      { name: "Minecraft", value: status, inline: true },
+      { name: "Laufmodus", value: laufenAktiv ? "🟢 Aktiv" : "⚪ Aus", inline: true },
+      { name: "Discord", value: discordReady ? "🟢 Verbunden" : "🔴 Nicht verbunden", inline: true },
+      { name: "Spieler", value: String(MC_USERNAME).slice(0, 100), inline: true },
+      { name: "Server", value: `${MC_HOST}:${MC_PORT}`.slice(0, 100), inline: true },
+      { name: "Uptime", value: formatLiveUptime(), inline: true },
+      { name: "Koordinaten", value: formatKoordinaten(), inline: true },
+      { name: "Webportal", value: `Version ${APP_VERSION}`, inline: true },
+      { name: "Letzter Fehler", value: letzterFehler ? String(letzterFehler).slice(0, 900) : "Keiner bekannt", inline: false }
+    )
+    .setFooter({ text: "FrozenRun · Nutze die Buttons zur Steuerung" })
+    .setTimestamp();
+  return embed;
 }
 async function handleDiscordInteraction(interaction) {
   if (interaction.isButton()) {
@@ -1995,7 +1997,7 @@ async function handleDiscordInteraction(interaction) {
         case "fr_dashboard_stoprun": laufenStoppen(); break;
         default: return;
       }
-      await interaction.update({ content: buildDiscordDashboardText(), components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } });
+      await interaction.update({ embeds: [buildDiscordDashboardEmbed()], components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } });
     } catch (err) {
       const message = String(err?.message || err).slice(0, 1000);
       if (interaction.deferred || interaction.replied) await interaction.followUp({ content: "Aktion fehlgeschlagen: " + message, ephemeral: true }).catch(() => {});
@@ -2013,7 +2015,7 @@ async function handleDiscordInteraction(interaction) {
   try {
     if (command === "dashboard") {
       await interaction.reply({
-        content: buildDiscordDashboardText(),
+        embeds: [buildDiscordDashboardEmbed()],
         components: buildDiscordDashboardComponents(),
         ephemeral: true,
         allowedMentions: { parse: [] }
