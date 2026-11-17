@@ -1702,6 +1702,25 @@ res.setHeader("Origin-Agent-Cluster", "?1");
 if (isSecureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
+if (req.method === "GET" && (url === "/v4" || url === "/v4/")) {
+  if (!getSession(req)) {
+    res.writeHead(302, { Location: "/login?next=%2Fv4" });
+    return res.end();
+  }
+  try {
+    const dashboard = fs.readFileSync(path.join(__dirname, "public", "v4", "index.html"));
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "same-origin",
+      "X-Frame-Options": "DENY"
+    });
+    return res.end(dashboard);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun 4.0 Dashboard-Datei fehlt." });
+  }
+}
 if (req.method === "GET" && (url === "/v3" || url === "/v3/")) {
   if (!getSession(req)) {
     res.writeHead(302, { Location: "/login?next=%2Fv3" });
@@ -1759,7 +1778,13 @@ if (!getSession(req)) {
 res.writeHead(302, { Location: "/login" });
 return res.end();
 }
-return html(res, 200, DASHBOARD_HTML);
+try {
+const dashboard = fs.readFileSync(path.join(__dirname, "public", "v4", "index.html"));
+res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "same-origin", "X-Frame-Options": "DENY" });
+return res.end(dashboard);
+} catch (err) {
+return json(res, 404, { ok: false, error: "FrozenRun 4.0 Dashboard-Datei fehlt." });
+}
 }
 if (req.method === "POST" && url === "/api/login") {
 if (loginRateLimited(req)) return json(res, 429, { ok: false, error: "Zu viele Login-Versuche. Warte eine Minute." });
