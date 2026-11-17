@@ -1986,8 +1986,6 @@ function buildDiscordCommands() {
     new SlashCommandBuilder().setName("bot-home").setDescription("Führt /home afk aus"),
     new SlashCommandBuilder().setName("bot-run").setDescription("Startet die Lauf-Funktion"),
     new SlashCommandBuilder().setName("bot-stoprun").setDescription("Stoppt die Lauf-Funktion"),
-    new SlashCommandBuilder().setName("mc-chat").setDescription("Sendet eine Nachricht in den Minecraft-Chat")
-      .addStringOption(o => o.setName("nachricht").setDescription("Nachricht für Minecraft").setRequired(true).setMaxLength(256)),
     new SlashCommandBuilder().setName("mc-command").setDescription("Führt einen Minecraft-Befehl aus")
       .addStringOption(o => o.setName("befehl").setDescription("Befehl, mit oder ohne führenden Schrägstrich").setRequired(true).setMaxLength(256))
   ].map(command => command.toJSON());
@@ -2150,10 +2148,6 @@ async function handleDiscordInteraction(interaction) {
     } else if (command === "bot-stoprun") {
       laufenStoppen();
       await interaction.reply({ content: "Laufen wurde gestoppt.", ephemeral: true });
-    } else if (command === "mc-chat") {
-      const text = interaction.options.getString("nachricht", true);
-      await sendChatMessage(text);
-      await interaction.reply({ content: "Nachricht an Minecraft gesendet.", ephemeral: true });
     } else if (command === "mc-command") {
       const text = interaction.options.getString("befehl", true);
       const output = await sendCommand(text);
