@@ -79,6 +79,7 @@ const DISCORD_CLIENT_ID = String(process.env.DISCORD_CLIENT_ID || "").trim();
 const DISCORD_GUILD_ID = String(process.env.DISCORD_GUILD_ID || "").trim();
 const DISCORD_CHAT_CHANNEL_ID = String(process.env.DISCORD_CHAT_CHANNEL_ID || "").trim();
 const DISCORD_LOG_CHANNEL_ID = String(process.env.DISCORD_LOG_CHANNEL_ID || "").trim();
+const DISCORD_DASHBOARD_CHANNEL_ID = String(process.env.DISCORD_DASHBOARD_CHANNEL_ID || DISCORD_LOG_CHANNEL_ID || DISCORD_CHAT_CHANNEL_ID || "").trim();
 const DISCORD_ALLOWED_USER_IDS = new Set(String(process.env.DISCORD_ALLOWED_USER_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
 const DISCORD_ALLOWED_ROLE_IDS = new Set(String(process.env.DISCORD_ALLOWED_ROLE_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
 let discordClient = null;
@@ -86,6 +87,8 @@ let discordReady = false;
 let discordLastStatus = "";
 let discordStatusTimer = null;
 let discordChatRelayLastAt = 0;
+let discordDashboardMessage = null;
+let discordUptimeMessage = null;
 // Tatsächliche Bedrock-Welt für die Bildschirm-Ansicht.
 // Die Browser-Ansicht verwendet daraus die echten Blockpositionen statt einer Demo-Welt.
 const worldChunks = new Map();
@@ -1955,7 +1958,8 @@ async function sendDiscordChat(message) {
 }
 function buildDiscordCommands() {
   return [
-    new SlashCommandBuilder().setName("dashboard").setDescription("Zeigt alle Bot- und Minecraft-Statuswerte in Discord"),
+    new SlashCommandBuilder().setName("dashboard").setDescription("Zeigt das öffentliche, dauerhaft aktualisierte FrozenRun-Control-Center"),
+    new SlashCommandBuilder().setName("uptime").setDescription("Zeigt die Minecraft-Laufzeit live und dauerhaft in Discord"),
     new SlashCommandBuilder().setName("bot-status").setDescription("Zeigt Minecraft-Status und Koordinaten"),
     new SlashCommandBuilder().setName("bot-start").setDescription("Startet den Minecraft-Bot"),
     new SlashCommandBuilder().setName("bot-stop").setDescription("Stoppt den Minecraft-Bot"),
@@ -1968,6 +1972,61 @@ function buildDiscordCommands() {
     new SlashCommandBuilder().setName("mc-command").setDescription("Führt einen Minecraft-Befehl aus")
       .addStringOption(o => o.setName("befehl").setDescription("Befehl, mit oder ohne führenden Schrägstrich").setRequired(true).setMaxLength(256))
   ].map(command => command.toJSON());
+}
+function buildDiscordUptimeEmbed() {
+  return new EmbedBuilder()
+    .setColor(mcOnline ? 0x35d399 : connecting ? 0xf5b942 : 0x667085)
+    .setTitle("FrozenRun · Live Uptime")
+    .setDescription("Diese Nachricht wird automatisch aktualisiert und nach Bot-Neustarts wiederverwendet.")
+    .addFields(
+      { name: "Minecraft", value: mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline", inline: true },
+      { name: "Laufzeit", value: formatLiveUptime(), inline: true },
+      { name: "Spieler", value: String(MC_USERNAME).slice(0, 100), inline: true },
+      { name: "Server", value: `${MC_HOST}:${MC_PORT}`.slice(0, 100), inline: false }
+    )
+    .setFooter({ text: "FrozenRun · Live aktualisiert" })
+    .setTimestamp();
+}
+async function findOrCreateDiscordMessage(channel, title, payload) {
+  const recent = await channel.messages.fetch({ limit: 100 });
+  const existing = recent.find(message =>
+    message.author?.id === discordClient.user.id &&
+    message.embeds?.some(embed => embed.title === title)
+  );
+  if (existing) return existing.edit(payload);
+  return channel.send({ ...payload, allowedMentions: { parse: [] } });
+}
+async function updatePersistentDiscordMessages(createIfMissing = false) {
+  if (!discordReady || !discordClient || !DISCORD_DASHBOARD_CHANNEL_ID) return;
+  const channel = await discordClient.channels.fetch(DISCORD_DASHBOARD_CHANNEL_ID).catch(() => null);
+  if (!channel?.isTextBased() || !channel.messages) {
+    addEvent("Discord-Dashboard-Kanal nicht erreichbar. Prüfe DISCORD_DASHBOARD_CHANNEL_ID und Bot-Rechte.", "error");
+    return;
+  }
+  const dashboardPayload = { embeds: [buildDiscordDashboardEmbed()], components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } };
+  const uptimePayload = { embeds: [buildDiscordUptimeEmbed()], allowedMentions: { parse: [] } };
+  try {
+    if (discordDashboardMessage) {
+      discordDashboardMessage = await discordDashboardMessage.edit(dashboardPayload);
+    } else if (createIfMissing) {
+      discordDashboardMessage = await findOrCreateDiscordMessage(channel, "FrozenRun · Control Center", dashboardPayload);
+    } else {
+      const recent = await channel.messages.fetch({ limit: 100 });
+      discordDashboardMessage = recent.find(message => message.author?.id === discordClient.user.id && message.embeds?.some(embed => embed.title === "FrozenRun · Control Center")) || null;
+      if (discordDashboardMessage) discordDashboardMessage = await discordDashboardMessage.edit(dashboardPayload);
+    }
+    if (discordUptimeMessage) {
+      discordUptimeMessage = await discordUptimeMessage.edit(uptimePayload);
+    } else if (createIfMissing) {
+      discordUptimeMessage = await findOrCreateDiscordMessage(channel, "FrozenRun · Live Uptime", uptimePayload);
+    } else {
+      const recent = await channel.messages.fetch({ limit: 100 });
+      discordUptimeMessage = recent.find(message => message.author?.id === discordClient.user.id && message.embeds?.some(embed => embed.title === "FrozenRun · Live Uptime")) || null;
+      if (discordUptimeMessage) discordUptimeMessage = await discordUptimeMessage.edit(uptimePayload);
+    }
+  } catch (err) {
+    addEvent("Discord-Dashboard konnte nicht aktualisiert werden: " + (err?.message || err), "error");
+  }
 }
 function buildDiscordDashboardComponents() {
   const button = (customId, label, style, emoji) =>
@@ -2032,20 +2091,27 @@ async function handleDiscordInteraction(interaction) {
     return;
   }
   if (!interaction.isChatInputCommand()) return;
+  const command = interaction.commandName;
+  if (command === "dashboard" || command === "uptime") {
+    if (!DISCORD_DASHBOARD_CHANNEL_ID) {
+      await interaction.reply({ content: "Bitte setze DISCORD_DASHBOARD_CHANNEL_ID in Render auf die ID des öffentlichen Discord-Kanals.", ephemeral: true });
+      return;
+    }
+    await updatePersistentDiscordMessages(true);
+    const target = command === "uptime" ? discordUptimeMessage : discordDashboardMessage;
+    await interaction.reply({
+      content: target ? `Die öffentliche ${command === "uptime" ? "Uptime-Anzeige" : "Control-Center-Nachricht"} wurde aktualisiert: ${target.url}` : "Die öffentliche Nachricht konnte nicht erstellt werden. Prüfe die Bot-Rechte im Dashboard-Kanal.",
+      ephemeral: true,
+      allowedMentions: { parse: [] }
+    });
+    return;
+  }
   if (!discordCanControl(interaction)) {
     await interaction.reply({ content: "Du darfst den Minecraft-Bot nicht über Discord steuern. Bitte konfiguriere DISCORD_ALLOWED_USER_IDS / DISCORD_ALLOWED_ROLE_IDS oder gib Manage Server.", ephemeral: true });
     return;
   }
-  const command = interaction.commandName;
   try {
-    if (command === "dashboard") {
-      await interaction.reply({
-        embeds: [buildDiscordDashboardEmbed()],
-        components: buildDiscordDashboardComponents(),
-        ephemeral: true,
-        allowedMentions: { parse: [] }
-      });
-    } else if (command === "bot-status") {
+    if (command === "bot-status") {
       await interaction.reply({ content: discordStatusText(), ephemeral: true });
     } else if (command === "bot-start") {
       minecraftStarten();
@@ -2113,6 +2179,15 @@ async function startDiscordIntegration() {
       } catch (err) {
         addEvent(`Discord-Slash-Befehle konnten nicht registriert werden: ${err?.message || err}`, "error");
       }
+      if (DISCORD_DASHBOARD_CHANNEL_ID) {
+        await updatePersistentDiscordMessages(true);
+        discordStatusTimer = setInterval(() => {
+          void updatePersistentDiscordMessages(false);
+        }, 15000);
+        discordStatusTimer.unref?.();
+      } else {
+        addEvent("Dauerhaftes Discord-Control-Center nicht eingerichtet: DISCORD_DASHBOARD_CHANNEL_ID fehlt.", "warning");
+      }
       if (DISCORD_CHAT_CHANNEL_ID) {
         discordClient.on(Events.MessageCreate, async message => {
           if (message.author.bot || message.channelId !== DISCORD_CHAT_CHANNEL_ID) return;
@@ -2131,7 +2206,7 @@ async function startDiscordIntegration() {
       if (discordClient.user) {
         discordClient.user.setActivity("Minecraft-Status", { type: ActivityType.Watching });
       }
-      discordStatusTimer = setInterval(() => {
+      const presenceTimer = setInterval(() => {
         const status = `${mcOnline}|${connecting}|${formatKoordinaten()}|${laufenAktiv}`;
         if (status === discordLastStatus) return;
         discordLastStatus = status;
@@ -2142,7 +2217,7 @@ async function startDiscordIntegration() {
           });
         }
       }, 15000);
-      discordStatusTimer.unref?.();
+      presenceTimer.unref?.();
     });
     discordClient.on(Events.InteractionCreate, interaction => {
       void handleDiscordInteraction(interaction).catch(err => console.error("Discord-Interaction-Fehler:", err));
