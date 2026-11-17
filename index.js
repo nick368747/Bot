@@ -2207,7 +2207,8 @@ async function startDiscordIntegration() {
       } else {
         addEvent("Dauerhaftes Discord-Control-Center nicht eingerichtet: DISCORD_DASHBOARD_CHANNEL_ID fehlt.", "warning");
       }
-      // Absichtlich kein Discord->Minecraft-Chat-Relay: Der Bot sendet keine freien Chatnachrichten.      if (discordClient.user) {
+      // Absichtlich kein Discord->Minecraft-Chat-Relay: Der Bot sendet keine freien Chatnachrichten.
+      if (discordClient.user) {
         discordClient.user.setActivity("Minecraft-Status", { type: ActivityType.Watching });
       }
       const presenceTimer = setInterval(() => {
