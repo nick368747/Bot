@@ -735,27 +735,8 @@ setTimeout(() => minecraftVerbinden(), 1000);
 // ============================================================
 // Web-Aktionen
 // ============================================================
-async function sendChatMessage(message) {
-if (!mcOnline || !mcBot) throw new Error("Minecraft ist offline.");
-const text = sanitizeChatMessage(message);
-if (!text) throw new Error("Nachricht ist leer.");
-if (text.length > 256) throw new Error("Nachricht ist zu lang (max. 256 Zeichen).");
-if (text.startsWith("/")) throw new Error("Für Befehle bitte das Befehlsfeld verwenden.");
-mcBot.queue("text", {
-needs_translation: false,
-category: "authored",
-chat: "chat",
-whisper: "whisper",
-announcement: "announcement",
-type: "chat",
-source_name: mcBot.username || MC_USERNAME,
-message: text,
-xuid: "0",
-platform_chat_id: "",
-has_filtered_message: false,
-filtered_message: ""
-});
-addChat(MC_USERNAME, text, "self");
+async function sendChatMessage(_message) {
+throw new Error("Freie Minecraft-Chatnachrichten sind deaktiviert. Verwende ausschließlich /-Befehle über die Chat-Konsole.");
 }
 async function sendCommand(command) {
 if (!mcOnline) throw new Error("Minecraft ist offline.");
@@ -1705,6 +1686,26 @@ res.setHeader("Origin-Agent-Cluster", "?1");
 if (isSecureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
+if (req.method === "GET" && (url === "/chat" || url === "/chat/")) {
+  if (!getSession(req)) {
+    res.writeHead(302, { Location: "/login?next=%2Fchat" });
+    return res.end();
+  }
+  try {
+    const chatPage = fs.readFileSync(path.join(__dirname, "public", "v4", "chat.html"));
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "same-origin",
+      "X-Frame-Options": "DENY",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+    });
+    return res.end(chatPage);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun Chat-Konsole fehlt." });
+  }
+}
 if (req.method === "GET" && (url === "/world" || url === "/world/")) {
   if (!getSession(req)) {
     res.writeHead(302, { Location: "/login?next=%2Fworld" });
@@ -1893,9 +1894,7 @@ laufenStoppen();
 return json(res, 200, publicStatus());
 }
 if (url === "/api/minecraft/chat") {
-const body = await readJson(req);
-await sendChatMessage(body.message);
-return json(res, 200, publicStatus());
+return json(res, 403, { ok: false, error: "Freie Minecraft-Chatnachrichten sind deaktiviert. Verwende /chat für Slash-Befehle." });
 }
 if (url === "/api/minecraft/command") {
 const body = await readJson(req);
@@ -2208,22 +2207,7 @@ async function startDiscordIntegration() {
       } else {
         addEvent("Dauerhaftes Discord-Control-Center nicht eingerichtet: DISCORD_DASHBOARD_CHANNEL_ID fehlt.", "warning");
       }
-      if (DISCORD_CHAT_CHANNEL_ID) {
-        discordClient.on(Events.MessageCreate, async message => {
-          if (message.author.bot || message.channelId !== DISCORD_CHAT_CHANNEL_ID) return;
-          const text = sanitizeChatMessage(message.content);
-          if (!text || text.startsWith("/") || text.length > 256) return;
-          const now = Date.now();
-          if (now - discordChatRelayLastAt < 700) return;
-          discordChatRelayLastAt = now;
-          try {
-            await sendChatMessage(`[Discord] ${message.member?.displayName || message.author.username}: ${text}`.slice(0, 256));
-          } catch (err) {
-            await message.reply({ content: `Minecraft-Chat nicht gesendet: ${String(err?.message || err).slice(0, 500)}`, allowedMentions: { parse: [] } }).catch(() => {});
-          }
-        });
-      }
-      if (discordClient.user) {
+      // Absichtlich kein Discord->Minecraft-Chat-Relay: Der Bot sendet keine freien Chatnachrichten.      if (discordClient.user) {
         discordClient.user.setActivity("Minecraft-Status", { type: ActivityType.Watching });
       }
       const presenceTimer = setInterval(() => {
