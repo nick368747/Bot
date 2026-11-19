@@ -584,11 +584,7 @@ laufenStoppen();
 }
 function scheduleReconnect() {
 if (manuellGestoppt || reconnectTimer) return;
-reconnectTimer = setTimeout(() => {
-reconnectTimer = null;
-if (!manuellGestoppt) minecraftVerbinden();
-}, 30_000);
-addEvent("Automatischer Reconnect in 30 Sekunden geplant.", "info");
+addEvent("Minecraft getrennt. Automatischer Reconnect deaktiviert; bitte manuell starten.", "warning");
 }
 function minecraftVerbinden() {
 if (connecting || mcOnline || manuellGestoppt) return;
@@ -1868,6 +1864,7 @@ if (url.startsWith("/api/") && req.headers.origin) {
   catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
 }
 if (!requireSession(req, res)) return;
+if (["/api/minecraft/start","/api/minecraft/stop","/api/minecraft/reconnect","/api/minecraft/home","/api/minecraft/run","/api/minecraft/stoprun"].includes(url) && req.headers["x-frozenrun-confirm"] !== "yes") return json(res, 428, { ok: false, error: "Sicherheitsbestätigung fehlt." });
 try {
 if (url === "/api/minecraft/start") {
 minecraftStarten();
