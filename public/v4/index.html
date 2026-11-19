@@ -47,4 +47,5 @@ $("refresh").addEventListener("click",()=>{refresh();toast("Status wird aktualis
 $("commandForm").addEventListener("submit",async e=>{e.preventDefault();const input=$("commandInput");let command=input.value.trim();if(!command)return;if(!command.startsWith("/"))command="/"+command;if(!confirm("Minecraft-Befehl wirklich ausführen?\\n\\n"+command))return;try{await api("/api/minecraft/command",{command});input.value="";toast("Befehl ausgeführt");await refresh()}catch(err){toast(err.message,true)}});
 $("moneyForm").addEventListener("submit",async e=>{e.preventDefault();const input=$("moneyInput");if(!input.value.trim())return;if(!confirm("Zahlung wirklich ausführen?\\nBetrag: "+input.value))return;try{await api("/api/minecraft/pay",{amount:input.value});input.value="";toast("Überweisung ausgelöst");await refresh()}catch(err){toast(err.message,true)}});
 refresh();setInterval(refresh,5000);
+</script>
 </body></html>
