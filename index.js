@@ -80,18 +80,10 @@ const eventLog = [];
 const DISCORD_TOKEN = String(process.env.DISCORD_TOKEN || "").trim();
 const DISCORD_CLIENT_ID = String(process.env.DISCORD_CLIENT_ID || "").trim();
 const DISCORD_GUILD_ID = String(process.env.DISCORD_GUILD_ID || "").trim();
-// Ein gemeinsamer Discord-Kanal für Chat-Weiterleitung, Meldungen und Control-Center.
-// DISCORD_CHANNEL_ID ist die bevorzugte Einstellung; alte Variablen bleiben als Fallback kompatibel.
-const DISCORD_CHANNEL_ID = String(
-  process.env.DISCORD_CHANNEL_ID ||
-  process.env.DISCORD_DASHBOARD_CHANNEL_ID ||
-  process.env.DISCORD_LOG_CHANNEL_ID ||
-  process.env.DISCORD_CHAT_CHANNEL_ID ||
-  ""
-).trim();
-const DISCORD_CHAT_CHANNEL_ID = DISCORD_CHANNEL_ID;
-const DISCORD_LOG_CHANNEL_ID = DISCORD_CHANNEL_ID;
-const DISCORD_DASHBOARD_CHANNEL_ID = DISCORD_CHANNEL_ID;
+// Drei getrennte Discord-Kanäle: Minecraft-Chat, Control-Center und sämtliche Meldungen.
+const DISCORD_CHAT_CHANNEL_ID = String(process.env.DISCORD_CHAT_CHANNEL_ID || "").trim();
+const DISCORD_LOG_CHANNEL_ID = String(process.env.DISCORD_LOG_CHANNEL_ID || "").trim();
+const DISCORD_DASHBOARD_CHANNEL_ID = String(process.env.DISCORD_DASHBOARD_CHANNEL_ID || "").trim();
 const DISCORD_ALLOWED_USER_IDS = new Set(String(process.env.DISCORD_ALLOWED_USER_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
 const DISCORD_ALLOWED_ROLE_IDS = new Set(String(process.env.DISCORD_ALLOWED_ROLE_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
 let discordClient = null;
@@ -264,7 +256,7 @@ const entry = { time: nowIso(), message: String(message), type };
 eventLog.push(entry);
 while (eventLog.length > 150) eventLog.shift();
 console.log(`[${type.toUpperCase()}] ${message}`);
-if (type === "error" || type === "warning" || type === "success") void sendDiscordLog(message, type);
+void sendDiscordLog(message, type);
 }
 function addChat(source, message, type = "chat") {
 const entry = {
@@ -2099,7 +2091,7 @@ async function updatePersistentDiscordMessages(createIfMissing = false) {
   if (!discordReady || !discordClient || !DISCORD_DASHBOARD_CHANNEL_ID) return;
   const channel = await discordClient.channels.fetch(DISCORD_DASHBOARD_CHANNEL_ID).catch(() => null);
   if (!channel?.isTextBased() || !channel.messages) {
-    addEvent("Discord-Dashboard-Kanal nicht erreichbar. Prüfe DISCORD_CHANNEL_ID und Bot-Rechte.", "error");
+    addEvent("Discord-Dashboard-Kanal nicht erreichbar. Prüfe DISCORD_DASHBOARD_CHANNEL_ID und Bot-Rechte.", "error");
     return;
   }
   const dashboardPayload = { embeds: [buildDiscordDashboardEmbed()], components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } };
@@ -2193,7 +2185,7 @@ async function handleDiscordInteraction(interaction) {
   const command = interaction.commandName;
   if (command === "dashboard" || command === "uptime") {
     if (!DISCORD_DASHBOARD_CHANNEL_ID) {
-      await interaction.reply({ content: "Bitte setze DISCORD_CHANNEL_ID in Render auf die ID des öffentlichen Discord-Kanals.", ephemeral: true });
+      await interaction.reply({ content: "Bitte setze DISCORD_DASHBOARD_CHANNEL_ID in Render auf die ID des öffentlichen Discord-Kanals.", ephemeral: true });
       return;
     }
     await updatePersistentDiscordMessages(true);
@@ -2281,7 +2273,7 @@ async function startDiscordIntegration() {
         }, 15000);
         discordStatusTimer.unref?.();
       } else {
-        addEvent("Dauerhaftes Discord-Control-Center nicht eingerichtet: DISCORD_CHANNEL_ID fehlt.", "warning");
+        addEvent("Dauerhaftes Discord-Control-Center nicht eingerichtet: DISCORD_DASHBOARD_CHANNEL_ID fehlt.", "warning");
       }
       // Absichtlich kein Discord->Minecraft-Chat-Relay: Der Bot sendet keine freien Chatnachrichten.
       if (discordClient.user) {
