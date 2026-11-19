@@ -763,6 +763,7 @@ resetMinecraftState();
 addEvent("Minecraft-Bot wurde gestoppt.", "warning");
 }
 function minecraftNeuVerbinden() {
+if (!minecraftAuthReady || !minecraftAuthflow) throw new Error('Bitte zuerst über „Microsoft / Xbox anmelden“ anmelden und die Anmeldung abschließen.');
 minecraftStoppen();
 manuellGestoppt = false;
 setTimeout(() => minecraftVerbinden(), 1000);
@@ -1903,7 +1904,7 @@ if (url.startsWith("/api/") && req.headers.origin) {
   catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
 }
 if (!requireSession(req, res)) return;
-if (["/api/minecraft/start","/api/minecraft/stop","/api/minecraft/reconnect","/api/minecraft/home","/api/minecraft/run","/api/minecraft/stoprun"].includes(url) && req.headers["x-frozenrun-confirm"] !== "yes") return json(res, 428, { ok: false, error: "Sicherheitsbestätigung fehlt." });
+if (["/api/minecraft/auth","/api/minecraft/start","/api/minecraft/stop","/api/minecraft/reconnect","/api/minecraft/home","/api/minecraft/run","/api/minecraft/stoprun"].includes(url) && req.headers["x-frozenrun-confirm"] !== "yes") return json(res, 428, { ok: false, error: "Sicherheitsbestätigung fehlt." });
 try {
 if (url === "/api/minecraft/auth") {
 const result = minecraftAnmelden();
