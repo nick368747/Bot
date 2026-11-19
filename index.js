@@ -70,6 +70,9 @@ let laufenTimer = null;
 let laufenRichtungsTimer = null;
 let laufenRichtung = 0;
 let authInfo = null;
+let minecraftAuthflow = null;
+let minecraftAuthReady = false;
+let minecraftAuthPromise = null;
 let letzterFehler = null;
 const chatLog = [];
 const eventLog = [];
@@ -586,8 +589,57 @@ function scheduleReconnect() {
 if (manuellGestoppt || reconnectTimer) return;
 addEvent("Minecraft getrennt. Automatischer Reconnect deaktiviert; bitte manuell starten.", "warning");
 }
+function minecraftAnmelden() {
+if (minecraftAuthReady && minecraftAuthflow) {
+  authInfo = { status: "ready", method: "Microsoft / Xbox", verifiedAt: Date.now() };
+  return { ok: true, ready: true };
+}
+if (minecraftAuthPromise) return { ok: true, pending: true };
+authInfo = { status: "starting", method: "Microsoft / Xbox", verificationUri: null, userCode: null };
+try {
+  const authflow = new Authflow(MC_USERNAME, MC_PROFILES_FOLDER, {
+    flow: MC_AUTH_FLOW,
+    authTitle: MC_AUTH_TITLE,
+    deviceType: MC_AUTH_DEVICE,
+    forceRefresh: RESET_MINECRAFT_LOGIN
+  }, data => {
+    authInfo = {
+      status: "waiting",
+      method: "Microsoft / Xbox",
+      verificationUri: data.verification_uri || "https://microsoft.com/devicelogin",
+      userCode: data.user_code || null,
+      expiresIn: Number(data.expires_in || 0),
+      receivedAt: Date.now()
+    };
+    addEvent(`Microsoft-Anmeldung wartet auf Bestätigung: ${data.user_code || "Code nicht vorhanden"}`, "auth");
+  });
+  minecraftAuthflow = authflow;
+  minecraftAuthPromise = authflow.getXboxToken().then(() => {
+    minecraftAuthReady = true;
+    authInfo = { status: "ready", method: "Microsoft / Xbox", verifiedAt: Date.now() };
+    addEvent("Microsoft-/Xbox-Anmeldung erfolgreich. Minecraft kann jetzt separat gestartet werden.", "success");
+    return true;
+  }).catch(err => {
+    minecraftAuthReady = false;
+    minecraftAuthflow = null;
+    minecraftAuthPromise = null;
+    authInfo = { status: "error", method: "Microsoft / Xbox", error: err?.message || String(err) };
+    addEvent(`Microsoft-Anmeldung fehlgeschlagen: ${authInfo.error}`, "error");
+    throw err;
+  });
+  minecraftAuthPromise.catch(() => {});
+  return { ok: true, pending: true };
+} catch (err) {
+  minecraftAuthflow = null;
+  minecraftAuthReady = false;
+  minecraftAuthPromise = null;
+  authInfo = { status: "error", method: "Microsoft / Xbox", error: err?.message || String(err) };
+  throw err;
+}
+}
 function minecraftVerbinden() {
 if (connecting || mcOnline || manuellGestoppt) return;
+if (!minecraftAuthReady || !minecraftAuthflow) throw new Error('Bitte zuerst über „Microsoft / Xbox anmelden“ anmelden und die Anmeldung abschließen.');
 connecting = true;
 letzterFehler = null;
 authInfo = null;
@@ -597,22 +649,8 @@ clearTimeout(reconnectTimer);
 reconnectTimer = null;
 }
 addEvent(`Verbinde ${MC_USERNAME} mit ${MC_HOST}:${MC_PORT} ...`, "info");
-let authflow;
+const authflow = minecraftAuthflow;
 try {
-authflow = new Authflow(MC_USERNAME, MC_PROFILES_FOLDER, {
-flow: MC_AUTH_FLOW,
-authTitle: MC_AUTH_TITLE,
-deviceType: MC_AUTH_DEVICE,
-forceRefresh: RESET_MINECRAFT_LOGIN
-}, data => {
-authInfo = {
-verificationUri: data.verification_uri || null,
-userCode: data.user_code || null,
-expiresIn: Number(data.expires_in || 0),
-receivedAt: Date.now()
-};
-addEvent(`Microsoft-Anmeldung benötigt: ${data.user_code || "Code nicht vorhanden"}`, "auth");
-});
 const client = bedrock.createClient({
 host: MC_HOST,
 port: MC_PORT,
@@ -706,6 +744,7 @@ if (!manuellGestoppt) scheduleReconnect();
 }
 }
 function minecraftStarten() {
+if (!minecraftAuthReady || !minecraftAuthflow) throw new Error('Bitte zuerst über „Microsoft / Xbox anmelden“ anmelden und die Anmeldung abschließen.');
 manuellGestoppt = false;
 if (!mcOnline && !connecting) minecraftVerbinden();
 }
@@ -1866,6 +1905,10 @@ if (url.startsWith("/api/") && req.headers.origin) {
 if (!requireSession(req, res)) return;
 if (["/api/minecraft/start","/api/minecraft/stop","/api/minecraft/reconnect","/api/minecraft/home","/api/minecraft/run","/api/minecraft/stoprun"].includes(url) && req.headers["x-frozenrun-confirm"] !== "yes") return json(res, 428, { ok: false, error: "Sicherheitsbestätigung fehlt." });
 try {
+if (url === "/api/minecraft/auth") {
+const result = minecraftAnmelden();
+return json(res, 200, { ...publicStatus(), auth: authInfo, authPending: Boolean(result.pending), authReady: Boolean(result.ready) });
+}
 if (url === "/api/minecraft/start") {
 minecraftStarten();
 return json(res, 200, publicStatus());
