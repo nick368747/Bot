@@ -642,7 +642,7 @@ if (connecting || mcOnline || manuellGestoppt) return;
 if (!minecraftAuthReady || !minecraftAuthflow) throw new Error('Bitte zuerst über „Microsoft / Xbox anmelden“ anmelden und die Anmeldung abschließen.');
 connecting = true;
 letzterFehler = null;
-authInfo = null;
+authInfo = { status: "ready", method: "Microsoft / Xbox", verifiedAt: Date.now() };
 const generation = ++connectionGeneration;
 if (reconnectTimer) {
 clearTimeout(reconnectTimer);
