@@ -2155,6 +2155,7 @@ function buildDiscordCommands() {
   return [
     new SlashCommandBuilder().setName("dashboard").setDescription("Zeigt das öffentliche, dauerhaft aktualisierte FrozenRun-Control-Center"),
     new SlashCommandBuilder().setName("uptime").setDescription("Zeigt die Minecraft-Laufzeit live und dauerhaft in Discord"),
+    new SlashCommandBuilder().setName("webseite").setDescription("Zeigt den Webportal-Link und erklärt die FrozenRun-Webseite"),
     new SlashCommandBuilder().setName("bot-status").setDescription("Zeigt Minecraft-Status und Koordinaten"),
     new SlashCommandBuilder().setName("bot-start").setDescription("Startet den Minecraft-Bot"),
     new SlashCommandBuilder().setName("bot-stop").setDescription("Stoppt den Minecraft-Bot"),
@@ -2286,6 +2287,31 @@ async function handleDiscordInteraction(interaction) {
   }
   if (!interaction.isChatInputCommand()) return;
   const command = interaction.commandName;
+  if (command === "webseite") {
+    const websiteUrl = `${PUBLIC_URL}/login`;
+    const explanation = [
+      "**🌐 FrozenRun – Das Webportal**",
+      "",
+      "Über die FrozenRun-Webseite kannst du den Minecraft-Bot und seine Funktionen bequem über eine übersichtliche Browser-Oberfläche verwalten. Du findest dort den aktuellen Verbindungsstatus, den Minecraft-Spieler und Server, die Laufzeit, Koordinaten sowie weitere Status- und Ereignisinformationen.",
+      "",
+      "**Was kannst du dort machen?**",
+      "• Den Minecraft-Bot starten, stoppen oder neu verbinden.",
+      "• Die Home-AFK-Funktion und den Laufmodus steuern.",
+      "• Den Live-Status, die Koordinaten und die Uptime im Blick behalten.",
+      "• Die verfügbaren Informationen und Meldungen zentral im Dashboard ansehen.",
+      "",
+      "**🔐 Anmeldung und Sicherheit**",
+      "Zum Öffnen des Portals verwendest du den Link unten. Für geschützte Steuerungsfunktionen musst du dich mit dem eingerichteten Webportal-Passwort anmelden. Gib dein Passwort niemals weiter und teile keine privaten Zugangsdaten im Discord-Chat.",
+      "",
+      "**ℹ️ Wichtig**",
+      "Dieser Befehl veröffentlicht den Webseiten-Link nur dann, wenn jemand **/webseite** aufruft. FrozenRun postet diese Erklärung und den Link nicht automatisch und sendet sie auch nicht von selbst in andere Kanäle. Die Antwort auf den Befehl ist öffentlich sichtbar, damit alle Mitglieder des jeweiligen Kanals den Link nutzen können.",
+      "",
+      "**➡️ Hier geht es zur Webseite:**",
+      websiteUrl
+    ].join("\\n");
+    await interaction.reply({ content: explanation, ephemeral: false, allowedMentions: { parse: [] } });
+    return;
+  }
   if (command === "dashboard" || command === "uptime") {
     if (!DISCORD_DASHBOARD_CHANNEL_ID) {
       await interaction.reply({ content: "Bitte setze DISCORD_DASHBOARD_CHANNEL_ID in Render auf die ID des öffentlichen Discord-Kanals.", ephemeral: true });
