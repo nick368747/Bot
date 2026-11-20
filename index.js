@@ -2224,16 +2224,13 @@ async function updatePersistentDiscordMessages(createIfMissing = false) {
 function buildDiscordDashboardComponents() {
   const button = (customId, label, style, emoji) =>
     new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style).setEmoji(emoji);
+  const botIsOn = mcOnline || connecting;
   return [
     new ActionRowBuilder().addComponents(
-      button("fr_dashboard_start", "Ein", ButtonStyle.Success, "▶️"),
-      button("fr_dashboard_stop", "Aus", ButtonStyle.Danger, "⏹️"),
+      button("fr_dashboard_toggle_bot", botIsOn ? "Bot Aus" : "Bot Ein", botIsOn ? ButtonStyle.Danger : ButtonStyle.Success, botIsOn ? "⏹️" : "▶️"),
       button("fr_dashboard_reconnect", "Neu verbinden", ButtonStyle.Secondary, "🔄"),
       button("fr_dashboard_home", "Home AFK", ButtonStyle.Primary, "🏠"),
-      button("fr_dashboard_run", "Laufen", ButtonStyle.Success, "🏃")
-    ),
-    new ActionRowBuilder().addComponents(
-      button("fr_dashboard_stoprun", "Laufen stoppen", ButtonStyle.Danger, "🛑")
+      button("fr_dashboard_toggle_run", laufenAktiv ? "Laufen Aus" : "Laufen", laufenAktiv ? ButtonStyle.Danger : ButtonStyle.Success, laufenAktiv ? "🛑" : "🏃")
     )
   ];
 }
@@ -2266,12 +2263,16 @@ async function handleDiscordInteraction(interaction) {
     }
     try {
       switch (interaction.customId) {
-        case "fr_dashboard_start": minecraftStarten(); break;
-        case "fr_dashboard_stop": minecraftStoppen(); break;
+        case "fr_dashboard_toggle_bot":
+          if (mcOnline || connecting) minecraftStoppen();
+          else minecraftStarten();
+          break;
         case "fr_dashboard_reconnect": minecraftNeuVerbinden(); break;
         case "fr_dashboard_home": await homeAfk(); break;
-        case "fr_dashboard_run": laufenStarten(); break;
-        case "fr_dashboard_stoprun": laufenStoppen(); break;
+        case "fr_dashboard_toggle_run":
+          if (laufenAktiv) laufenStoppen();
+          else laufenStarten();
+          break;
         default: return;
       }
       await interaction.update({ embeds: [buildDiscordDashboardEmbed()], components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } });
