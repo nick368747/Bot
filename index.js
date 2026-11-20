@@ -7,7 +7,7 @@ const { Authflow, Titles } = require("prismarine-auth");
 const prismarineChunk = require("prismarine-chunk");
 const prismarineRegistry = require("prismarine-registry");
 const { Vec3 } = require("vec3");
-const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
 // ============================================================
 // FrozenRun – Web-Version mit optionaler Discord-Anbindung
 // ============================================================
@@ -70,15 +70,66 @@ let laufenTimer = null;
 let laufenRichtungsTimer = null;
 let laufenRichtung = 0;
 let authInfo = null;
+let minecraftAuthflow = null;
+let minecraftAuthReady = false;
+let minecraftAuthPromise = null;
 let letzterFehler = null;
 const chatLog = [];
 const eventLog = [];
+const uptimeHistoryFile = path.join(process.env.DATA_DIR || __dirname, "frozenrun-uptime.json");
+let uptimeSessions = [];
+let activeUptimeStartedAt = null;
+try {
+  const saved = JSON.parse(fs.readFileSync(uptimeHistoryFile, "utf8"));
+  if (Array.isArray(saved)) uptimeSessions = saved.filter(x => Number.isFinite(x.start) && (x.end === null || Number.isFinite(x.end)));
+} catch {}
+function saveUptimeHistory() {
+  try { fs.writeFileSync(uptimeHistoryFile, JSON.stringify(uptimeSessions.slice(-5000)), "utf8"); }
+  catch (err) { console.error("Uptime-Verlauf konnte nicht gespeichert werden:", err?.message || err); }
+}
+function beginUptimeSession() {
+  if (activeUptimeStartedAt !== null) return;
+  activeUptimeStartedAt = Date.now();
+  uptimeSessions.push({ start: activeUptimeStartedAt, end: null });
+  saveUptimeHistory();
+}
+function endUptimeSession() {
+  if (activeUptimeStartedAt === null) return;
+  const current = uptimeSessions.findLast(x => x.start === activeUptimeStartedAt && x.end === null);
+  if (current) current.end = Date.now();
+  activeUptimeStartedAt = null;
+  saveUptimeHistory();
+}
+function uptimeOverview() {
+  const now = Date.now();
+  const periods = { week: 7 * 86400000, month: 30 * 86400000, year: 365 * 86400000 };
+  const result = {};
+  for (const [key, duration] of Object.entries(periods)) {
+    const from = now - duration;
+    let onlineMs = 0;
+    for (const session of uptimeSessions) {
+      const start = Math.max(from, session.start);
+      const end = Math.min(now, session.end ?? now);
+      if (end > start) onlineMs += end - start;
+    }
+    result[key] = { onlineMs, onlineSeconds: Math.floor(onlineMs / 1000), percentage: Math.min(100, onlineMs / duration * 100) };
+  }
+  return result;
+}
+function formatDurationLong(seconds) {
+  const s = Math.max(0, Math.floor(seconds || 0));
+  const days = Math.floor(s / 86400), hours = Math.floor((s % 86400) / 3600), minutes = Math.floor((s % 3600) / 60);
+  return days ? days + " T. " + hours + " Std. " : hours + " Std. " + minutes + " Min.";
+}
+
 // Discord bleibt optional: Ohne DISCORD_TOKEN läuft die Webseite unverändert weiter.
 const DISCORD_TOKEN = String(process.env.DISCORD_TOKEN || "").trim();
 const DISCORD_CLIENT_ID = String(process.env.DISCORD_CLIENT_ID || "").trim();
 const DISCORD_GUILD_ID = String(process.env.DISCORD_GUILD_ID || "").trim();
+// Drei getrennte Discord-Kanäle: Minecraft-Chat, Control-Center und sämtliche Meldungen.
 const DISCORD_CHAT_CHANNEL_ID = String(process.env.DISCORD_CHAT_CHANNEL_ID || "").trim();
 const DISCORD_LOG_CHANNEL_ID = String(process.env.DISCORD_LOG_CHANNEL_ID || "").trim();
+const DISCORD_DASHBOARD_CHANNEL_ID = String(process.env.DISCORD_DASHBOARD_CHANNEL_ID || "").trim();
 const DISCORD_ALLOWED_USER_IDS = new Set(String(process.env.DISCORD_ALLOWED_USER_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
 const DISCORD_ALLOWED_ROLE_IDS = new Set(String(process.env.DISCORD_ALLOWED_ROLE_IDS || "").split(",").map(v => v.trim()).filter(Boolean));
 let discordClient = null;
@@ -86,6 +137,8 @@ let discordReady = false;
 let discordLastStatus = "";
 let discordStatusTimer = null;
 let discordChatRelayLastAt = 0;
+let discordDashboardMessage = null;
+let discordUptimeMessage = null;
 // Tatsächliche Bedrock-Welt für die Bildschirm-Ansicht.
 // Die Browser-Ansicht verwendet daraus die echten Blockpositionen statt einer Demo-Welt.
 const worldChunks = new Map();
@@ -249,7 +302,7 @@ const entry = { time: nowIso(), message: String(message), type };
 eventLog.push(entry);
 while (eventLog.length > 150) eventLog.shift();
 console.log(`[${type.toUpperCase()}] ${message}`);
-if (type === "error" || type === "warning" || type === "success") void sendDiscordLog(message, type);
+void sendDiscordLog(message, type);
 }
 function addChat(source, message, type = "chat") {
 const entry = {
@@ -408,6 +461,7 @@ money: aktuellesGeld,
 moneyFormatted: formatGeld(aktuellesGeld),
 coordinates: { ...aktuelleKoordinaten },
 coordinatesFormatted: formatKoordinaten(),
+uptimeOverview: uptimeOverview(),
 rotation: { ...aktuelleRotation },
 running: laufenAktiv,
 auth: authInfo,
@@ -572,6 +626,7 @@ addEvent(`Laufen: ${err.message}`, "error");
 // Minecraft verbinden
 // ============================================================
 function resetMinecraftState() {
+if (mcOnline) endUptimeSession();
 mcOnline = false;
 minecraftStartzeit = null;
 minecraftUuid = null;
@@ -581,39 +636,70 @@ laufenStoppen();
 }
 function scheduleReconnect() {
 if (manuellGestoppt || reconnectTimer) return;
-reconnectTimer = setTimeout(() => {
-reconnectTimer = null;
-if (!manuellGestoppt) minecraftVerbinden();
-}, 30_000);
-addEvent("Automatischer Reconnect in 30 Sekunden geplant.", "info");
+addEvent("Minecraft getrennt. Automatischer Reconnect deaktiviert; bitte manuell starten.", "warning");
+}
+function minecraftAnmelden() {
+if (minecraftAuthReady && minecraftAuthflow) {
+  authInfo = { status: "ready", method: "Microsoft / Xbox", verifiedAt: Date.now() };
+  return { ok: true, ready: true };
+}
+if (minecraftAuthPromise) return { ok: true, pending: true };
+authInfo = { status: "starting", method: "Microsoft / Xbox", verificationUri: null, userCode: null };
+try {
+  const authflow = new Authflow(MC_USERNAME, MC_PROFILES_FOLDER, {
+    flow: MC_AUTH_FLOW,
+    authTitle: MC_AUTH_TITLE,
+    deviceType: MC_AUTH_DEVICE,
+    forceRefresh: RESET_MINECRAFT_LOGIN
+  }, data => {
+    authInfo = {
+      status: "waiting",
+      method: "Microsoft / Xbox",
+      verificationUri: data.verification_uri || "https://microsoft.com/devicelogin",
+      userCode: data.user_code || null,
+      expiresIn: Number(data.expires_in || 0),
+      receivedAt: Date.now()
+    };
+    addEvent(`Microsoft-Anmeldung wartet auf Bestätigung: ${data.user_code || "Code nicht vorhanden"}`, "auth");
+  });
+  minecraftAuthflow = authflow;
+  minecraftAuthPromise = authflow.getXboxToken().then(() => {
+    minecraftAuthReady = true;
+    authInfo = { status: "ready", method: "Microsoft / Xbox", verifiedAt: Date.now() };
+    addEvent("Microsoft-/Xbox-Anmeldung erfolgreich. Minecraft kann jetzt separat gestartet werden.", "success");
+    return true;
+  }).catch(err => {
+    minecraftAuthReady = false;
+    minecraftAuthflow = null;
+    minecraftAuthPromise = null;
+    authInfo = { status: "error", method: "Microsoft / Xbox", error: err?.message || String(err) };
+    addEvent(`Microsoft-Anmeldung fehlgeschlagen: ${authInfo.error}`, "error");
+    throw err;
+  });
+  minecraftAuthPromise.catch(() => {});
+  return { ok: true, pending: true };
+} catch (err) {
+  minecraftAuthflow = null;
+  minecraftAuthReady = false;
+  minecraftAuthPromise = null;
+  authInfo = { status: "error", method: "Microsoft / Xbox", error: err?.message || String(err) };
+  throw err;
+}
 }
 function minecraftVerbinden() {
 if (connecting || mcOnline || manuellGestoppt) return;
+if (!minecraftAuthReady || !minecraftAuthflow) throw new Error('Bitte zuerst über „Microsoft / Xbox anmelden“ anmelden und die Anmeldung abschließen.');
 connecting = true;
 letzterFehler = null;
-authInfo = null;
+authInfo = { status: "ready", method: "Microsoft / Xbox", verifiedAt: Date.now() };
 const generation = ++connectionGeneration;
 if (reconnectTimer) {
 clearTimeout(reconnectTimer);
 reconnectTimer = null;
 }
 addEvent(`Verbinde ${MC_USERNAME} mit ${MC_HOST}:${MC_PORT} ...`, "info");
-let authflow;
+const authflow = minecraftAuthflow;
 try {
-authflow = new Authflow(MC_USERNAME, MC_PROFILES_FOLDER, {
-flow: MC_AUTH_FLOW,
-authTitle: MC_AUTH_TITLE,
-deviceType: MC_AUTH_DEVICE,
-forceRefresh: RESET_MINECRAFT_LOGIN
-}, data => {
-authInfo = {
-verificationUri: data.verification_uri || null,
-userCode: data.user_code || null,
-expiresIn: Number(data.expires_in || 0),
-receivedAt: Date.now()
-};
-addEvent(`Microsoft-Anmeldung benötigt: ${data.user_code || "Code nicht vorhanden"}`, "auth");
-});
 const client = bedrock.createClient({
 host: MC_HOST,
 port: MC_PORT,
@@ -634,6 +720,7 @@ if (generation !== connectionGeneration) return;
 mcOnline = true;
 connecting = false;
 minecraftStartzeit = Date.now();
+beginUptimeSession();
 letzterFehler = null;
 authInfo = null;
 if (packet.runtime_entity_id !== undefined) playerEntityId = Number(packet.runtime_entity_id);
@@ -707,6 +794,7 @@ if (!manuellGestoppt) scheduleReconnect();
 }
 }
 function minecraftStarten() {
+if (!minecraftAuthReady || !minecraftAuthflow) throw new Error('Bitte zuerst über „Microsoft / Xbox anmelden“ anmelden und die Anmeldung abschließen.');
 manuellGestoppt = false;
 if (!mcOnline && !connecting) minecraftVerbinden();
 }
@@ -720,11 +808,13 @@ laufenStoppen();
 if (mcBot) {
 try { mcBot.disconnect("FrozenRun gestoppt"); } catch {}
 }
+endUptimeSession();
 mcBot = null;
 resetMinecraftState();
 addEvent("Minecraft-Bot wurde gestoppt.", "warning");
 }
 function minecraftNeuVerbinden() {
+if (!minecraftAuthReady || !minecraftAuthflow) throw new Error('Bitte zuerst über „Microsoft / Xbox anmelden“ anmelden und die Anmeldung abschließen.');
 minecraftStoppen();
 manuellGestoppt = false;
 setTimeout(() => minecraftVerbinden(), 1000);
@@ -732,27 +822,8 @@ setTimeout(() => minecraftVerbinden(), 1000);
 // ============================================================
 // Web-Aktionen
 // ============================================================
-async function sendChatMessage(message) {
-if (!mcOnline || !mcBot) throw new Error("Minecraft ist offline.");
-const text = sanitizeChatMessage(message);
-if (!text) throw new Error("Nachricht ist leer.");
-if (text.length > 256) throw new Error("Nachricht ist zu lang (max. 256 Zeichen).");
-if (text.startsWith("/")) throw new Error("Für Befehle bitte das Befehlsfeld verwenden.");
-mcBot.queue("text", {
-needs_translation: false,
-category: "authored",
-chat: "chat",
-whisper: "whisper",
-announcement: "announcement",
-type: "chat",
-source_name: mcBot.username || MC_USERNAME,
-message: text,
-xuid: "0",
-platform_chat_id: "",
-has_filtered_message: false,
-filtered_message: ""
-});
-addChat(MC_USERNAME, text, "self");
+async function sendChatMessage(_message) {
+throw new Error("Freie Minecraft-Chatnachrichten sind deaktiviert. Verwende ausschließlich /-Befehle über die Chat-Konsole.");
 }
 async function sendCommand(command) {
 if (!mcOnline) throw new Error("Minecraft ist offline.");
@@ -788,7 +859,39 @@ return { amount, output: firstOutput };
 // ============================================================
 const LOGIN_HTML = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#4267d5"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Block Bande"><link rel="icon" href="/app-icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/app-icon.svg"><title>Block Bande – Botportal</title>
-<style>*{box-sizing:border-box}html,body{width:100%;height:100%;min-height:0;margin:0;overflow:hidden}html{background:#d9d5ff}body{height:100vh;height:100dvh;min-height:0;background:linear-gradient(125deg,#bfd7ff 0%,#d9d5ff 48%,#ffc4d4 100%);color:#171717;font-family:"Comic Sans MS","Segoe Print",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.card{width:min(620px,100%);flex:0 0 auto;overflow:visible;background:transparent;border:0;border-radius:0;padding:clamp(12px,4vw,34px) clamp(8px,3vw,28px);box-shadow:none;position:relative;margin:auto}.logo{width:100%;font-size:clamp(40px,8vw,76px);font-weight:1000;line-height:1.05;text-align:center;margin:0 0 18px;letter-spacing:-2px;overflow-wrap:anywhere}.brand-blue{color:#4779c7}.brand-red{color:#f04444}.portal{text-align:center;font-size:clamp(25px,5vw,40px);font-weight:900;margin:0 0 clamp(20px,6vh,46px)}input,button{width:100%;min-height:50px;border-radius:6px;border:4px solid #202020;font-size:22px;font-family:inherit}input{display:block;max-width:270px;margin:0 auto 12px;background:#d5d5d5;color:#171717;padding:0 14px}input::placeholder{color:#171717;opacity:1}button{display:block;max-width:270px;margin:auto;background:#d5d5d5;color:#171717;font-weight:900;cursor:pointer}button:disabled{opacity:.7;cursor:wait}button:active{transform:translateY(1px)}#msg{margin-top:14px;text-align:center;color:#a51d1d;min-height:22px;overflow-wrap:anywhere}.small{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:13px;color:#333;margin:0;z-index:5;pointer-events:none}.login-scene{display:block;width:min(100%,560px);height:auto;max-height:clamp(76px,18vh,150px);margin:0 auto 10px}.login-brand-image{display:block;width:min(100%,660px);height:auto;max-height:clamp(44px,12vh,120px);margin:0 auto 12px;overflow:visible}.login-brand-wordmark{display:flex;justify-content:center;align-items:center;gap:.14em;width:100%;font-size:clamp(40px,8vw,76px);font-weight:1000;line-height:1.05;letter-spacing:-2px;white-space:nowrap}.login-brand-wordmark .brand-blue,.login-brand-wordmark .brand-red{display:inline-block}.dashboard-brand-logo{width:clamp(190px,24vw,330px);max-height:70px}.top .title{display:flex;align-items:center;gap:8px;min-width:0}.dashboard-title-suffix{font-size:.48em;white-space:nowrap}@media(max-width:700px){.login-brand-image{width:min(100%,520px)}.dashboard-brand-logo{width:clamp(130px,27vw,210px);max-height:54px}.dashboard-title-suffix{display:none}.top{gap:6px}.card{padding-left:8px;padding-right:8px}.login-brand-wordmark{font-size:clamp(34px,9vw,58px);letter-spacing:-1.5px}}@media(max-height:520px){body{justify-content:center}.card{margin:0 auto;padding:4px 8px}.login-scene{max-height:68px;margin-bottom:4px}.login-brand-image{max-height:48px;margin-bottom:4px}.portal{margin-bottom:8px;font-size:24px}input,button{min-height:42px;font-size:18px}#msg{margin-top:5px}}</style></head><body><main class="card"><div class="logo login-brand-wordmark" role="img" aria-label="Block Bande"><span class="brand-blue">Block</span><span class="brand-red">Bande</span></div><div class="portal">Botportal</div><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button id="loginSubmit" type="submit" style="position:static;width:min(270px,100%);min-height:50px;margin:10px auto 0;padding:8px 14px;border:4px solid #202020;border-radius:6px;background:#d5d5d5;color:#171717;font-size:22px;font-weight:900;cursor:pointer">Anmelden</button></form><div id="msg"></div><div class="small" aria-label="Anwendungsversion">Version: 2.0.9</div></
+<style>
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;min-height:100%;margin:0}
+html{background:#080d1b}
+body{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));overflow:auto;color:#edf3ff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 16% 14%,rgba(49,91,190,.32),transparent 38%),radial-gradient(ellipse at 88% 82%,rgba(119,55,190,.24),transparent 40%),linear-gradient(145deg,#080d1b 0%,#101a32 52%,#0a1021 100%)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(140,170,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(140,170,255,.08) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,black,transparent 90%)}
+.card{position:relative;width:min(460px,100%);margin:auto;padding:clamp(26px,6vw,44px);border:1px solid rgba(151,178,255,.2);border-radius:26px;background:linear-gradient(155deg,rgba(25,38,68,.94),rgba(13,22,43,.96));box-shadow:0 30px 100px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.07);backdrop-filter:blur(18px)}
+.logo{width:100%;margin:0 0 18px;text-align:center;font-size:clamp(38px,8vw,58px);font-weight:950;line-height:1.05;letter-spacing:-2.5px;white-space:nowrap}
+.brand-blue{color:#76aaff;text-shadow:0 0 28px rgba(78,145,255,.28)}
+.brand-red{color:#ff7188;text-shadow:0 0 28px rgba(255,88,124,.2)}
+.portal{text-align:center;color:#f4f7ff;font-size:clamp(22px,5vw,29px);font-weight:850;letter-spacing:-.6px;margin:0 0 8px}
+.login-subtitle{text-align:center;color:#a9b8d6;font-size:14px;line-height:1.6;margin:0 auto 28px;max-width:310px}
+#form{display:grid;gap:12px}
+input,button{width:100%;min-height:54px;border-radius:13px;font:inherit}
+input{border:1px solid rgba(160,185,255,.25);background:rgba(4,11,25,.68);color:#f4f7ff;padding:0 16px;font-size:16px;outline:none;transition:border-color .18s,box-shadow .18s}
+input::placeholder{color:#7889a9}
+input:focus{border-color:#76aaff;box-shadow:0 0 0 4px rgba(83,143,255,.16)}
+button{border:1px solid rgba(173,205,255,.35);background:linear-gradient(110deg,#438cff,#7659ef);color:white;font-size:16px;font-weight:850;letter-spacing:.2px;cursor:pointer;box-shadow:0 10px 28px rgba(63,112,239,.25);transition:transform .18s,filter .18s,box-shadow .18s}
+button:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 14px 34px rgba(63,112,239,.34)}
+button:active:not(:disabled){transform:translateY(0)}
+button:disabled{opacity:.68;cursor:wait}
+#msg{min-height:22px;margin-top:15px;text-align:center;color:#ff9cae;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.small{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));font-size:11px;color:#7182a4;z-index:5;pointer-events:none}
+.login-scene{display:block;width:min(100%,560px);height:auto;max-height:clamp(76px,18vh,150px);margin:0 auto 10px}
+.login-brand-image{display:block;width:min(100%,660px);height:auto;max-height:clamp(44px,12vh,120px);margin:0 auto 12px;overflow:visible}
+.login-brand-wordmark{display:flex;justify-content:center;align-items:center;gap:.14em;width:100%;font-size:clamp(38px,8vw,58px);font-weight:950;line-height:1.05;letter-spacing:-2px;white-space:nowrap}
+.login-brand-wordmark .brand-blue,.login-brand-wordmark .brand-red{display:inline-block}
+.dashboard-brand-logo{width:clamp(190px,24vw,330px);max-height:70px}
+.top .title{display:flex;align-items:center;gap:8px;min-width:0}
+.dashboard-title-suffix{font-size:.48em;white-space:nowrap}
+@media(max-width:700px){.login-brand-image{width:min(100%,520px)}.dashboard-brand-logo{width:clamp(130px,27vw,210px);max-height:54px}.dashboard-title-suffix{display:none}.top{gap:6px}.card{padding:26px 22px}.login-brand-wordmark{font-size:clamp(34px,9vw,52px);letter-spacing:-1.5px}}
+@media(max-height:520px){body{place-items:start center}.card{margin:auto;padding:18px 22px}.logo{font-size:36px;margin-bottom:10px}.portal{font-size:22px}.login-subtitle{margin-bottom:14px}input,button{min-height:46px}}
+</style></head><body><main class="card"><div class="logo login-brand-wordmark" role="img" aria-label="Block Bande"><span class="brand-blue">Block</span><span class="brand-red">Bande</span></div><div class="portal">Botportal</div><p class="login-subtitle">Melde dich an, um das FrozenRun Control Center zu öffnen.</p><form id="form"><input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required><button id="loginSubmit" type="submit" style="position:static;width:min(270px,100%);min-height:50px;margin:10px auto 0;padding:8px 14px;border:4px solid #202020;border-radius:6px;background:#d5d5d5;color:#171717;font-size:22px;font-weight:900;cursor:pointer">Anmelden</button></form><div id="msg"></div><div class="small" aria-label="Anwendungsversion">Version: 2.0.9</div></
 main><script>
 (function(){
  var form=document.getElementById('form'),input=document.getElementById('password'),button=document.getElementById('loginSubmit'),msg=document.getElementById('msg'),busy=false;
@@ -1702,6 +1805,84 @@ res.setHeader("Origin-Agent-Cluster", "?1");
 if (isSecureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
+if (req.method === "GET" && (url === "/chat" || url === "/chat/")) {
+  if (!getSession(req)) {
+    res.writeHead(302, { Location: "/login?next=%2Fchat" });
+    return res.end();
+  }
+  try {
+    const chatPage = fs.readFileSync(path.join(__dirname, "public", "v4", "chat.html"));
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "same-origin",
+      "X-Frame-Options": "DENY",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+    });
+    return res.end(chatPage);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun Chat-Konsole fehlt." });
+  }
+}
+if (req.method === "GET" && (url === "/world" || url === "/world/")) {
+  if (!getSession(req)) {
+    res.writeHead(302, { Location: "/login?next=%2Fworld" });
+    return res.end();
+  }
+  try {
+    const worldPage = fs.readFileSync(path.join(__dirname, "public", "v4", "world.html"));
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "same-origin",
+      "X-Frame-Options": "DENY",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+    });
+    return res.end(worldPage);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun 3D-Weltansicht fehlt." });
+  }
+}
+if (req.method === "GET" && (url === "/v4" || url === "/v4/")) {
+  if (!getSession(req)) {
+    res.writeHead(302, { Location: "/login?next=%2Fv4" });
+    return res.end();
+  }
+  try {
+    const dashboard = fs.readFileSync(path.join(__dirname, "public", "v4", "index.html"));
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "same-origin",
+      "X-Frame-Options": "DENY"
+    });
+    return res.end(dashboard);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun 4.0 Dashboard-Datei fehlt." });
+  }
+}
+if (req.method === "GET" && (url === "/v3" || url === "/v3/")) {
+  if (!getSession(req)) {
+    res.writeHead(302, { Location: "/login?next=%2Fv3" });
+    return res.end();
+  }
+  try {
+    const dashboard = fs.readFileSync(path.join(__dirname, "public", "v3", "index.html"));
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "same-origin",
+      "X-Frame-Options": "DENY"
+    });
+    return res.end(dashboard);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun 3.0 Dashboard-Datei fehlt." });
+  }
+}
 if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-icon.svg" || url === "/brand-logo.svg" || url === "/sw.js")) {
   const assets = {
     "/manifest.webmanifest": { file: "manifest.webmanifest", type: "application/manifest+json; charset=utf-8", cache: "no-cache" },
@@ -1740,7 +1921,13 @@ if (!getSession(req)) {
 res.writeHead(302, { Location: "/login" });
 return res.end();
 }
-return html(res, 200, DASHBOARD_HTML);
+try {
+const dashboard = fs.readFileSync(path.join(__dirname, "public", "v4", "index.html"));
+res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "same-origin", "X-Frame-Options": "DENY" });
+return res.end(dashboard);
+} catch (err) {
+return json(res, 404, { ok: false, error: "FrozenRun 4.0 Dashboard-Datei fehlt." });
+}
 }
 if (req.method === "POST" && url === "/api/login") {
 if (loginRateLimited(req)) return json(res, 429, { ok: false, error: "Zu viele Login-Versuche. Warte eine Minute." });
@@ -1759,6 +1946,36 @@ return res.end(JSON.stringify({ ok: true }));
 } catch (err) {
 return json(res, 400, { ok: false, error: err.message });
 }
+}
+if (req.method === "GET" && url === "/api/discord/status") {
+if (!requireSession(req, res)) return;
+const definitions = [
+  ["chat", "Minecraft-Chat", DISCORD_CHAT_CHANNEL_ID],
+  ["dashboard", "Steuerung", DISCORD_DASHBOARD_CHANNEL_ID],
+  ["logs", "Meldungen", DISCORD_LOG_CHANNEL_ID]
+];
+const channels = await Promise.all(definitions.map(async ([key, label, id]) => {
+  if (!id) return { key, label, configured: false, reachable: false, error: "Kanal-ID fehlt" };
+  if (!discordReady || !discordClient) return { key, label, configured: true, reachable: false, error: "Discord nicht verbunden" };
+  try {
+    const channel = await discordClient.channels.fetch(id);
+    if (!channel || !channel.isTextBased() || typeof channel.send !== "function") return { key, label, configured: true, reachable: false, error: "Kanal nicht gefunden oder kein Textkanal" };
+    const permissions = channel.permissionsFor?.(discordClient.user);
+    const canView = permissions ? permissions.has(PermissionFlagsBits.ViewChannel) : null;
+    const canSend = permissions ? permissions.has(PermissionFlagsBits.SendMessages) : null;
+    const permissionError = canView === false ? "Bot darf den Kanal nicht ansehen" : canSend === false ? "Bot darf keine Nachrichten senden" : "";
+    return { key, label, configured: true, reachable: !permissionError, name: channel.name || label, error: permissionError };
+  } catch (err) {
+    return { key, label, configured: true, reachable: false, error: err?.message || "Kanal konnte nicht geladen werden" };
+  }
+}));
+return json(res, 200, {
+  ok: true,
+  connected: Boolean(discordReady && discordClient?.user),
+  bot: discordClient?.user?.tag || null,
+  channels,
+  events: eventLog.slice(-12).reverse().map(e => ({ time: e.time, message: e.message, type: e.type }))
+});
 }
 if (req.method === "GET" && url === "/api/status") {
 if (!requireSession(req, res)) return;
@@ -1800,7 +2017,34 @@ if (url.startsWith("/api/") && req.headers.origin) {
   catch { return json(res, 403, { ok: false, error: "Ungueltige Anfragequelle." }); }
 }
 if (!requireSession(req, res)) return;
+if (url === "/api/discord/test") {
+const body = await readJson(req);
+const channelIds = {
+  chat: DISCORD_CHAT_CHANNEL_ID,
+  dashboard: DISCORD_DASHBOARD_CHANNEL_ID,
+  logs: DISCORD_LOG_CHANNEL_ID
+};
+const key = String(body.channel || "");
+const channelId = channelIds[key];
+if (!channelId) return json(res, 400, { ok: false, error: "Unbekannter oder nicht konfigurierter Discord-Kanal." });
+if (!discordReady || !discordClient) return json(res, 503, { ok: false, error: "Discord ist derzeit nicht verbunden." });
+const channel = await discordGetChannel(channelId);
+if (!channel) return json(res, 502, { ok: false, error: "Kanal nicht erreichbar. Prüfe Kanal-ID und Bot-Berechtigungen; Details stehen in den Render-Logs." });
 try {
+  const sent = await channel.send({ content: "🧪 **FrozenRun Verbindungstest** – dieser Kanal ist erreichbar. (" + new Date().toLocaleString("de-DE") + ")", allowedMentions: { parse: [] } });
+  console.log("[DISCORD TEST] Testnachricht erfolgreich:", key, sent.id);
+  return json(res, 200, { ok: true, message: "Testnachricht wurde gesendet." });
+} catch (err) {
+  console.error("[DISCORD TEST] Nachricht fehlgeschlagen:", key, err?.message || err);
+  return json(res, 502, { ok: false, error: "Senden fehlgeschlagen: " + (err?.message || "Discord-Fehler") });
+}
+}
+if (url === "/api/minecraft/auth" && req.headers["x-frozenrun-confirm"] !== "yes") return json(res, 428, { ok: false, error: "Sicherheitsbestätigung fehlt." });
+try {
+if (url === "/api/minecraft/auth") {
+const result = minecraftAnmelden();
+return json(res, 200, { ...publicStatus(), auth: authInfo, authPending: Boolean(result.pending), authReady: Boolean(result.ready) });
+}
 if (url === "/api/minecraft/start") {
 minecraftStarten();
 return json(res, 200, publicStatus());
@@ -1826,9 +2070,7 @@ laufenStoppen();
 return json(res, 200, publicStatus());
 }
 if (url === "/api/minecraft/chat") {
-const body = await readJson(req);
-await sendChatMessage(body.message);
-return json(res, 200, publicStatus());
+return json(res, 403, { ok: false, error: "Freie Minecraft-Chatnachrichten sind deaktiviert. Verwende /chat für Slash-Befehle." });
 }
 if (url === "/api/minecraft/command") {
 const body = await readJson(req);
@@ -1911,7 +2153,8 @@ async function sendDiscordChat(message) {
 }
 function buildDiscordCommands() {
   return [
-    new SlashCommandBuilder().setName("dashboard").setDescription("Zeigt alle Bot- und Minecraft-Statuswerte in Discord"),
+    new SlashCommandBuilder().setName("dashboard").setDescription("Zeigt das öffentliche, dauerhaft aktualisierte FrozenRun-Control-Center"),
+    new SlashCommandBuilder().setName("uptime").setDescription("Zeigt die Minecraft-Laufzeit live und dauerhaft in Discord"),
     new SlashCommandBuilder().setName("bot-status").setDescription("Zeigt Minecraft-Status und Koordinaten"),
     new SlashCommandBuilder().setName("bot-start").setDescription("Startet den Minecraft-Bot"),
     new SlashCommandBuilder().setName("bot-stop").setDescription("Stoppt den Minecraft-Bot"),
@@ -1919,11 +2162,64 @@ function buildDiscordCommands() {
     new SlashCommandBuilder().setName("bot-home").setDescription("Führt /home afk aus"),
     new SlashCommandBuilder().setName("bot-run").setDescription("Startet die Lauf-Funktion"),
     new SlashCommandBuilder().setName("bot-stoprun").setDescription("Stoppt die Lauf-Funktion"),
-    new SlashCommandBuilder().setName("mc-chat").setDescription("Sendet eine Nachricht in den Minecraft-Chat")
-      .addStringOption(o => o.setName("nachricht").setDescription("Nachricht für Minecraft").setRequired(true).setMaxLength(256)),
     new SlashCommandBuilder().setName("mc-command").setDescription("Führt einen Minecraft-Befehl aus")
       .addStringOption(o => o.setName("befehl").setDescription("Befehl, mit oder ohne führenden Schrägstrich").setRequired(true).setMaxLength(256))
   ].map(command => command.toJSON());
+}
+function buildDiscordUptimeEmbed() {
+  return new EmbedBuilder()
+    .setColor(mcOnline ? 0x35d399 : connecting ? 0xf5b942 : 0x667085)
+    .setTitle("FrozenRun · Live Uptime")
+    .setDescription("Diese Nachricht wird automatisch aktualisiert und nach Bot-Neustarts wiederverwendet.")
+    .addFields(
+      { name: "Minecraft", value: mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline", inline: true },
+      { name: "Laufzeit", value: formatLiveUptime(), inline: true },
+      { name: "Spieler", value: String(MC_USERNAME).slice(0, 100), inline: true },
+      { name: "Server", value: `${MC_HOST}:${MC_PORT}`.slice(0, 100), inline: false }
+    )
+    .setFooter({ text: "FrozenRun · Live aktualisiert" })
+    .setTimestamp();
+}
+async function findOrCreateDiscordMessage(channel, title, payload) {
+  const recent = await channel.messages.fetch({ limit: 100 });
+  const existing = recent.find(message =>
+    message.author?.id === discordClient.user.id &&
+    message.embeds?.some(embed => embed.title === title)
+  );
+  if (existing) return existing.edit(payload);
+  return channel.send({ ...payload, allowedMentions: { parse: [] } });
+}
+async function updatePersistentDiscordMessages(createIfMissing = false) {
+  if (!discordReady || !discordClient || !DISCORD_DASHBOARD_CHANNEL_ID) return;
+  const channel = await discordClient.channels.fetch(DISCORD_DASHBOARD_CHANNEL_ID).catch(() => null);
+  if (!channel?.isTextBased() || !channel.messages) {
+    addEvent("Discord-Dashboard-Kanal nicht erreichbar. Prüfe DISCORD_DASHBOARD_CHANNEL_ID und Bot-Rechte.", "error");
+    return;
+  }
+  const dashboardPayload = { embeds: [buildDiscordDashboardEmbed()], components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } };
+  const uptimePayload = { embeds: [buildDiscordUptimeEmbed()], allowedMentions: { parse: [] } };
+  try {
+    if (discordDashboardMessage) {
+      discordDashboardMessage = await discordDashboardMessage.edit(dashboardPayload);
+    } else if (createIfMissing) {
+      discordDashboardMessage = await findOrCreateDiscordMessage(channel, "FrozenRun · Control Center", dashboardPayload);
+    } else {
+      const recent = await channel.messages.fetch({ limit: 100 });
+      discordDashboardMessage = recent.find(message => message.author?.id === discordClient.user.id && message.embeds?.some(embed => embed.title === "FrozenRun · Control Center")) || null;
+      if (discordDashboardMessage) discordDashboardMessage = await discordDashboardMessage.edit(dashboardPayload);
+    }
+    if (discordUptimeMessage) {
+      discordUptimeMessage = await discordUptimeMessage.edit(uptimePayload);
+    } else if (createIfMissing) {
+      discordUptimeMessage = await findOrCreateDiscordMessage(channel, "FrozenRun · Live Uptime", uptimePayload);
+    } else {
+      const recent = await channel.messages.fetch({ limit: 100 });
+      discordUptimeMessage = recent.find(message => message.author?.id === discordClient.user.id && message.embeds?.some(embed => embed.title === "FrozenRun · Live Uptime")) || null;
+      if (discordUptimeMessage) discordUptimeMessage = await discordUptimeMessage.edit(uptimePayload);
+    }
+  } catch (err) {
+    addEvent("Discord-Dashboard konnte nicht aktualisiert werden: " + (err?.message || err), "error");
+  }
 }
 function buildDiscordDashboardComponents() {
   const button = (customId, label, style, emoji) =>
@@ -1941,24 +2237,26 @@ function buildDiscordDashboardComponents() {
     )
   ];
 }
-function buildDiscordDashboardText() {
-  return [
-    "📊 **FrozenRun – Status-Dashboard**",
-    "",
-    `🤖 **Minecraft:** ${mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline"}`,
-    `👤 **Spielername:** ${MC_USERNAME}`,
-    `🌐 **Server:** ${MC_HOST}:${MC_PORT}`,
-    `📍 **Koordinaten:** ${formatKoordinaten()}`,
-    `⏱️ **Uptime:** ${formatLiveUptime()}`,
-    `🏃 **Laufen:** ${laufenAktiv ? "🟢 Aktiv" : "⚪ Aus"}`,
-    `🌍 **Webportal:** Version ${APP_VERSION}`,
-    `💬 **Discord-Anbindung:** ${discordReady ? "🟢 Verbunden" : "🔴 Nicht verbunden"}`,
-    letzterFehler ? `⚠️ **Letzter Fehler:** ${String(letzterFehler).slice(0, 400)}` : "✅ **Letzter Fehler:** keiner bekannt",
-    "",
-    `Aktualisiert: <t:${Math.floor(Date.now() / 1000)}:R>`,
-    "",
-    "**Steuerung** · Nutze die Knöpfe unter dieser Nachricht."
-  ].join("\n");
+function buildDiscordDashboardEmbed() {
+  const status = mcOnline ? "🟢 Online" : connecting ? "🟡 Verbindet…" : "🔴 Offline";
+  const embed = new EmbedBuilder()
+    .setColor(mcOnline ? 0x35d399 : connecting ? 0xf5b942 : 0x667085)
+    .setTitle("FrozenRun · Control Center")
+    .setDescription("Minecraft-Bot live überwachen und mit den Schaltflächen direkt steuern.")
+    .addFields(
+      { name: "Minecraft", value: status, inline: true },
+      { name: "Laufmodus", value: laufenAktiv ? "🟢 Aktiv" : "⚪ Aus", inline: true },
+      { name: "Discord", value: discordReady ? "🟢 Verbunden" : "🔴 Nicht verbunden", inline: true },
+      { name: "Spieler", value: String(MC_USERNAME).slice(0, 100), inline: true },
+      { name: "Server", value: `${MC_HOST}:${MC_PORT}`.slice(0, 100), inline: true },
+      { name: "Uptime", value: formatLiveUptime(), inline: true },
+      { name: "Koordinaten", value: formatKoordinaten(), inline: true },
+      { name: "Webportal", value: `Version ${APP_VERSION}`, inline: true },
+      { name: "Letzter Fehler", value: letzterFehler ? String(letzterFehler).slice(0, 900) : "Keiner bekannt", inline: false }
+    )
+    .setFooter({ text: "FrozenRun · Nutze die Buttons zur Steuerung" })
+    .setTimestamp();
+  return embed;
 }
 async function handleDiscordInteraction(interaction) {
   if (interaction.isButton()) {
@@ -1976,7 +2274,7 @@ async function handleDiscordInteraction(interaction) {
         case "fr_dashboard_stoprun": laufenStoppen(); break;
         default: return;
       }
-      await interaction.update({ content: buildDiscordDashboardText(), components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } });
+      await interaction.update({ embeds: [buildDiscordDashboardEmbed()], components: buildDiscordDashboardComponents(), allowedMentions: { parse: [] } });
     } catch (err) {
       const message = String(err?.message || err).slice(0, 1000);
       if (interaction.deferred || interaction.replied) await interaction.followUp({ content: "Aktion fehlgeschlagen: " + message, ephemeral: true }).catch(() => {});
@@ -1986,20 +2284,27 @@ async function handleDiscordInteraction(interaction) {
     return;
   }
   if (!interaction.isChatInputCommand()) return;
+  const command = interaction.commandName;
+  if (command === "dashboard" || command === "uptime") {
+    if (!DISCORD_DASHBOARD_CHANNEL_ID) {
+      await interaction.reply({ content: "Bitte setze DISCORD_DASHBOARD_CHANNEL_ID in Render auf die ID des öffentlichen Discord-Kanals.", ephemeral: true });
+      return;
+    }
+    await updatePersistentDiscordMessages(true);
+    const target = command === "uptime" ? discordUptimeMessage : discordDashboardMessage;
+    await interaction.reply({
+      content: target ? `Die öffentliche ${command === "uptime" ? "Uptime-Anzeige" : "Control-Center-Nachricht"} wurde aktualisiert: ${target.url}` : "Die öffentliche Nachricht konnte nicht erstellt werden. Prüfe die Bot-Rechte im Dashboard-Kanal.",
+      ephemeral: true,
+      allowedMentions: { parse: [] }
+    });
+    return;
+  }
   if (!discordCanControl(interaction)) {
     await interaction.reply({ content: "Du darfst den Minecraft-Bot nicht über Discord steuern. Bitte konfiguriere DISCORD_ALLOWED_USER_IDS / DISCORD_ALLOWED_ROLE_IDS oder gib Manage Server.", ephemeral: true });
     return;
   }
-  const command = interaction.commandName;
   try {
-    if (command === "dashboard") {
-      await interaction.reply({
-        content: buildDiscordDashboardText(),
-        components: buildDiscordDashboardComponents(),
-        ephemeral: true,
-        allowedMentions: { parse: [] }
-      });
-    } else if (command === "bot-status") {
+    if (command === "bot-status") {
       await interaction.reply({ content: discordStatusText(), ephemeral: true });
     } else if (command === "bot-start") {
       minecraftStarten();
@@ -2019,10 +2324,6 @@ async function handleDiscordInteraction(interaction) {
     } else if (command === "bot-stoprun") {
       laufenStoppen();
       await interaction.reply({ content: "Laufen wurde gestoppt.", ephemeral: true });
-    } else if (command === "mc-chat") {
-      const text = interaction.options.getString("nachricht", true);
-      await sendChatMessage(text);
-      await interaction.reply({ content: "Nachricht an Minecraft gesendet.", ephemeral: true });
     } else if (command === "mc-command") {
       const text = interaction.options.getString("befehl", true);
       const output = await sendCommand(text);
@@ -2067,25 +2368,20 @@ async function startDiscordIntegration() {
       } catch (err) {
         addEvent(`Discord-Slash-Befehle konnten nicht registriert werden: ${err?.message || err}`, "error");
       }
-      if (DISCORD_CHAT_CHANNEL_ID) {
-        discordClient.on(Events.MessageCreate, async message => {
-          if (message.author.bot || message.channelId !== DISCORD_CHAT_CHANNEL_ID) return;
-          const text = sanitizeChatMessage(message.content);
-          if (!text || text.startsWith("/") || text.length > 256) return;
-          const now = Date.now();
-          if (now - discordChatRelayLastAt < 700) return;
-          discordChatRelayLastAt = now;
-          try {
-            await sendChatMessage(`[Discord] ${message.member?.displayName || message.author.username}: ${text}`.slice(0, 256));
-          } catch (err) {
-            await message.reply({ content: `Minecraft-Chat nicht gesendet: ${String(err?.message || err).slice(0, 500)}`, allowedMentions: { parse: [] } }).catch(() => {});
-          }
-        });
+      if (DISCORD_DASHBOARD_CHANNEL_ID) {
+        await updatePersistentDiscordMessages(true);
+        discordStatusTimer = setInterval(() => {
+          void updatePersistentDiscordMessages(false);
+        }, 15000);
+        discordStatusTimer.unref?.();
+      } else {
+        addEvent("Dauerhaftes Discord-Control-Center nicht eingerichtet: DISCORD_DASHBOARD_CHANNEL_ID fehlt.", "warning");
       }
+      // Absichtlich kein Discord->Minecraft-Chat-Relay: Der Bot sendet keine freien Chatnachrichten.
       if (discordClient.user) {
         discordClient.user.setActivity("Minecraft-Status", { type: ActivityType.Watching });
       }
-      discordStatusTimer = setInterval(() => {
+      const presenceTimer = setInterval(() => {
         const status = `${mcOnline}|${connecting}|${formatKoordinaten()}|${laufenAktiv}`;
         if (status === discordLastStatus) return;
         discordLastStatus = status;
@@ -2096,7 +2392,7 @@ async function startDiscordIntegration() {
           });
         }
       }, 15000);
-      discordStatusTimer.unref?.();
+      presenceTimer.unref?.();
     });
     discordClient.on(Events.InteractionCreate, interaction => {
       void handleDiscordInteraction(interaction).catch(err => console.error("Discord-Interaction-Fehler:", err));
