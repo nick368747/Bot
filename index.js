@@ -2289,27 +2289,19 @@ async function handleDiscordInteraction(interaction) {
   const command = interaction.commandName;
   if (command === "webseite") {
     const websiteUrl = `${PUBLIC_URL}/login`;
-    const explanation = [
-      "**🌐 FrozenRun – Das Webportal**",
-      "",
-      "Über die FrozenRun-Webseite kannst du den Minecraft-Bot und seine Funktionen bequem über eine übersichtliche Browser-Oberfläche verwalten. Du findest dort den aktuellen Verbindungsstatus, den Minecraft-Spieler und Server, die Laufzeit, Koordinaten sowie weitere Status- und Ereignisinformationen.",
-      "",
-      "**Was kannst du dort machen?**",
-      "• Den Minecraft-Bot starten, stoppen oder neu verbinden.",
-      "• Die Home-AFK-Funktion und den Laufmodus steuern.",
-      "• Den Live-Status, die Koordinaten und die Uptime im Blick behalten.",
-      "• Die verfügbaren Informationen und Meldungen zentral im Dashboard ansehen.",
-      "",
-      "**🔐 Anmeldung und Sicherheit**",
-      "Zum Öffnen des Portals verwendest du den Link unten. Für geschützte Steuerungsfunktionen musst du dich mit dem eingerichteten Webportal-Passwort anmelden. Gib dein Passwort niemals weiter und teile keine privaten Zugangsdaten im Discord-Chat.",
-      "",
-      "**ℹ️ Wichtig**",
-      "Dieser Befehl veröffentlicht den Webseiten-Link nur dann, wenn jemand **/webseite** aufruft. FrozenRun postet diese Erklärung und den Link nicht automatisch und sendet sie auch nicht von selbst in andere Kanäle. Die Antwort auf den Befehl ist öffentlich sichtbar, damit alle Mitglieder des jeweiligen Kanals den Link nutzen können.",
-      "",
-      "**➡️ Hier geht es zur Webseite:**",
-      websiteUrl
-    ].join("\n");
-    await interaction.reply({ content: explanation, ephemeral: false, allowedMentions: { parse: [] } });
+    const embed = new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle("🌐 FrozenRun – Das Webportal")
+      .setDescription("Das zentrale Web-Dashboard für deinen Minecraft-Bot. Öffne das Portal über den Link und melde dich mit deinen eingerichteten Zugangsdaten an.")
+      .addFields(
+        { name: "🎮 Minecraft-Steuerung", value: "Bot starten, stoppen oder neu verbinden sowie Home-AFK und den Laufmodus steuern.", inline: false },
+        { name: "📊 Live-Übersicht", value: "Verbindungsstatus, Spieler, Server, Koordinaten, Laufzeit und Systemereignisse übersichtlich ansehen.", inline: false },
+        { name: "🔐 Anmeldung & Sicherheit", value: "Geschützte Funktionen sind nur nach Anmeldung verfügbar. Teile dein Passwort oder private Zugangsdaten niemals im Discord-Chat.", inline: false },
+        { name: "ℹ️ Verwendung dieses Befehls", value: "Der Link und diese Erklärung werden ausschließlich als Antwort auf **/webseite** gesendet. Es gibt keine automatische Veröffentlichung. Diese Antwort ist öffentlich und für alle Mitglieder im Kanal sichtbar.", inline: false },
+        { name: "🔗 Direkter Webseiten-Link", value: `[FrozenRun-Webseite öffnen](${websiteUrl})`, inline: false }
+      )
+      .setFooter({ text: "FrozenRun · Block Bande" });
+    await interaction.reply({ embeds: [embed], ephemeral: false, allowedMentions: { parse: [] } });
     return;
   }
   if (command === "dashboard" || command === "uptime") {
