@@ -1916,6 +1916,15 @@ return res.end();
 }
 return html(res, 200, DASHBOARD_HTML);
 }
+if (req.method === "GET" && (url === "/gast" || url === "/gast/")) {
+  try {
+    const dashboard = fs.readFileSync(path.join(__dirname, "public", "v4", "index.html"));
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "same-origin", "X-Frame-Options": "DENY" });
+    return res.end(dashboard);
+  } catch (err) {
+    return json(res, 404, { ok: false, error: "FrozenRun Gast-Dashboard-Datei fehlt." });
+  }
+}
 if (req.method === "GET" && url === "/") {
 if (!getSession(req)) {
 res.writeHead(302, { Location: "/login" });
@@ -1976,6 +1985,41 @@ return json(res, 200, {
   channels,
   events: eventLog.slice(-12).reverse().map(e => ({ time: e.time, message: e.message, type: e.type }))
 });
+}
+if (req.method === "GET" && url === "/api/guest/status") {
+  const status = publicStatus();
+  // Gastansicht zeigt Betriebsdaten, aber niemals Microsoft-Gerätecodes oder private Anmeldedaten.
+  status.auth = { status: mcOnline ? "ready" : "idle", method: "Microsoft / Xbox" };
+  return json(res, 200, status);
+}
+if (req.method === "GET" && url === "/api/guest/discord/status") {
+  const definitions = [
+    ["chat", "Minecraft-Chat", DISCORD_CHAT_CHANNEL_ID],
+    ["dashboard", "Steuerung", DISCORD_DASHBOARD_CHANNEL_ID],
+    ["logs", "Meldungen", DISCORD_LOG_CHANNEL_ID]
+  ];
+  const channels = await Promise.all(definitions.map(async ([key, label, id]) => {
+    if (!id) return { key, label, configured: false, reachable: false, error: "Kanal-ID fehlt" };
+    if (!discordReady || !discordClient) return { key, label, configured: true, reachable: false, error: "Discord nicht verbunden" };
+    try {
+      const channel = await discordClient.channels.fetch(id);
+      if (!channel || !channel.isTextBased() || typeof channel.send !== "function") return { key, label, configured: true, reachable: false, error: "Kanal nicht gefunden oder kein Textkanal" };
+      const permissions = channel.permissionsFor?.(discordClient.user);
+      const canView = permissions ? permissions.has(PermissionFlagsBits.ViewChannel) : null;
+      const canSend = permissions ? permissions.has(PermissionFlagsBits.SendMessages) : null;
+      const permissionError = canView === false ? "Bot darf den Kanal nicht ansehen" : canSend === false ? "Bot darf keine Nachrichten senden" : "";
+      return { key, label, configured: true, reachable: !permissionError, name: channel.name || label, error: permissionError };
+    } catch (err) {
+      return { key, label, configured: true, reachable: false, error: err?.message || "Kanal konnte nicht geladen werden" };
+    }
+  }));
+  return json(res, 200, {
+    ok: true,
+    connected: Boolean(discordReady && discordClient?.user),
+    bot: discordClient?.user?.tag || null,
+    channels,
+    events: eventLog.slice(-12).reverse().map(e => ({ time: e.time, message: e.message, type: e.type }))
+  });
 }
 if (req.method === "GET" && url === "/api/status") {
 if (!requireSession(req, res)) return;
