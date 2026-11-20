@@ -76,6 +76,52 @@ let minecraftAuthPromise = null;
 let letzterFehler = null;
 const chatLog = [];
 const eventLog = [];
+const uptimeHistoryFile = path.join(process.env.DATA_DIR || __dirname, "frozenrun-uptime.json");
+let uptimeSessions = [];
+let activeUptimeStartedAt = null;
+try {
+  const saved = JSON.parse(fs.readFileSync(uptimeHistoryFile, "utf8"));
+  if (Array.isArray(saved)) uptimeSessions = saved.filter(x => Number.isFinite(x.start) && (x.end === null || Number.isFinite(x.end)));
+} catch {}
+function saveUptimeHistory() {
+  try { fs.writeFileSync(uptimeHistoryFile, JSON.stringify(uptimeSessions.slice(-5000)), "utf8"); }
+  catch (err) { console.error("Uptime-Verlauf konnte nicht gespeichert werden:", err?.message || err); }
+}
+function beginUptimeSession() {
+  if (activeUptimeStartedAt !== null) return;
+  activeUptimeStartedAt = Date.now();
+  uptimeSessions.push({ start: activeUptimeStartedAt, end: null });
+  saveUptimeHistory();
+}
+function endUptimeSession() {
+  if (activeUptimeStartedAt === null) return;
+  const current = uptimeSessions.findLast(x => x.start === activeUptimeStartedAt && x.end === null);
+  if (current) current.end = Date.now();
+  activeUptimeStartedAt = null;
+  saveUptimeHistory();
+}
+function uptimeOverview() {
+  const now = Date.now();
+  const periods = { week: 7 * 86400000, month: 30 * 86400000, year: 365 * 86400000 };
+  const result = {};
+  for (const [key, duration] of Object.entries(periods)) {
+    const from = now - duration;
+    let onlineMs = 0;
+    for (const session of uptimeSessions) {
+      const start = Math.max(from, session.start);
+      const end = Math.min(now, session.end ?? now);
+      if (end > start) onlineMs += end - start;
+    }
+    result[key] = { onlineMs, onlineSeconds: Math.floor(onlineMs / 1000), percentage: Math.min(100, onlineMs / duration * 100) };
+  }
+  return result;
+}
+function formatDurationLong(seconds) {
+  const s = Math.max(0, Math.floor(seconds || 0));
+  const days = Math.floor(s / 86400), hours = Math.floor((s % 86400) / 3600), minutes = Math.floor((s % 3600) / 60);
+  return days ? days + " T. " + hours + " Std. " : hours + " Std. " + minutes + " Min.";
+}
+
 // Discord bleibt optional: Ohne DISCORD_TOKEN läuft die Webseite unverändert weiter.
 const DISCORD_TOKEN = String(process.env.DISCORD_TOKEN || "").trim();
 const DISCORD_CLIENT_ID = String(process.env.DISCORD_CLIENT_ID || "").trim();
@@ -415,6 +461,7 @@ money: aktuellesGeld,
 moneyFormatted: formatGeld(aktuellesGeld),
 coordinates: { ...aktuelleKoordinaten },
 coordinatesFormatted: formatKoordinaten(),
+uptimeOverview: uptimeOverview(),
 rotation: { ...aktuelleRotation },
 running: laufenAktiv,
 auth: authInfo,
@@ -579,6 +626,7 @@ addEvent(`Laufen: ${err.message}`, "error");
 // Minecraft verbinden
 // ============================================================
 function resetMinecraftState() {
+if (mcOnline) endUptimeSession();
 mcOnline = false;
 minecraftStartzeit = null;
 minecraftUuid = null;
@@ -672,6 +720,7 @@ if (generation !== connectionGeneration) return;
 mcOnline = true;
 connecting = false;
 minecraftStartzeit = Date.now();
+beginUptimeSession();
 letzterFehler = null;
 authInfo = null;
 if (packet.runtime_entity_id !== undefined) playerEntityId = Number(packet.runtime_entity_id);
@@ -759,6 +808,7 @@ laufenStoppen();
 if (mcBot) {
 try { mcBot.disconnect("FrozenRun gestoppt"); } catch {}
 }
+endUptimeSession();
 mcBot = null;
 resetMinecraftState();
 addEvent("Minecraft-Bot wurde gestoppt.", "warning");
