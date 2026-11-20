@@ -2227,10 +2227,10 @@ function buildDiscordDashboardComponents() {
   const botIsOn = mcOnline || connecting;
   return [
     new ActionRowBuilder().addComponents(
-      button("fr_dashboard_toggle_bot", botIsOn ? "Bot Aus" : "Bot Ein", botIsOn ? ButtonStyle.Danger : ButtonStyle.Success, botIsOn ? "⏹️" : "▶️"),
+      button("fr_dashboard_toggle_bot", botIsOn ? "Aus" : "Ein", botIsOn ? ButtonStyle.Danger : ButtonStyle.Success, botIsOn ? "⏹️" : "▶️"),
       button("fr_dashboard_reconnect", "Neu verbinden", ButtonStyle.Secondary, "🔄"),
       button("fr_dashboard_home", "Home AFK", ButtonStyle.Primary, "🏠"),
-      button("fr_dashboard_toggle_run", laufenAktiv ? "Laufen Aus" : "Laufen", laufenAktiv ? ButtonStyle.Danger : ButtonStyle.Success, laufenAktiv ? "🛑" : "🏃")
+      button("fr_dashboard_toggle_run", laufenAktiv ? "Laufen Aus" : "Laufen An", laufenAktiv ? ButtonStyle.Danger : ButtonStyle.Success, laufenAktiv ? "🛑" : "🏃")
     )
   ];
 }
