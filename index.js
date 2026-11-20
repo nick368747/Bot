@@ -2332,17 +2332,17 @@ async function handleDiscordInteraction(interaction) {
   if (!interaction.isChatInputCommand()) return;
   const command = interaction.commandName;
   if (command === "webseite") {
-    const websiteUrl = `${PUBLIC_URL}/login`;
+    const websiteUrl = `${PUBLIC_URL}/gast`;
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
-      .setTitle("🌐 FrozenRun – Das Webportal")
-      .setDescription("Das zentrale Web-Dashboard für deinen Minecraft-Bot. Öffne das Portal über den Link und melde dich mit deinen eingerichteten Zugangsdaten an.")
+      .setTitle("🌐 FrozenRun – Öffentliches Webportal")
+      .setDescription("Hier findest du das FrozenRun-Dashboard im **Gastmodus**. Der Gastmodus ist für alle erreichbar und erlaubt es, die verfügbaren Live-Daten anzusehen, ohne sich anzumelden.")
       .addFields(
-        { name: "🎮 Minecraft-Steuerung", value: "Bot starten, stoppen oder neu verbinden sowie Home-AFK und den Laufmodus steuern.", inline: false },
-        { name: "📊 Live-Übersicht", value: "Verbindungsstatus, Spieler, Server, Koordinaten, Laufzeit und Systemereignisse übersichtlich ansehen.", inline: false },
-        { name: "🔐 Anmeldung & Sicherheit", value: "Geschützte Funktionen sind nur nach Anmeldung verfügbar. Teile dein Passwort oder private Zugangsdaten niemals im Discord-Chat.", inline: false },
-        { name: "ℹ️ Verwendung dieses Befehls", value: "Der Link und diese Erklärung werden ausschließlich als Antwort auf **/webseite** gesendet. Es gibt keine automatische Veröffentlichung. Diese Antwort ist öffentlich und für alle Mitglieder im Kanal sichtbar.", inline: false },
-        { name: "🔗 Direkter Webseiten-Link", value: `[FrozenRun-Webseite öffnen](${websiteUrl})`, inline: false }
+        { name: "👁 Gastmodus – nur ansehen", value: "Sieh Minecraft-Status, Spieler, Server, Koordinaten, Uptime, Systemmeldungen und den Discord-Verbindungsstatus. Die Daten werden laufend aktualisiert.", inline: false },
+        { name: "🔒 Keine Eingaben oder Steuerung", value: "Im Gastmodus können keine Bot-Aktionen ausgeführt, keine Befehle gesendet, keine Einstellungen geändert und keine Testnachrichten verschickt werden. Die Steuerungsfunktionen sind deaktiviert.", inline: false },
+        { name: "🔐 Geschützter Admin-Zugang", value: "Wenn du den Bot tatsächlich steuern möchtest, nutze den normalen Login und deine eingerichteten Zugangsdaten. Teile niemals Passwörter oder private Zugangsdaten.", inline: false },
+        { name: "ℹ️ Verwendung dieses Befehls", value: "Der Link und diese Erklärung werden ausschließlich gesendet, wenn jemand **/webseite** aufruft. Es erfolgt keine automatische Veröffentlichung. Die Antwort ist öffentlich und für alle Mitglieder im Kanal sichtbar.", inline: false },
+        { name: "🔗 Gast-Dashboard öffnen", value: `[FrozenRun im Gastmodus ansehen](${websiteUrl})`, inline: false }
       )
       .setFooter({ text: "FrozenRun · Block Bande" });
     await interaction.reply({ embeds: [embed], ephemeral: false, allowedMentions: { parse: [] } });
