@@ -2308,7 +2308,7 @@ async function handleDiscordInteraction(interaction) {
       "",
       "**➡️ Hier geht es zur Webseite:**",
       websiteUrl
-    ].join("\\n");
+    ].join("\n");
     await interaction.reply({ content: explanation, ephemeral: false, allowedMentions: { parse: [] } });
     return;
   }
