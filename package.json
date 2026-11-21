@@ -10,7 +10,7 @@
     "start:local": "node index.js"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "bedrock-protocol": "3.60.1",
