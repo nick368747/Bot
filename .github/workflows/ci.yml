@@ -1,0 +1,34 @@
+name: FrozenRun CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    name: Node.js syntax and dependency check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Check server syntax
+        run: npm run check
+
+      - name: Check inline dashboard scripts
+        run: |
+          node -e 'const fs=require("node:fs"); for (const file of ["public/v4/index.html","public/v4/chat.html","public/v4/world.html"]) { const html=fs.readFileSync(file,"utf8"); const scripts=[...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]; for (let i=0;i<scripts.length;i++) { try { new Function(scripts[i][1]); } catch (error) { console.error(file+" inline script "+(i+1)+": "+error.message); process.exitCode=1; } } }'
