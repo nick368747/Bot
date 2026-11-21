@@ -1258,8 +1258,8 @@ type)+'"><span class="time">'+fmtTime(x.time)+'</span> '+escapeHtml(x.message)+'
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[
 c]))}
-async function api(path,body){
- const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body||{})});
+async function api(path,body,extraHeaders){
+ const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept':'application/json',...(extraHeaders||{})},body:JSON.stringify(body||{})});
  const d=await r.json().catch(()=>({error:'Serverantwort konnte nicht gelesen werden (HTTP '+r.status+')'}));
  if(r.status===401){location.href='/login';return null}
  if(!r.ok)throw new Error(d.error||('Aktion fehlgeschlagen (HTTP '+r.status+')'));
@@ -1286,15 +1286,17 @@ for(const b of document.querySelectorAll('[data-action]')){
   toast('Befehl wird gesendet: '+(labels[a]||a));
   try{
    if(!routes[a])throw new Error('Unbekannter Button-Befehl: '+a);
-   await api(routes[a]);
-   toast(a==='mc-login'?'Minecraft gestartet. Falls nötig, erscheint der Microsoft-Anmeldecode.':(labels[a]+' erfolgreich ausgeführt.'));
+   const result=await api(routes[a],{},a==='mc-login'?{'x-frozenrun-confirm':'yes'}:{});
+   if(a==='mc-login'){
+    if(result?.auth?.userCode){$('auth').classList.remove('hidden');$('authCode').textContent=result.auth.userCode;if(result.auth.verificationUri)$('authLink').href=result.auth.verificationUri;}
+    toast(result?.authReady?'Microsoft-Anmeldung ist bereits aktiv.':'Microsoft-Anmeldung gestartet. Bitte den angezeigten Code bestätigen.');
+   }else toast(labels[a]+' erfolgreich ausgeführt.');
    await refresh();
   }catch(e){toast('Fehler bei '+(labels[a]||a)+': '+(e.message||'Unbekannter Fehler'));}
   finally{b.dataset.busy='0';b.disabled=false;b.textContent=original;}
  });
 }
-$('chatSend').addEventListener('click',async()=>{try{const v=$('chatInput').value;await api('/api/minecraft/chat',{message:
-v});$('chatInput').value='';toast('Nachricht gesendet');await refresh()}catch(e){toast(e.message)}});
+$('chatSend').addEventListener('click',async()=>{try{const v=$('chatInput').value.trim();if(!v.startsWith('/'))throw new Error('Nur Minecraft-Befehle mit / sind erlaubt.');await api('/api/minecraft/chat',{message:v});$('chatInput').value='';toast('Befehl gesendet');await refresh()}catch(e){toast(e.message)}});
 $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').value;await api('/api/minecraft/pay',{amount:
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
@@ -2116,7 +2118,11 @@ laufenStoppen();
 return json(res, 200, publicStatus());
 }
 if (url === "/api/minecraft/chat") {
-return json(res, 403, { ok: false, error: "Freie Minecraft-Chatnachrichten sind deaktiviert. Verwende /chat für Slash-Befehle." });
+const body = await readJson(req);
+const message = String(body.message || "").trim();
+if (!message.startsWith("/")) return json(res, 400, { ok: false, error: "Nur Minecraft-Befehle mit / sind erlaubt." });
+await sendCommand(message);
+return json(res, 200, publicStatus());
 }
 if (url === "/api/minecraft/command") {
 const body = await readJson(req);
