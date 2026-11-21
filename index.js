@@ -23,6 +23,7 @@ const RESET_MINECRAFT_LOGIN = process.env.RESET_MINECRAFT_LOGIN === "true";
 const MC_HOST = process.env.MC_HOST || "blockbande.de";
 const MC_PORT = Number(process.env.MC_PORT || 19132);
 const MC_USERNAME = process.env.MC_USERNAME || "LiveSinger9275";
+const MC_UUID = "00000000-0000-0000-0009-01f2e0eb93a6";
 const MONEY_TARGET = process.env.MONEY_TARGET || "!FrozenBoar16433";
 const TPA_PLAYER_NAME = process.env.TPA_PLAYER_NAME || "!FrozenBoar16433";
 const MC_AUTH_FLOW = process.env.MC_AUTH_FLOW || "live";
@@ -1207,6 +1208,7 @@ body{position:fixed!important;inset:0!important;padding:0!important}
 <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">00:00:00</div></div>
 <div class="card"><div class="label">Kontostand</div><div id="money" class="value">0 $</div></div>
 <div class="card"><div class="label">Koordinaten</div><div id="coords" class="value">0, 0, 0</div></div>
+<div class="card"><div class="label">ID</div><div class="value" style="font-size:14px;overflow-wrap:anywhere">${MC_UUID}</div></div>
 <div class="card"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><div class="label">Version</div><div id="versionValue" class="value" style="margin-top:0">${APP_VERSION}</div></div></div>
 </div>
 <div id="auth" class="card auth hidden"><b>Microsoft-Anmeldung erforderlich</b><p>Öffne die angezeigte Microsoft-Seite und
