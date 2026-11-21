@@ -1279,7 +1279,7 @@ for(const b of document.querySelectorAll('[data-action]')){
   if(b.dataset.busy==='1')return;
   const a=b.dataset.action;
   const labels={start:'Ein',stop:'Aus',reconnect:'Neu verbinden',home:'Home AFK',run:'Laufen',stoprun:'Laufen stoppen','mc-login':'MC Anmeldung'};
-  const routes={start:'/api/minecraft/start',stop:'/api/minecraft/stop',reconnect:'/api/minecraft/reconnect',home:'/api/minecraft/home',run:'/api/minecraft/run',stoprun:'/api/minecraft/stoprun','mc-login':'/api/minecraft/start'};
+  const routes={start:'/api/minecraft/start',stop:'/api/minecraft/stop',reconnect:'/api/minecraft/reconnect',home:'/api/minecraft/home',run:'/api/minecraft/run',stoprun:'/api/minecraft/stoprun','mc-login':'/api/minecraft/auth'};
   if(a==='mc-login'){const auth=$('auth');if(auth){auth.classList.remove('hidden');auth.querySelector('b').textContent='Microsoft-Anmeldung wird vorbereitet…';$('authCode').textContent='Code wird angefordert…';$('authLink').href='https://microsoft.com/devicelogin';$('authLink').textContent='Microsoft-Anmeldeseite öffnen';}}
   const original=b.textContent.trim();
   b.dataset.busy='1';b.disabled=true;b.textContent='Bitte warten…';
