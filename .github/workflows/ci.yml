@@ -31,4 +31,4 @@ jobs:
 
       - name: Check inline dashboard scripts
         run: |
-          node -e 'const fs=require("node:fs"); for (const file of ["public/v4/index.html","public/v4/chat.html","public/v4/world.html"]) { const html=fs.readFileSync(file,"utf8"); const scripts=[...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]; for (let i=0;i<scripts.length;i++) { try { new Function(scripts[i][1]); } catch (error) { console.error(file+" inline script "+(i+1)+": "+error.message); process.exitCode=1; } } }'
+          node -e 'const fs=require("node:fs"); for (const file of ["public/v4/index.html","public/v4/chat.html","public/v4/world.html"]) { const html=fs.readFileSync(file,"utf8"); const scripts=html.split("<script").slice(1).map(part=>part.split("</script>")[0].replace(/^[^>]*>/,"")); for (let i=0;i<scripts.length;i++) { try { new Function(scripts[i]); } catch (error) { console.error(file+" inline script "+(i+1)+": "+error.message); process.exitCode=1; } } }'
