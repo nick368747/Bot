@@ -199,11 +199,14 @@ while (eventLog.length > 150) eventLog.shift();
 console.log(`[${type.toUpperCase()}] ${message}`);
 void sendDiscordLog(message, type);
 }
+function stripMinecraftFormatting(value) {
+return String(value ?? "").replace(/§./gu, "").replace(/§/gu, "");
+}
 function addChat(source, message, type = "chat") {
 const entry = {
 time: nowIso(),
-source: String(source || "Minecraft"),
-message: String(message || ""),
+source: stripMinecraftFormatting(source || "Minecraft"),
+message: stripMinecraftFormatting(message || ""),
 type
 };
 chatLog.push(entry);
