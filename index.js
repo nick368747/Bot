@@ -149,28 +149,39 @@ let worldRegistry = null;
 let worldParserVersion = null;
 let worldParserError = null;
 function worldChunkKey(x, z) { return `${x},${z}`; }
-function worldParserVersionFor(clientVersion) {
+function worldParserVersionsFor(clientVersion) {
   const forced = String(process.env.BEDROCK_WORLD_VERSION || "").trim();
-  if (forced) return forced.startsWith("bedrock_") ? forced : `bedrock_${forced}`;
-  const v = String(clientVersion || "");
-  if (/^1\.21\./.test(v)) return `bedrock_${v}`;
-  return "bedrock_1.21.130";
+  const candidates = [];
+  if (forced) candidates.push(forced.startsWith("bedrock_") ? forced : `bedrock_${forced}`);
+  const v = String(clientVersion || "").trim();
+  if (/^1\.\d+\./.test(v)) candidates.push(`bedrock_${v}`);
+  // Manche Server-Forks melden ihre Buildnummer statt der Minecraft-Bedrock-Version.
+  if (/^26\./.test(v)) candidates.push("bedrock_1.26.60");
+  // prismarine-registry 1.12.0 enthält aktuelle Bedrock-Datensätze.
+  candidates.push("bedrock_1.26.60", "bedrock_1.21.130", "bedrock_1.21.0");
+  return [...new Set(candidates)];
 }
 function ensureWorldParser(clientVersion) {
   if (worldChunkClass && worldRegistry) return true;
-  const version = worldParserVersionFor(clientVersion);
-  try {
-    worldRegistry = prismarineRegistry(version);
-    worldChunkClass = prismarineChunk(worldRegistry);
-    worldParserVersion = version;
-    worldParserError = null;
-    addEvent(`3D-Weltparser aktiv: ${version}.`, "info");
-    return true;
-  } catch (err) {
-    worldParserError = err?.message || String(err);
-    addEvent(`3D-Weltparser konnte nicht geladen werden: ${worldParserError}`, "error");
-    return false;
+  const candidates = worldParserVersionsFor(clientVersion);
+  const errors = [];
+  for (const version of candidates) {
+    try {
+      const registry = prismarineRegistry(version);
+      const ChunkClass = prismarineChunk(registry);
+      worldRegistry = registry;
+      worldChunkClass = ChunkClass;
+      worldParserVersion = version;
+      worldParserError = null;
+      addEvent(`3D-Weltparser aktiv: ${version}.`, "success");
+      return true;
+    } catch (err) {
+      errors.push(`${version}: ${err?.message || String(err)}`);
+    }
   }
+  worldParserError = errors.join(" | ") || "Keine unterstützte Bedrock-Version gefunden.";
+  addEvent(`3D-Weltparser konnte nicht geladen werden: ${worldParserError}`, "error");
+  return false;
 }
 function resetWorldState() {
   worldChunks.clear();
@@ -727,8 +738,9 @@ authInfo = null;
 if (packet.runtime_entity_id !== undefined) playerEntityId = Number(packet.runtime_entity_id);
 if (packet.player_entity_id !== undefined) playerEntityId = Number(packet.player_entity_id);
 if (packet.entity_id !== undefined) playerEntityId = Number(packet.entity_id);
-if (packet.uuid) minecraftUuid = packet.uuid;
-addEvent(`${MC_USERNAME} ist online.`, "success");
+// Bedrock liefert die UUID im start_game-Paket nicht bei jedem Server zuverlässig.
+minecraftUuid = typeof packet.uuid === "string" && packet.uuid.trim() ? packet.uuid.trim() : MC_UUID;
+addEvent(`${MC_USERNAME} ist online. Spieler-UUID für Befehle gesetzt.`, "success");
 setTimeout(() => void geldAktualisieren(), 3000);
 });
 client.on("text", packet => {
