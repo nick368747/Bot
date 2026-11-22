@@ -147,58 +147,23 @@ const worldSurfaces = new Map();
 let worldChunkClass = null;
 let worldRegistry = null;
 let worldParserVersion = null;
-let worldParserError = null;
-let worldParserAttemptedFor = null;
-let worldParserDisabled = false;
+let worldParserError = "Die aktuelle BlockBande-Bedrock-Version wird vom installierten Chunk-Decoder noch nicht unterstützt.";
+let worldParserNoticeSent = false;
+let worldParserDisabled = true;
 function worldChunkKey(x, z) { return String(x) + "," + String(z); }
-function worldParserVersionsFor(clientVersion) {
-  const forced = String(process.env.BEDROCK_WORLD_VERSION || "").trim();
-  const candidates = [];
-  if (forced) candidates.push(forced.startsWith("bedrock_") ? forced : "bedrock_" + forced);
-  const v = String(clientVersion || "").trim();
-  // prismarine-chunk/prismarine-registry enthalten derzeit Bedrock-Datensätze bis 1.21.x.
-  // Neuere 1.26.x-Protokolle dürfen nicht mit einem alten Registry-Format decodiert werden.
-  if (/^1\.21\./.test(v)) candidates.push("bedrock_" + v);
-  candidates.push("bedrock_1.21.130", "bedrock_1.21.0");
-  return [...new Set(candidates)];
-}
-function ensureWorldParser(clientVersion) {
-  if (worldChunkClass && worldRegistry && !worldParserDisabled) return true;
-  if (worldParserDisabled) return false;
-  const v = String(clientVersion || "").trim();
-  if ((/^1\.26(?:\.|$)/.test(v) || /^26\./.test(v)) && !process.env.BEDROCK_WORLD_VERSION) {
-    worldParserError = "Bedrock-Protokoll " + v + " wird vom installierten prismarine-chunk noch nicht unterstützt.";
-    if (worldParserAttemptedFor !== v) addEvent("3D-Weltansicht pausiert: " + worldParserError + " Chat und Bot-Verbindung bleiben aktiv.", "warning");
-    worldParserAttemptedFor = v;
-    return false;
+function ensureWorldParser() {
+  if (!worldParserNoticeSent) {
+    addEvent("3D-Weltansicht pausiert: " + worldParserError + " Minecraft-Verbindung und Chat bleiben aktiv.", "warning");
+    worldParserNoticeSent = true;
   }
-  if (worldParserAttemptedFor === v) return false;
-  worldParserAttemptedFor = v;
-  const candidates = worldParserVersionsFor(v);
-  const errors = [];
-  for (const version of candidates) {
-    try {
-      const registry = prismarineRegistry(version);
-      const ChunkClass = prismarineChunk(registry);
-      worldRegistry = registry;
-      worldChunkClass = ChunkClass;
-      worldParserVersion = version;
-      worldParserError = null;
-      addEvent("3D-Weltparser aktiv: " + version + ".", "success");
-      return true;
-    } catch (err) {
-      errors.push(version + ": " + (err?.message || String(err)));
-    }
-  }
-  worldParserError = errors.join(" | ") || "Keine unterstützte Bedrock-Version gefunden.";
-  addEvent("3D-Weltansicht nicht verfügbar: " + worldParserError + " Chat und Bot-Verbindung bleiben aktiv.", "warning");
   return false;
 }
+async function decodeLevelChunk() { ensureWorldParser(); }
+async function decodeSubChunk() { ensureWorldParser(); }
 function resetWorldState() {
   worldChunks.clear();
   worldSurfaces.clear();
-  worldParserDisabled = false;
-  worldParserAttemptedFor = null;
+  worldParserNoticeSent = false;
 }
 function getWorldView() {
   const p = aktuelleKoordinaten;
@@ -773,7 +738,7 @@ mcBot.queue("text", {
   has_filtered_message: false,
   filtered_message: ""
 });
-addChat(MC_USERNAME, text, "chat");
+addChat("Webseite", text, "system");
 return true;
 }
 async function sendCommand(command) {
