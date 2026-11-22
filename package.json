@@ -13,7 +13,7 @@
     "node": ">=22.0.0"
   },
   "dependencies": {
-    "bedrock-protocol": "3.60.1",
+    "bedrock-protocol": "3.61.0",
     "prismarine-auth": "3.1.1",
     "prismarine-chunk": "1.41.0",
     "prismarine-registry": "1.1.0",
