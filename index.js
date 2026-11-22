@@ -316,13 +316,13 @@ return String(value ?? "").replace(/§./gu, "").replace(/§/gu, "");
 function addChat(source, message, type = "chat") {
 const entry = {
 time: nowIso(),
-source: stripMinecraftFormatting(source || ""),
-message: stripMinecraftFormatting(message || ""),
+source: String(source || ""),
+message: String(message || ""),
 type
 };
 chatLog.push(entry);
 while (chatLog.length > 200) chatLog.shift();
-if (type === "chat" && source !== "Discord") void sendDiscordChat(`${source}: ${message}`);
+if (type === "chat" && source !== "Discord") void sendDiscordChat(stripMinecraftFormatting(`${source}: ${message}`));
 }
 function formatLiveUptime() {
 if (!minecraftStartzeit) return "00:00:00";
@@ -1284,6 +1284,7 @@ if(d.events.length!==lastEvents){$('events').innerHTML=d.events.slice().reverse(
 type)+'"><span class="time">'+fmtTime(x.time)+'</span> '+escapeHtml(x.message)+'</div>').join('');lastEvents=d.events.length;
 }
 }
+function formatMinecraftText(value){const colors={'0':'#000000','1':'#0000AA','2':'#00AA00','3':'#00AAAA','4':'#AA0000','5':'#AA00AA','6':'#FFAA00','7':'#AAAAAA','8':'#555555','9':'#5555FF','a':'#55FF55','b':'#55FFFF','c':'#FF5555','d':'#FF55FF','e':'#FFFF55','f':'#FFFFFF'};let state={color:null,bold:false,italic:false,under:false,strike:false};let out='',part='';const flush=()=>{if(!part)return;let style='';if(state.color)style+='color:'+state.color+';';if(state.bold)style+='font-weight:700;';if(state.italic)style+='font-style:italic;';let dec=[];if(state.under)dec.push('underline');if(state.strike)dec.push('line-through');if(dec.length)style+='text-decoration:'+dec.join(' ')+';';out+=style?'<span style="'+style+'">'+escapeHtml(part)+'</span>':escapeHtml(part);part='';};const s=String(value??'');for(let i=0;i<s.length;i++){if(s[i]==='§'&&i+1<s.length){const code=s[++i].toLowerCase();if(!/[0-9a-fk-or]/.test(code)){part+='§'+code;continue;}flush();if(colors[code])state={color:colors[code],bold:false,italic:false,under:false,strike:false};else if(code==='r')state={color:null,bold:false,italic:false,under:false,strike:false};else if(code==='l')state.bold=true;else if(code==='o')state.italic=true;else if(code==='n')state.under=true;else if(code==='m')state.strike=true;else if(code==='k'){}continue;}part+=s[i];}flush();return out;}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[
 c]))}
 async function api(path,body,extraHeaders){
