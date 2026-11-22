@@ -316,7 +316,7 @@ return String(value ?? "").replace(/§./gu, "").replace(/§/gu, "");
 function addChat(source, message, type = "chat") {
 const entry = {
 time: nowIso(),
-source: stripMinecraftFormatting(source || "Minecraft"),
+source: stripMinecraftFormatting(source || ""),
 message: stripMinecraftFormatting(message || ""),
 type
 };
@@ -741,7 +741,7 @@ addEvent(`${MC_USERNAME} ist online. Spieler-UUID für Befehle gesetzt.`, "succe
 setTimeout(() => void geldAktualisieren(), 3000);
 });
 client.on("text", packet => {
-const username = packet.source_name || "Minecraft";
+const username = packet.source_name || "";
 const message = packet.message || (Array.isArray(packet.parameters) ? packet.parameters.join(" ") : "");
 if (message) addChat(username, message, "chat");
 const normalizedUser = String(username).trim().replace(/^!/, "").toLowerCase();
