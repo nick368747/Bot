@@ -1210,7 +1210,7 @@ for(const b of document.querySelectorAll('[data-action]')){
   finally{b.dataset.busy='0';b.disabled=false;b.textContent=original;}
  });
 }
-$('chatSend').addEventListener('click',async()=>{try{const v=$('chatInput').value.trim();if(!v.startsWith('/'))throw new Error('Nur Minecraft-Befehle mit / sind erlaubt.');await api('/api/minecraft/chat',{message:v});$('chatInput').value='';toast('Befehl gesendet');await refresh()}catch(e){toast(e.message)}});
+$('chatSend').addEventListener('click',async()=>{try{const v=$('chatInput').value.trim();if(!v)throw new Error('Bitte eine Nachricht eingeben.');await api('/api/minecraft/chat',{message:v});$('chatInput').value='';toast(v.startsWith('/')?'Minecraft-Befehl gesendet':'Chatnachricht gesendet');await refresh()}catch(e){toast(e.message)}});
 $('moneySend').addEventListener('click',async()=>{try{const v=$('moneyInput').value;await api('/api/minecraft/pay',{amount:
 v});$('moneyInput').value='';toast('Geld gesendet');await refresh()}catch(e){toast(e.message)}});
 $('commandSend').addEventListener('click',async()=>{try{const v=$('commandInput').value;await api('/api/minecraft/command',{
