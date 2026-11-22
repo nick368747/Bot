@@ -148,22 +148,33 @@ let worldChunkClass = null;
 let worldRegistry = null;
 let worldParserVersion = null;
 let worldParserError = null;
-function worldChunkKey(x, z) { return `${x},${z}`; }
+let worldParserAttemptedFor = null;
+let worldParserDisabled = false;
+function worldChunkKey(x, z) { return String(x) + "," + String(z); }
 function worldParserVersionsFor(clientVersion) {
   const forced = String(process.env.BEDROCK_WORLD_VERSION || "").trim();
   const candidates = [];
-  if (forced) candidates.push(forced.startsWith("bedrock_") ? forced : `bedrock_${forced}`);
+  if (forced) candidates.push(forced.startsWith("bedrock_") ? forced : "bedrock_" + forced);
   const v = String(clientVersion || "").trim();
-  if (/^1\.\d+\./.test(v)) candidates.push(`bedrock_${v}`);
-  // Manche Server-Forks melden ihre Buildnummer statt der Minecraft-Bedrock-Version.
-  if (/^26\./.test(v)) candidates.push("bedrock_1.26.60");
-  // prismarine-registry 1.12.0 enthält aktuelle Bedrock-Datensätze.
-  candidates.push("bedrock_1.26.60", "bedrock_1.21.130", "bedrock_1.21.0");
+  // prismarine-chunk/prismarine-registry enthalten derzeit Bedrock-Datensätze bis 1.21.x.
+  // Neuere 1.26.x-Protokolle dürfen nicht mit einem alten Registry-Format decodiert werden.
+  if (/^1\.21\./.test(v)) candidates.push("bedrock_" + v);
+  candidates.push("bedrock_1.21.130", "bedrock_1.21.0");
   return [...new Set(candidates)];
 }
 function ensureWorldParser(clientVersion) {
-  if (worldChunkClass && worldRegistry) return true;
-  const candidates = worldParserVersionsFor(clientVersion);
+  if (worldChunkClass && worldRegistry && !worldParserDisabled) return true;
+  if (worldParserDisabled) return false;
+  const v = String(clientVersion || "").trim();
+  if ((/^1\.26(?:\.|$)/.test(v) || /^26\./.test(v)) && !process.env.BEDROCK_WORLD_VERSION) {
+    worldParserError = "Bedrock-Protokoll " + v + " wird vom installierten prismarine-chunk noch nicht unterstützt.";
+    if (worldParserAttemptedFor !== v) addEvent("3D-Weltansicht pausiert: " + worldParserError + " Chat und Bot-Verbindung bleiben aktiv.", "warning");
+    worldParserAttemptedFor = v;
+    return false;
+  }
+  if (worldParserAttemptedFor === v) return false;
+  worldParserAttemptedFor = v;
+  const candidates = worldParserVersionsFor(v);
   const errors = [];
   for (const version of candidates) {
     try {
@@ -173,114 +184,21 @@ function ensureWorldParser(clientVersion) {
       worldChunkClass = ChunkClass;
       worldParserVersion = version;
       worldParserError = null;
-      addEvent(`3D-Weltparser aktiv: ${version}.`, "success");
+      addEvent("3D-Weltparser aktiv: " + version + ".", "success");
       return true;
     } catch (err) {
-      errors.push(`${version}: ${err?.message || String(err)}`);
+      errors.push(version + ": " + (err?.message || String(err)));
     }
   }
   worldParserError = errors.join(" | ") || "Keine unterstützte Bedrock-Version gefunden.";
-  addEvent(`3D-Weltparser konnte nicht geladen werden: ${worldParserError}`, "error");
+  addEvent("3D-Weltansicht nicht verfügbar: " + worldParserError + " Chat und Bot-Verbindung bleiben aktiv.", "warning");
   return false;
 }
 function resetWorldState() {
   worldChunks.clear();
   worldSurfaces.clear();
-}
-function isAirBlock(block) {
-  const name = String(block?.name || "").toLowerCase();
-  return !name || name === "air" || name === "cave_air" || name === "void_air";
-}
-function blockColor(name) {
-  const n = String(name || "").toLowerCase();
-  if (n.includes("grass")) return "#6fa34f";
-  if (n.includes("dirt") || n.includes("mud")) return "#795548";
-  if (n.includes("stone") || n.includes("deepslate") || n.includes("cobble")) return "#777b82";
-  if (n.includes("sand")) return "#d8c17a";
-  if (n.includes("gravel")) return "#8b8a82";
-  if (n.includes("water")) return "#3f7fc1";
-  if (n.includes("lava")) return "#d46a25";
-  if (n.includes("wood") || n.includes("log") || n.includes("planks")) return "#8b633f";
-  if (n.includes("leaves")) return "#4f8f45";
-  if (n.includes("snow") || n.includes("ice")) return "#d9edf7";
-  if (n.includes("glass")) return "#9fc7d9";
-  if (n.includes("brick")) return "#a55a4d";
-  return "#8a8f98";
-}
-function rebuildWorldSurface(chunk) {
-  const x0 = Number(chunk.x) * 16;
-  const z0 = Number(chunk.z) * 16;
-  const blocks = [];
-  const minY = Number(chunk.minY ?? -64);
-  const maxY = minY + Number(chunk.worldHeight ?? 384) - 1;
-  for (let lx = 0; lx < 16; lx++) {
-    for (let lz = 0; lz < 16; lz++) {
-      for (let y = maxY; y >= minY; y--) {
-        let block;
-        try { block = chunk.getBlock(new Vec3(lx, y, lz)); } catch { block = null; }
-        if (!isAirBlock(block)) {
-          blocks.push({
-            x: x0 + lx,
-            y,
-            z: z0 + lz,
-            name: String(block.name || "unknown"),
-            color: blockColor(block.name)
-          });
-          break;
-        }
-      }
-    }
-  }
-  worldSurfaces.set(worldChunkKey(chunk.x, chunk.z), blocks);
-}
-async function decodeLevelChunk(packet) {
-  if (!mcBot || !ensureWorldParser(mcBot.version)) return;
-  if (packet?.cache_enabled) {
-    // Caching braucht zusätzlich den Client-Blob-Store. Für die erste robuste Ansicht
-    // werden nur ungekachte LevelChunk-Pakete verarbeitet.
-    return;
-  }
-  const x = Number(packet?.x);
-  const z = Number(packet?.z);
-  if (!Number.isFinite(x) || !Number.isFinite(z)) return;
-  try {
-    let chunk = worldChunks.get(worldChunkKey(x, z));
-    if (!chunk) {
-      chunk = new worldChunkClass({ x, z, minY: -64, worldHeight: 384 });
-      worldChunks.set(worldChunkKey(x, z), chunk);
-    }
-    const count = Number(packet.sub_chunk_count);
-    await chunk.networkDecodeNoCache(packet.payload || Buffer.alloc(0), Number.isFinite(count) ? count : -1);
-    rebuildWorldSurface(chunk);
-  } catch (err) {
-    worldParserError = err?.message || String(err);
-    addEvent(`3D-LevelChunk konnte nicht gelesen werden: ${worldParserError}`, "error");
-  }
-}
-async function decodeSubChunk(packet) {
-  if (!mcBot || !ensureWorldParser(mcBot.version) || !packet?.entries) return;
-  const origin = packet.origin || {};
-  if (packet.cache_enabled) return;
-  for (const entry of packet.entries) {
-    const result = String(entry?.result ?? "").toLowerCase();
-    if (!(result === "success" || Number(entry?.result) === 1)) continue;
-    const x = Number(origin.x) + Number(entry.dx || 0);
-    const y = Number(origin.y) + Number(entry.dy || 0);
-    const z = Number(origin.z) + Number(entry.dz || 0);
-    if (![x, y, z].every(Number.isFinite) || !entry.payload) continue;
-    try {
-      let chunk = worldChunks.get(worldChunkKey(x, z));
-      if (!chunk) {
-        chunk = new worldChunkClass({ x, z, minY: -64, worldHeight: 384 });
-        worldChunks.set(worldChunkKey(x, z), chunk);
-      }
-      await chunk.networkDecodeSubChunkNoCache(y, entry.payload);
-      rebuildWorldSurface(chunk);
-    } catch (err) {
-      worldParserError = err?.message || String(err);
-      addEvent(`3D-SubChunk konnte nicht gelesen werden: ${worldParserError}`, "error");
-    }
-  }
+  worldParserDisabled = false;
+  worldParserAttemptedFor = null;
 }
 function getWorldView() {
   const p = aktuelleKoordinaten;
@@ -835,8 +753,28 @@ setTimeout(() => minecraftVerbinden(), 1000);
 // ============================================================
 // Web-Aktionen
 // ============================================================
-async function sendChatMessage(_message) {
-throw new Error("Freie Minecraft-Chatnachrichten sind deaktiviert. Verwende ausschließlich /-Befehle über die Chat-Konsole.");
+async function sendChatMessage(message) {
+if (!mcBot || !mcOnline) throw new Error("Minecraft ist offline.");
+const text = sanitizeChatMessage(message);
+if (!text) throw new Error("Nachricht ist leer.");
+if (text.length > 256) throw new Error("Nachricht ist zu lang (max. 256 Zeichen).");
+if (text.startsWith("/")) return sendCommand(text);
+mcBot.queue("text", {
+  type: "chat",
+  needs_translation: false,
+  category: "authored",
+  chat: "chat",
+  whisper: "whisper",
+  announcement: "announcement",
+  source_name: MC_USERNAME,
+  message: text,
+  xuid: "0",
+  platform_chat_id: "",
+  has_filtered_message: false,
+  filtered_message: ""
+});
+addChat(MC_USERNAME, text, "chat");
+return true;
 }
 async function sendCommand(command) {
 if (!mcOnline) throw new Error("Minecraft ist offline.");
@@ -2130,9 +2068,11 @@ return json(res, 200, publicStatus());
 }
 if (url === "/api/minecraft/chat") {
 const body = await readJson(req);
-const message = String(body.message || "").trim();
-if (!message.startsWith("/")) return json(res, 400, { ok: false, error: "Nur Minecraft-Befehle mit / sind erlaubt." });
-await sendCommand(message);
+const message = sanitizeChatMessage(body.message);
+if (!message) return json(res, 400, { ok: false, error: "Nachricht ist leer." });
+if (message.length > 256) return json(res, 400, { ok: false, error: "Nachricht ist zu lang (max. 256 Zeichen)." });
+if (message.startsWith("/")) await sendCommand(message);
+else await sendChatMessage(message);
 return json(res, 200, publicStatus());
 }
 if (url === "/api/minecraft/command") {
