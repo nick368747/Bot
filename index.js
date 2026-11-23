@@ -4,9 +4,6 @@ const path = require("path");
 const crypto = require("crypto");
 const bedrock = require("bedrock-protocol");
 const { Authflow, Titles } = require("prismarine-auth");
-const prismarineChunk = require("prismarine-chunk");
-const prismarineRegistry = require("prismarine-registry");
-const { Vec3 } = require("vec3");
 const { Client: DiscordClient, GatewayIntentBits, Events, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
 // ============================================================
 // FrozenRun – Web-Version mit optionaler Discord-Anbindung
@@ -140,161 +137,7 @@ let discordStatusTimer = null;
 let discordChatRelayLastAt = 0;
 let discordDashboardMessage = null;
 let discordUptimeMessage = null;
-// Tatsächliche Bedrock-Welt für die Bildschirm-Ansicht.
-// Die Browser-Ansicht verwendet daraus die echten Blockpositionen statt einer Demo-Welt.
-const worldChunks = new Map();
-const worldSurfaces = new Map();
-let worldChunkClass = null;
-let worldRegistry = null;
-let worldParserVersion = null;
-let worldParserError = null;
-let worldParserNoticeSent = false;
-let worldParserDisabled = false;
-const WORLD_PARSER_CANDIDATES = [
-  String(process.env.BEDROCK_WORLD_VERSION || "").trim(),
-  "bedrock_1.21.130",
-  "bedrock_1.21.0"
-].filter(Boolean).map(v => v.startsWith("bedrock_") ? v : "bedrock_" + v);
-function worldChunkKey(x, z) { return String(x) + "," + String(z); }
-function ensureWorldParser() {
-  if (worldChunkClass && worldRegistry && !worldParserDisabled) return true;
-  if (worldParserDisabled) return false;
-  const errors = [];
-  for (const version of [...new Set(WORLD_PARSER_CANDIDATES)]) {
-    try {
-      const registry = prismarineRegistry(version);
-      const ChunkClass = prismarineChunk(registry);
-      worldRegistry = registry;
-      worldChunkClass = ChunkClass;
-      worldParserVersion = version;
-      worldParserError = null;
-      addEvent("3D-Weltparser geladen: " + version + ".", "success");
-      return true;
-    } catch (err) {
-      errors.push(version + ": " + (err?.message || String(err)));
-    }
-  }
-  worldParserError = errors.join(" | ") || "Kein passender Bedrock-Chunkparser gefunden.";
-  if (!worldParserNoticeSent) {
-    addEvent("3D-Weltansicht nicht verfügbar: " + worldParserError, "warning");
-    worldParserNoticeSent = true;
-  }
-  return false;
-}
-function worldColor(name) {
-  const n = String(name || "").toLowerCase();
-  if (n.includes("water")) return "#3f7fc1";
-  if (n.includes("grass") || n.includes("moss") || n.includes("leaves") || n.includes("sapling")) return "#6fa34f";
-  if (n.includes("sand") || n.includes("sandstone")) return "#d8c17a";
-  if (n.includes("dirt") || n.includes("wood") || n.includes("log") || n.includes("planks")) return "#795548";
-  if (n.includes("stone") || n.includes("deepslate") || n.includes("cobble") || n.includes("ore")) return "#777b82";
-  if (n.includes("snow") || n.includes("ice")) return "#c8e5f4";
-  return "#8a8f98";
-}
-function rebuildWorldSurface(chunkX, chunkZ, chunk) {
-  const result = [];
-  const minY = Number.isFinite(chunk.minY) ? chunk.minY : -64;
-  const maxY = Number.isFinite(chunk.maxY) ? chunk.maxY : 320;
-  // Nur die oberste sichtbare Blockschicht jedes X/Z-Punkts übertragen.
-  for (let z = 0; z < 16; z++) {
-    for (let x = 0; x < 16; x++) {
-      for (let y = maxY - 1; y >= minY; y--) {
-        let block;
-        try { block = chunk.getBlock({ x, y, z }); } catch { continue; }
-        if (!block || !block.name || block.name === "air" || block.name === "cave_air" || block.name === "void_air") continue;
-        result.push({ x: chunkX * 16 + x, y, z: chunkZ * 16 + z, color: worldColor(block.name), name: block.name });
-        break;
-      }
-    }
-  }
-  worldSurfaces.set(worldChunkKey(chunkX, chunkZ), result);
-}
-function getOrCreateWorldChunk(x, z) {
-  const key = worldChunkKey(x, z);
-  let chunk = worldChunks.get(key);
-  if (!chunk) {
-    chunk = new worldChunkClass({ x, z });
-    worldChunks.set(key, chunk);
-  }
-  return chunk;
-}
-async function decodeLevelChunk(packet) {
-  if (!ensureWorldParser() || !packet || !Buffer.isBuffer(packet.payload)) return;
-  const count = Number(packet.sub_chunk_count);
-  if (!Number.isInteger(count) || count < 0) {
-    worldParserError = "Der Server verwendet SubChunk-Polling (sub_chunk_count=" + count + "); dieses Abrufverfahren ist noch nicht implementiert.";
-    if (!worldParserNoticeSent) {
-      addEvent("3D-Welt: " + worldParserError, "warning");
-      worldParserNoticeSent = true;
-    }
-    return;
-  }
-  if (packet.cache_enabled) {
-    worldParserError = "Der Server sendet gecachte Chunks; der Client-Blob-Cache ist noch nicht implementiert.";
-    if (!worldParserNoticeSent) {
-      addEvent("3D-Welt: " + worldParserError, "warning");
-      worldParserNoticeSent = true;
-    }
-    return;
-  }
-  try {
-    const x = Number(packet.x);
-    const z = Number(packet.z);
-    const chunk = getOrCreateWorldChunk(x, z);
-    chunk.networkDecodeNoCache(packet.payload, count);
-    rebuildWorldSurface(x, z, chunk);
-    worldParserError = null;
-  } catch (err) {
-    worldParserError = err?.message || String(err);
-    addEvent("3D-LevelChunk konnte nicht decodiert werden: " + worldParserError, "warning");
-  }
-}
-async function decodeSubChunk(packet) {
-  if (!ensureWorldParser() || !packet || packet.cache_enabled) return;
-  const origin = packet.origin || {};
-  const entries = Array.isArray(packet.entries) ? packet.entries : [];
-  for (const entry of entries) {
-    if (Number(entry.result) !== 1 || !Buffer.isBuffer(entry.payload)) continue;
-    const blockX = Number(origin.x || 0) + Number(entry.dx || 0) * 16;
-    const blockZ = Number(origin.z || 0) + Number(entry.dz || 0) * 16;
-    const chunkX = Math.floor(blockX / 16);
-    const chunkZ = Math.floor(blockZ / 16);
-    const sectionY = Math.floor((Number(origin.y || 0) / 16)) + Number(entry.dy || 0);
-    try {
-      const chunk = getOrCreateWorldChunk(chunkX, chunkZ);
-      await chunk.networkDecodeSubChunkNoCache(sectionY, entry.payload);
-      rebuildWorldSurface(chunkX, chunkZ, chunk);
-    } catch (err) {
-      worldParserError = err?.message || String(err);
-      addEvent("3D-SubChunk konnte nicht decodiert werden: " + worldParserError, "warning");
-    }
-  }
-}
-function resetWorldState() {
-  worldChunks.clear();
-  worldSurfaces.clear();
-  worldParserNoticeSent = false;
-  worldParserError = null;
-}
-function getWorldView() {
-  const p = aktuelleKoordinaten;
-  const centerX = Math.floor(Number(p.x) / 16);
-  const centerZ = Math.floor(Number(p.z) / 16);
-  const blocks = [];
-  const radius = 2;
-  for (let cx = centerX - radius; cx <= centerX + radius; cx++) {
-    for (let cz = centerZ - radius; cz <= centerZ + radius; cz++) {
-      const part = worldSurfaces.get(worldChunkKey(cx, cz));
-      if (part) blocks.push(...part);
-    }
-  }
-  return {
-    parser: worldParserVersion,
-    parserError: worldParserError,
-    chunks: worldSurfaces.size,
-    blocks
-  };
-}
+// 3D-Weltverarbeitung deaktiviert: keine Chunk-Decodierung im Hintergrund.
 const sessions = new Map();
 const loginAttempts = new Map();
 // ============================================================
@@ -718,27 +561,8 @@ authflow
 });
 mcBot = client;
 connecting = false;
-client.on("level_chunk", packet => {
-void decodeLevelChunk(packet);
-});
-client.on("subchunk", packet => {
-void decodeSubChunk(packet);
-});
 client.on("start_game", async packet => {
 if (generation !== connectionGeneration) return;
-// Die aktuellen Bedrock-Block-Runtime-IDs kommen vom Server im start_game-Paket.
-// Ohne handleStartGame kennt der lokale Prismarine-Parser gehashte IDs (z. B. 17710) nicht.
-try {
-  if (ensureWorldParser() && typeof worldRegistry.handleStartGame === "function") {
-    worldRegistry.handleStartGame(packet);
-    addEvent("3D-Welt: Server-Blockpalette und Runtime-IDs übernommen.", "success");
-  } else {
-    addEvent("3D-Welt: Diese Registry-Version kann die Server-Blockpalette nicht übernehmen.", "warning");
-  }
-} catch (err) {
-  worldParserError = "Server-Blockpalette konnte nicht geladen werden: " + (err?.message || String(err));
-  addEvent("3D-Welt: " + worldParserError, "warning");
-}
 mcOnline = true;
 connecting = false;
 minecraftStartzeit = Date.now();
@@ -1872,24 +1696,8 @@ if (req.method === "GET" && (url === "/chat" || url === "/chat/")) {
   }
 }
 if (req.method === "GET" && (url === "/world" || url === "/world/")) {
-  if (!getSession(req)) {
-    res.writeHead(302, { Location: "/login?next=%2Fworld" });
-    return res.end();
-  }
-  try {
-    const worldPage = fs.readFileSync(path.join(__dirname, "public", "v4", "world.html"));
-    res.writeHead(200, {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "same-origin",
-      "X-Frame-Options": "DENY",
-      "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
-    });
-    return res.end(worldPage);
-  } catch (err) {
-    return json(res, 404, { ok: false, error: "FrozenRun 3D-Weltansicht fehlt." });
-  }
+  res.writeHead(302, { Location: "/" });
+  return res.end();
 }
 if (req.method === "GET" && (url === "/v4" || url === "/v4/")) {
   if (!getSession(req)) {
@@ -2070,18 +1878,6 @@ if (req.method === "GET" && url === "/api/guest/discord/status") {
 if (req.method === "GET" && url === "/api/status") {
 if (!requireSession(req, res)) return;
 return json(res, 200, publicStatus());
-}
-if (req.method === "GET" && url === "/api/view") {
-if (!requireSession(req, res)) return;
-return json(res, 200, {
-ok: true,
-online: mcOnline,
-position: { ...aktuelleKoordinaten },
-rotation: { ...aktuelleRotation },
-username: MC_USERNAME,
-world: getWorldView(),
-timestamp: Date.now()
-});
 }
 if ((req.method === "GET" && url.split("?")[0] === "/logout") || (req.method === "POST" && ["/api/logout", "/logout"].includes(url.split("?")[0]))) {
 if (req.method === "POST" && req.headers.origin) {
