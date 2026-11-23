@@ -322,7 +322,7 @@ type
 };
 chatLog.push(entry);
 while (chatLog.length > 200) chatLog.shift();
-if (type === "chat" && source !== "Discord") void sendDiscordChat(stripMinecraftFormatting(`${source}: ${message}`));
+// Minecraft-Serverchat bleibt im Web-Dashboard und wird nicht nach Discord gespiegelt.
 }
 function formatLiveUptime() {
 if (!minecraftStartzeit) return "00:00:00";
@@ -1278,7 +1278,7 @@ function render(d){const statusValue=$('statusValue');if(statusValue){statusValu
 'coords').textContent=d.coordinatesFormatted;
 if(d.auth&&d.auth.status==='ready'){$('auth').classList.remove('hidden');$('auth').querySelector('b').textContent='Microsoft-Anmeldung erfolgreich';$('auth').querySelector('p').textContent='Dein Microsoft-/Xbox-Konto ist verbunden. Klicke jetzt auf „Ein“, um den Minecraft-Bot zu starten.';$('authLink').classList.add('hidden');$('authCode').textContent='✓ Erfolgreich angemeldet';}else if(d.auth&&d.auth.userCode){$('auth').classList.remove('hidden');$('auth').querySelector('b').textContent='Microsoft-Anmeldung erforderlich';$('auth').querySelector('p').textContent='Öffne die angezeigte Microsoft-Seite und gib den Code ein.';$('authLink').classList.remove('hidden');$('authCode').textContent=d.auth.userCode;if(d.auth.verificationUri)$('authLink').href=d.auth.verificationUri;}else if(d.auth&&d.auth.status==='error'){$('auth').classList.remove('hidden');$('auth').querySelector('b').textContent='Microsoft-Anmeldung fehlgeschlagen';$('auth').querySelector('p').textContent=d.auth.error||'Bitte erneut anmelden.';$('authLink').classList.remove('hidden');$('authCode').textContent='';}else{$('auth').classList.add('hidden');}
 if(d.chat.length!==lastChat){$('chat').innerHTML=d.chat.map(x=>'<div class="line"><span class="time">'+fmtTime(x.time)+'</
-span> <span class="name">'+escapeHtml(x.source)+'</span>: '+escapeHtml(x.message)+'</div>').join('');$('chat').scrollTop=$(
+span> <span class="name">'+formatMinecraftText(x.source)+'</span>: '+formatMinecraftText(x.message)+'</div>').join('');$('chat').scrollTop=$(
 'chat').scrollHeight;lastChat=d.chat.length;}
 if(d.events.length!==lastEvents){$('events').innerHTML=d.events.slice().reverse().map(x=>'<div class="event '+escapeHtml(x.
 type)+'"><span class="time">'+fmtTime(x.time)+'</span> '+escapeHtml(x.message)+'</div>').join('');lastEvents=d.events.length;
