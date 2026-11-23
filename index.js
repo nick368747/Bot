@@ -248,7 +248,11 @@ function loadWorldStartGame(packet) {
     if (typeof worldRegistry.handleStartGame !== "function") {
       throw new Error("Diese prismarine-registry-Version unterstützt handleStartGame nicht.");
     }
-    worldRegistry.handleStartGame(packet);
+    // Bedrock 1.21.60+ liefert die Item-Palette separat (packet_item_registry).
+    // prismarine-registry erwartet weiterhin packet.itemstates. Für die 3D-Blockpalette
+    // reicht hier ein leeres Array; handleStartGame baut anschließend die Block-Runtime-IDs.
+    const registryPacket = Array.isArray(packet.itemstates) ? packet : { ...packet, itemstates: [] };
+    worldRegistry.handleStartGame(registryPacket);
     worldParserError = null;
     return true;
   } catch (err) {
