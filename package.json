@@ -16,8 +16,8 @@
     "bedrock-protocol": "3.61.0",
     "prismarine-auth": "3.1.1",
     "discord.js": "^14.27.0",
-    "prismarine-chunk": "^1.0.0",
-    "prismarine-registry": "^1.0.0",
-    "vec3": "^0.1.10"
+    "prismarine-chunk": "1.41.0",
+    "prismarine-registry": "1.12.0",
+    "vec3": "0.1.3"
   }
 }
