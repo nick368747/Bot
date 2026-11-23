@@ -31,6 +31,16 @@ async function run() {
     assert.equal(ready, true, "HTTP server starts and serves login");
     const unauth = await request("/api/status");
     assert.equal(unauth.status, 401, "dashboard API rejects unauthenticated access");
+    for (const route of ["/api/minecraft/start", "/api/minecraft/stop", "/api/minecraft/reconnect",
+      "/api/minecraft/home", "/api/minecraft/run", "/api/minecraft/stoprun", "/api/minecraft/auth",
+      "/api/minecraft/chat", "/api/minecraft/pay", "/api/minecraft/command", "/api/discord/test", "/api/world3d"]) {
+      const protectedResponse = await request(route, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+      assert.equal(protectedResponse.status, 401, route + " rejects unauthenticated requests");
+    }
+    const guestStatus = await request("/api/guest/status");
+    assert.equal(guestStatus.status, 200, "guest status endpoint is public");
+    const guestDiscord = await request("/api/guest/discord/status");
+    assert.equal(guestDiscord.status, 200, "guest Discord status endpoint is public");
     const login = await request("/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password }) });
     assert.equal(login.status, 200, "valid login succeeds");
     const cookie = (login.headers.get("set-cookie") || "").split(";")[0];
@@ -54,6 +64,8 @@ async function run() {
     const discord = await request("/api/discord/status", { headers: authHeaders });
     assert.equal(discord.status, 200, "Discord status endpoint responds without configured Discord");
     assert.equal((await discord.json()).connected, false, "Discord reports disconnected when no token is configured");
+    const chatPage = await request("/chat", { headers: authHeaders });
+    assert.equal(chatPage.status, 200, "chat page serves for authenticated session");
     const dashboard = await request("/", { headers: authHeaders });
     assert.equal(dashboard.status, 200, "dashboard HTML serves");
     const html = await dashboard.text();
