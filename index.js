@@ -154,6 +154,9 @@ let worldParserVersion = null;
 let worldParserError = null;
 let worldParserNoticeSent = false;
 let worldParserDisabled = false;
+let lastStartGamePacket = null;
+let worldMinY = -64;
+let worldHeight = 384;
 const WORLD_PARSER_CANDIDATES = [
   String(process.env.BEDROCK_WORLD_VERSION || "").trim(),
   "bedrock_1.21.130",
@@ -217,13 +220,44 @@ function getOrCreateWorldChunk(x, z) {
   const key = worldChunkKey(x, z);
   let chunk = worldChunks.get(key);
   if (!chunk) {
-    chunk = new worldChunkClass({ x, z });
+    chunk = new worldChunkClass({ x, z, minY: worldMinY, worldHeight });
     worldChunks.set(key, chunk);
   }
   return chunk;
 }
+function pruneWorldChunks() {
+  const centerX = Math.floor((Number(aktuelleKoordinaten.x) || 0) / 16);
+  const centerZ = Math.floor((Number(aktuelleKoordinaten.z) || 0) / 16);
+  const keepRadius = 3;
+  for (const key of worldChunks.keys()) {
+    const [x, z] = key.split(",").map(Number);
+    if (Math.abs(x - centerX) > keepRadius || Math.abs(z - centerZ) > keepRadius) {
+      worldChunks.delete(key);
+      worldSurfaces.delete(key);
+    }
+  }
+}
+function loadWorldStartGame(packet) {
+  if (!packet || !ensureWorldParser()) return false;
+  lastStartGamePacket = packet;
+  const minY = Number(packet.world_minimum_y ?? packet.minimum_y);
+  const height = Number(packet.world_height);
+  if (Number.isFinite(minY)) worldMinY = minY;
+  if (Number.isFinite(height) && height > 0 && height <= 1024) worldHeight = height;
+  try {
+    if (typeof worldRegistry.handleStartGame !== "function") {
+      throw new Error("Diese prismarine-registry-Version unterstützt handleStartGame nicht.");
+    }
+    worldRegistry.handleStartGame(packet);
+    worldParserError = null;
+    return true;
+  } catch (err) {
+    worldParserError = err?.message || String(err);
+    return false;
+  }
+}
 async function decodeLevelChunk(packet) {
-  if (!ensureWorldParser() || !packet || !Buffer.isBuffer(packet.payload)) return;
+  if (!world3DEnabled || !ensureWorldParser() || !packet || !Buffer.isBuffer(packet.payload)) return;
   const count = Number(packet.sub_chunk_count);
   if (!Number.isInteger(count) || count < 0) {
     worldParserError = "Der Server verwendet SubChunk-Polling (sub_chunk_count=" + count + "); dieses Abrufverfahren ist noch nicht implementiert.";
@@ -244,9 +278,12 @@ async function decodeLevelChunk(packet) {
   try {
     const x = Number(packet.x);
     const z = Number(packet.z);
+    if (!Number.isFinite(x) || !Number.isFinite(z)) throw new Error("Chunk enthält ungültige Koordinaten.");
     const chunk = getOrCreateWorldChunk(x, z);
-    chunk.networkDecodeNoCache(packet.payload, count);
+    await chunk.networkDecodeNoCache(packet.payload, count);
+    if (!world3DEnabled) return;
     rebuildWorldSurface(x, z, chunk);
+    pruneWorldChunks();
     worldParserError = null;
   } catch (err) {
     worldParserError = err?.message || String(err);
@@ -254,7 +291,7 @@ async function decodeLevelChunk(packet) {
   }
 }
 async function decodeSubChunk(packet) {
-  if (!ensureWorldParser() || !packet || packet.cache_enabled) return;
+  if (!world3DEnabled || !ensureWorldParser() || !packet || packet.cache_enabled) return;
   const origin = packet.origin || {};
   const entries = Array.isArray(packet.entries) ? packet.entries : [];
   for (const entry of entries) {
@@ -267,7 +304,9 @@ async function decodeSubChunk(packet) {
     try {
       const chunk = getOrCreateWorldChunk(chunkX, chunkZ);
       await chunk.networkDecodeSubChunkNoCache(sectionY, entry.payload);
+      if (!world3DEnabled) return;
       rebuildWorldSurface(chunkX, chunkZ, chunk);
+      pruneWorldChunks();
     } catch (err) {
       worldParserError = err?.message || String(err);
       addEvent("3D-SubChunk konnte nicht decodiert werden: " + worldParserError, "warning");
@@ -723,20 +762,14 @@ authflow
 });
 mcBot = client;
 connecting = false;
-client.on("level_chunk", packet => { if (world3DEnabled) void decodeLevelChunk(packet); });
-client.on("subchunk", packet => { if (world3DEnabled) void decodeSubChunk(packet); });
+client.on("level_chunk", packet => { if (world3DEnabled && generation === connectionGeneration) void decodeLevelChunk(packet); });
+client.on("subchunk", packet => { if (world3DEnabled && generation === connectionGeneration) void decodeSubChunk(packet); });
 client.on("start_game", async packet => {
 if (generation !== connectionGeneration) return;
+lastStartGamePacket = packet;
 if (world3DEnabled) {
-  try {
-    if (ensureWorldParser() && typeof worldRegistry.handleStartGame === "function") {
-      worldRegistry.handleStartGame(packet);
-      addEvent("3D-Welt: Server-Blockpalette übernommen.", "success");
-    }
-  } catch (err) {
-    worldParserError = err?.message || String(err);
-    addEvent("3D-Welt: " + worldParserError, "warning");
-  }
+  if (loadWorldStartGame(packet)) addEvent("3D-Welt: Server-Blockpalette übernommen.", "success");
+  else addEvent("3D-Welt: Blockpalette konnte nicht geladen werden: " + (worldParserError || "Unbekannter Fehler"), "warning");
 }
 mcOnline = true;
 connecting = false;
@@ -2033,9 +2066,20 @@ if (req.headers.origin) { try { if (new URL(req.headers.origin).host !== String(
 let body=""; req.on("data",chunk=>{body+=chunk;if(body.length>2048)req.destroy()});
 req.on("end",()=>{try {
 const data=JSON.parse(body||"{}"); if(typeof data.enabled!=="boolean")return json(res,400,{ok:false,error:"enabled muss true oder false sein."});
-world3DEnabled=data.enabled; if(!world3DEnabled)resetWorldState(); else {worldParserNoticeSent=false;ensureWorldParser();}
-try{fs.writeFileSync(world3DSettingsFile,JSON.stringify({enabled:world3DEnabled}),"utf8")}catch(err){console.error("3D-Einstellung konnte nicht gespeichert werden:",err.message)}
-addEvent("3D-Weltansicht "+(world3DEnabled?"aktiviert":"deaktiviert")+".","info"); return json(res,200,{ok:true,enabled:world3DEnabled});
+world3DEnabled=data.enabled;
+if(!world3DEnabled) resetWorldState();
+else {
+  worldParserNoticeSent=false;
+  if (ensureWorldParser() && mcOnline && lastStartGamePacket) {
+    if (loadWorldStartGame(lastStartGamePacket)) addEvent("3D-Welt: Server-Blockpalette übernommen.", "success");
+    else addEvent("3D-Welt: Blockpalette konnte nicht geladen werden: " + (worldParserError || "Unbekannter Fehler"), "warning");
+  }
+}
+let saved = true;
+try { fs.mkdirSync(path.dirname(world3DSettingsFile), {recursive:true}); fs.writeFileSync(world3DSettingsFile,JSON.stringify({enabled:world3DEnabled}),"utf8"); }
+catch(err) { saved=false; console.error("3D-Einstellung konnte nicht gespeichert werden:",err.message); }
+addEvent("3D-Weltansicht "+(world3DEnabled?"aktiviert":"deaktiviert")+".","info");
+return json(res,200,{ok:true,enabled:world3DEnabled,saved,parserError:worldParserError});
 }catch{return json(res,400,{ok:false,error:"Ungültige Anfrage."})}});
 return;
 }
