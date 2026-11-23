@@ -726,6 +726,19 @@ void decodeSubChunk(packet);
 });
 client.on("start_game", async packet => {
 if (generation !== connectionGeneration) return;
+// Die aktuellen Bedrock-Block-Runtime-IDs kommen vom Server im start_game-Paket.
+// Ohne handleStartGame kennt der lokale Prismarine-Parser gehashte IDs (z. B. 17710) nicht.
+try {
+  if (ensureWorldParser() && typeof worldRegistry.handleStartGame === "function") {
+    worldRegistry.handleStartGame(packet);
+    addEvent("3D-Welt: Server-Blockpalette und Runtime-IDs übernommen.", "success");
+  } else {
+    addEvent("3D-Welt: Diese Registry-Version kann die Server-Blockpalette nicht übernehmen.", "warning");
+  }
+} catch (err) {
+  worldParserError = "Server-Blockpalette konnte nicht geladen werden: " + (err?.message || String(err));
+  addEvent("3D-Welt: " + worldParserError, "warning");
+}
 mcOnline = true;
 connecting = false;
 minecraftStartzeit = Date.now();
