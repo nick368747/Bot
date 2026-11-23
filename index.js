@@ -1719,56 +1719,8 @@ if (req.method === "GET" && (url === "/v4" || url === "/v4/")) {
   }
 }
 if (req.method === "GET" && (url === "/v3" || url === "/v3/")) {
-  if (!getSession(req)) {
-    res.writeHead(302, { Location: "/login?next=%2Fv3" });
-    return res.end();
-  }
-  try {
-    const dashboard = fs.readFileSync(path.join(__dirname, "public", "v3", "index.html"));
-    res.writeHead(200, {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "same-origin",
-      "X-Frame-Options": "DENY"
-    });
-    return res.end(dashboard);
-  } catch (err) {
-    return json(res, 404, { ok: false, error: "FrozenRun 3.0 Dashboard-Datei fehlt." });
-  }
-}
-if (req.method === "GET" && (url === "/manifest.webmanifest" || url === "/app-icon.svg" || url === "/brand-logo.svg" || url === "/sw.js")) {
-  const assets = {
-    "/manifest.webmanifest": { file: "manifest.webmanifest", type: "application/manifest+json; charset=utf-8", cache: "no-cache" },
-    "/app-icon.svg": { file: "app-icon.svg", type: "image/svg+xml; charset=utf-8", cache: "public, max-age=3600" },
-    "/brand-logo.svg": { file: "brand-logo.svg", type: "image/svg+xml; charset=utf-8", cache: "no-cache" },
-    "/sw.js": { file: "sw.js", type: "application/javascript; charset=utf-8", cache: "no-cache" }
-  };
-  const asset = assets[url];
-  try {
-    const body = fs.readFileSync(path.join(__dirname, asset.file));
-    res.writeHead(200, { "Content-Type": asset.type, "Cache-Control": asset.cache, "X-Content-Type-Options": "nosniff", "Service-Worker-Allowed": "/" });
-    return res.end(body);
-  } catch (err) {
-    return json(res, 404, { ok: false, error: "App-Datei fehlt." });
-  }
-}
-if (req.method === "GET" && url === "/health") {
-return json(res, 200, { ok: true, minecraftOnline: mcOnline });
-}
-if (req.method === "GET" && (url === "/login" || url === "/login/")) {
-if (getSession(req)) {
-res.writeHead(302, { Location: "/" });
-return res.end();
-}
-return html(res, 200, LOGIN_HTML);
-}
-if (req.method === "GET" && (url === "/dashboard" || url === "/dashboard/")) {
-if (!getSession(req)) {
-res.writeHead(302, { Location: "/login?next=%2Fdashboard" });
-return res.end();
-}
-return html(res, 200, DASHBOARD_HTML);
+  res.writeHead(302, { Location: "/" });
+  return res.end();
 }
 if (req.method === "GET" && (url === "/gast" || url === "/gast/")) {
   try {
