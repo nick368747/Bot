@@ -1871,6 +1871,7 @@ if (req.method === "GET" && (url === "/chat" || url === "/chat/")) {
   }
 }
 if (req.method === "GET" && (url === "/world" || url === "/world/")) {
+  if (!world3DEnabled) { res.writeHead(302, { Location: "/" }); return res.end(); }
   if (!getSession(req)) {
     res.writeHead(302, { Location: "/login?next=%2Fworld" });
     return res.end();
