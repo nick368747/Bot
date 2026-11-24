@@ -1964,6 +1964,16 @@ if (req.method === "GET" && (url === "/gast" || url === "/gast/")) {
     return json(res, 404, { ok: false, error: "FrozenRun Gast-Dashboard-Datei fehlt." });
   }
 }
+if (req.method === "GET" && (url === "/login" || url === "/login/")) {
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "same-origin",
+    "X-Frame-Options": "DENY"
+  });
+  return res.end(LOGIN_HTML);
+}
 if (req.method === "GET" && url === "/") {
 if (!getSession(req)) {
 res.writeHead(302, { Location: "/login" });
