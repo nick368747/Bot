@@ -1887,6 +1887,10 @@ res.setHeader("Origin-Agent-Cluster", "?1");
 if (isSecureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
 res.setHeader("Cache-Control", "no-store");
 const url = String(req.url || "/").split("?")[0];
+// Render health check: unabhängig von Login, Minecraft und Discord erreichbar.
+if (req.method === "GET" && url === "/health") {
+  return json(res, 200, { ok: true, service: "FrozenRun", status: "healthy" });
+}
 if (req.method === "GET" && (url === "/chat" || url === "/chat/")) {
   if (!getSession(req)) {
     res.writeHead(302, { Location: "/login?next=%2Fchat" });
